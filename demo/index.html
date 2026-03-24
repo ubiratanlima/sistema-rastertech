@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Rastertech - Ensaio Visual</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Header com Logo e Status de Sincronização -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1 class="logo">Rastertech</h1>
+                <span class="subtitle">Gestão de Ativos</span>
+            </div>
+            <div class="header-right">
+                <div id="userInfo" class="user-info">
+                    <!-- Preenchido dinamicamente pelo JavaScript -->
+                </div>
+                <div id="syncStatus" class="sync-status sync-synced">
+                    <svg class="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="sync-text">Sincronizado</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Mobile (Bottom Navigation) -->
+        <nav class="mobile-nav bottom-nav">
+            <button class="nav-item active" data-page="dashboard">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                </svg>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-item" data-page="assets">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l10 3v9c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l10-3z"/>
+                </svg>
+                <span>Ativos</span>
+            </button>
+            <button class="nav-item" data-page="form">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
+                </svg>
+                <span>Ordem</span>
+            </button>
+            <button class="nav-item" data-page="settings">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.64l-1.92-3.32c-.12-.22-.39-.3-.61-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.5-.41h-3.84c-.26 0-.46.17-.49.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.09-.49 0-.61.22L2.74 8.87c-.12.22-.07.5.12.64l2.03 1.58c-.05.3-.07.62-.07.94 0 .33.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.64l1.92 3.32c.12.22.39.3.61.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.5.41h3.84c.26 0 .46-.17.49-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.49 0 .61-.22l1.92-3.32c.12-.22.07-.5-.12-.64l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+                <span>Opções</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="page active">
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <div class="search-bar">
+                        <input type="text" id="searchInput" placeholder="Buscar por placa ou IMEI..." class="search-input">
+                        <button class="search-btn">🔍</button>
+                    </div>
+                </div>
+
+                <section class="dashboard-section">
+                    <h3 class="section-title">Status Geral</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalAssets">12</div>
+                            <div class="stat-label">Ativos Total</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="installedAssets">8</div>
+                            <div class="stat-label">Instalados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="availableAssets">3</div>
+                            <div class="stat-label">Disponíveis</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="maintenanceAssets">1</div>
+                            <div class="stat-label">Em Manutenção</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dashboard-section">
+                    <h3 class="section-title">Ativos Recentes</h3>
+                    <div id="assetsList" class="assets-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Assets Page -->
+            <div id="assetsPage" class="page">
+                <div class="page-header">
+                    <h2>Gestão de Ativos</h2>
+                    <button id="newAssetBtn" class="btn btn-primary">+ Novo Ativo</button>
+                </div>
+
+                <div class="filters">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">Todos os Status</option>
+                        <option value="Disponível">Disponível</option>
+                        <option value="Instalado">Instalado</option>
+                        <option value="Em Retirada">Em Retirada</option>
+                        <option value="Manutenção">Manutenção</option>
+                    </select>
+                </div>
+
+                <div id="assetsGrid" class="assets-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Form Page (O.S./Checklist) -->
+            <div id="formPage" class="page">
+                <div class="page-header">
+                    <h2>Ordem de Serviço</h2>
+                </div>
+
+                <div class="form-container">
+                    <form id="osForm" class="checklist-form">
+                        <div class="form-section">
+                            <h3>Informações da O.S.</h3>
+                            
+                            <div class="form-group">
+                                <label for="osNumber">Número da O.S. *</label>
+                                <input type="text" id="osNumber" name="osNumber" placeholder="OS-2026-03-001" required>
+                                <span class="field-helper">Identificador único da ordem</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="technicianName">Técnico Responsável *</label>
+                                    <input type="text" id="technicianName" name="technicianName" placeholder="João Silva" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehiclePlate">Placa do Veículo *</label>
+                                    <input type="text" id="vehiclePlate" name="vehiclePlate" placeholder="ABC-1234" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Checklist de Instalação</h3>
+                            
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="checklist" value="rastreador-recebido"> Rastreador recebido em bom estado
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="checklist" value="chip-instalado"> Chip GSM instalado e testado
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="checklist" value="conexao-verificada"> Conexão verificada
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="checklist" value="cliente-presente"> Cliente presente na instalação
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="checklist" value="documento-coletado"> Documento do cliente coletado (foto)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Notas e Observações</h3>
+                            
+                            <div class="form-group">
+                                <label for="notes">Observações *</label>
+                                <textarea id="notes" name="notes" placeholder="Descreva qualquer detalhe importante sobre a instalação..." rows="4" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Envio</h3>
+                            <div id="formStatus" class="form-status"></div>
+                            <button type="submit" class="btn btn-primary btn-submit">Enviar O.S.</button>
+                            <button type="reset" class="btn btn-secondary">Limpar Formulário</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settingsPage" class="page">
+                <div class="page-header">
+                    <h2>Configurações</h2>
+                </div>
+
+                <section class="settings-section">
+                    <h3>Modo Offline</h3>
+                    <div class="setting-item">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="offlineToggle" class="toggle-input">
+                            <span class="toggle-slider"></span>
+                            Simular Modo Offline
+                        </label>
+                        <p class="setting-description">Quando ativado, simula perda de conexão de rede</p>
+                    </div>
+                </section>
+
+                <section class="settings-section">
+                    <h3>Dados</h3>
+                    <button id="resetDataBtn" class="btn btn-secondary">Limpar Dados da Demo</button>
+                    <p class="setting-description">Remove formulários e dados salvos localmente</p>
+                </section>
+
+                <section class="settings-section">
+                    <h3>Informações</h3>
+                    <p><strong>Versão:</strong> 1.0.0-demo</p>
+                    <p><strong>Última Sincronização:</strong> <span id="lastSync">-</span></p>
+                    <p><strong>Modo:</strong> <span id="currentMode">Online</span></p>
+                </section>
+            </div>
+        </main>
+
+        <!-- Modal para detalhes do ativo -->
+        <div id="assetModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close">&times;</button>
+                <div id="modalBody">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Snackbar para notificações -->
+        <div id="snackbar" class="snackbar"></div>
+    </div>
+
+    <script src="js/mock-data.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
