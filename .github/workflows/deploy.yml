@@ -1,0 +1,49 @@
+name: Deploy Sistema-Rastertech
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  tests:
+    name: Core Quality Check (CI)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, gd, redis, pdo_mysql
+
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Code Style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Run Tests
+        run: php artisan test
+
+  deploy:
+    name: Automated VPS Deploy (CD)
+    needs: tests
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /home/${{ secrets.VPS_USER }}/projetos-wsl/sistema-rastertech
+            git pull origin main
+            docker-compose up -d --build
+            docker exec app php artisan migrate --force
+            docker exec app php artisan optimize
+            echo "Deploy do Sistema Rastertech concluído com sucesso! 🚀"
