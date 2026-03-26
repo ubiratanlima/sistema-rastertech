@@ -32,4 +32,33 @@ class VehicleController extends Controller
 
         return view('fleets.index', compact('vehicles'));
     }
+
+    /**
+     * Inativa um veículo com trava de segurança (0-Ativos).
+     */
+    public function destroy($id)
+    {
+        // 🔒 VERIFICAÇÃO DE SEGURANÇA: O veículo possui tecnologia instalada?
+        $hasActiveDevice = DB::table('devices')
+            ->where('vehicle_id', $id)
+            ->exists();
+
+        if ($hasActiveDevice) {
+            return redirect()
+                ->route('fleets.index')
+                ->with('error', 'O veículo possui um rastreador vinculado. Desvincule o equipamento antes de inativar.');
+        }
+
+        // 🛡️ SEGURO PARA OPERAÇÃO
+        try {
+            DB::table('vehicles')->where('id', $id)->delete();
+            return redirect()
+                ->route('fleets.index')
+                ->with('success', 'Veículo removido da frota com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('fleets.index')
+                ->with('error', 'Ocorreu um erro técnico ao tentar remover o veículo.');
+        }
+    }
 }

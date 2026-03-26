@@ -28,6 +28,7 @@ Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->
 
 // 🚗 GESTÃO DE FROTAS (VEÍCULOS)
 Route::get('/fleets', [VehicleController::class, 'index'])->name('fleets.index');
+Route::delete('/fleets/{id}', [VehicleController::class, 'destroy'])->name('fleets.destroy');
 
 // Futuras rotas de Gestão (SIM Cards, Clientes, Frotas)
 // Route::get('/sims', [SimCardController::class, 'index'])->name('sims.index');
