@@ -50,4 +50,33 @@ class SimCardController extends Controller
 
         return redirect()->back()->with('success', '📟 Chip cadastrado com sucesso no inventário!');
     }
+
+    /**
+     * Inativa um Cartão SIM com trava de segurança.
+     */
+    public function destroy($id)
+    {
+        // 🔒 VERIFICAÇÃO DE SEGURANÇA: Chip está sendo usado por algum rastreador?
+        $isLinked = DB::table('devices')
+            ->where('gsm_card_id', $id)
+            ->exists();
+
+        if ($isLinked) {
+            return redirect()
+                ->route('sim-cards.index')
+                ->with('error', 'Este chip está vinculado a um rastreador ativo. Desvincule-o antes de remover.');
+        }
+
+        // 🛡️ SEGURO PARA OPERAÇÃO
+        try {
+            DB::table('gsm_cards')->where('id', $id)->delete();
+            return redirect()
+                ->route('sim-cards.index')
+                ->with('success', 'Chip removido do inventário com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('sim-cards.index')
+                ->with('error', 'Erro técnico ao tentar remover o chip.');
+        }
+    }
 }

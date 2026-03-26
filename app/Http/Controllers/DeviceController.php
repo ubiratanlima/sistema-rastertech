@@ -27,4 +27,31 @@ class DeviceController extends Controller
 
         return view('devices.index', compact('devices'));
     }
+
+    /**
+     * Inativa um Equipamento com trava de segurança.
+     */
+    public function destroy($id)
+    {
+        // 🔒 VERIFICAÇÃO DE SEGURANÇA: O rastreador está instalado em algum carro?
+        $device = DB::table('devices')->where('id', $id)->first();
+
+        if ($device && $device->vehicle_id) {
+            return redirect()
+                ->route('devices.index')
+                ->with('error', 'Este rastreador está instalado em um veículo. Desinstale o equipamento antes de remover.');
+        }
+
+        // 🛡️ SEGURO PARA OPERAÇÃO
+        try {
+            DB::table('devices')->where('id', $id)->delete();
+            return redirect()
+                ->route('devices.index')
+                ->with('success', 'Hardware removido do inventário com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('devices.index')
+                ->with('error', 'Ocorreu um erro técnico ao tentar remover o equipamento.');
+        }
+    }
 }

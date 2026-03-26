@@ -13,4 +13,5 @@ class Customer extends Model
 
     public function vehicles() { return $this->hasMany(Vehicle::class); }
     public function devices() { return $this->hasMany(Device::class); }
+    public function subUsers() { return $this->hasMany(CustomerSubUser::class); }
 }

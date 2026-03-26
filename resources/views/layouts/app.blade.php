@@ -67,12 +67,40 @@
                     <li class="nav-item">
                         <a href="/sim-cards" class="nav-link {{ request()->is('sim-cards*') ? 'active' : '' }}"><i class="nav-icon fas fa-sim-card"></i><p>Cartões SIM</p></a>
                     </li>
+                    <li class="nav-item">
+                        <a href="/devices" class="nav-link {{ request()->is('devices*') ? 'active' : '' }}"><i class="nav-icon fas fa-microchip"></i><p>Equipamentos</p></a>
+                    </li>
                     <li class="nav-header">GESTÃO</li>
                     <li class="nav-item">
                         <a href="/customers" class="nav-link {{ request()->is('customers*') ? 'active' : '' }}"><i class="nav-icon fas fa-users"></i><p>Clientes / Frotas</p></a>
                     </li>
                     <li class="nav-item">
                         <a href="/fleets" class="nav-link {{ request()->is('fleets*') ? 'active' : '' }}"><i class="nav-icon fas fa-truck-moving"></i><p>Frotas</p></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Acessos</p></a>
+                    </li>
+
+                    <li class="nav-header">DEPARTAMENTO TÉCNICO</li>
+                    <li class="nav-item">
+                        <a href="/providers" class="nav-link {{ request()->is('providers*') ? 'active' : '' }}"><i class="nav-icon fas fa-industry"></i><p>Fornecedores</p></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/platforms" class="nav-link {{ request()->is('platforms*') ? 'active' : '' }}"><i class="nav-icon fas fa-server"></i><p>Plataformas</p></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/device-models" class="nav-link {{ request()->is('device-models*') ? 'active' : '' }}"><i class="nav-icon fas fa-microchip"></i><p>Modelos</p></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/device-commands" class="nav-link {{ request()->is('device-commands*') ? 'active' : '' }}"><i class="nav-icon fas fa-comment-dots"></i><p>Comandos SMS</p></a>
+                    </li>
+
+                    <li class="nav-header">ADMINISTRAÇÃO</li>
+                    <li class="nav-item">
+                        <a href="/users" class="nav-link {{ request()->is('users*') ? 'active' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>Usuários Internos</p></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/reports" class="nav-link {{ request()->is('reports*') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice"></i><p>Relatórios</p></a>
                     </li>
                 </ul>
             </nav>
