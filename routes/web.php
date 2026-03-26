@@ -1,34 +1,34 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\SimCardController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\VehicleController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - Sistema Rastertech
+| Web Routes - RASTERTECH COMMAND CENTER v1.0
 |--------------------------------------------------------------------------
-| Rotas estruturadas padrão Embraet Academy
 */
 
-// Redirecionamento Inicial
-Route::get('/', function () {
-    return redirect('/home');
-});
+// 🚀 DASHBOARD DINÂMICO
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-// Auth (Apenas para o AdminLTE carregar)
-Auth::routes(['register' => false]);
+// 🖥️ GESTÃO DE ATIVOS: DISPOSITIVOS
+Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
 
-// Rotas do Sistema (Dashboard e Inventário)
-Route::middleware(['auth'])->group(function () {
-    
-    // DASHBOARD (Página Inicial)
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+// 📟 GESTÃO DE ATIVOS: CARTÕES SIM (CHIPS)
+Route::get('/sim-cards', [SimCardController::class, 'index'])->name('sim-cards.index');
 
-    // DISPOSITIVOS (Rastreadores)
-    Route::group(['prefix' => 'devices', 'as' => 'devices.'], function () {
-        Route::get('/', [DeviceController::class, 'index'])->name('index');
-        Route::get('/{device}', [DeviceController::class, 'show'])->name('show');
-    });
+// 👥 ADMINISTRAÇÃO: CLIENTES E FROTAS
+Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 
-});
+// 🚗 GESTÃO DE FROTAS (VEÍCULOS)
+Route::get('/fleets', [VehicleController::class, 'index'])->name('fleets.index');
+
+// Futuras rotas de Gestão (SIM Cards, Clientes, Frotas)
+// Route::get('/sims', [SimCardController::class, 'index'])->name('sims.index');
+// Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');

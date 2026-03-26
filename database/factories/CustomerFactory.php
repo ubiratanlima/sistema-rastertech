@@ -14,6 +14,7 @@ class CustomerFactory extends Factory
         return [
             'name' => $this->faker->name(),
             'document' => $this->faker->numerify('###########'), 
+            'code' => $this->faker->numerify('############'), 
             'is_default_stock' => false,
         ];
     }

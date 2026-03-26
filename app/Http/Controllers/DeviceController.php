@@ -2,32 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Device;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DeviceController extends Controller
 {
     /**
-     * Listagem Massiva de Rastreadores (Inventário)
+     * Lista todos os aparelhos no inventário.
      */
     public function index()
     {
-        // Eager-loading mestre (Para carregar todos os nomes sem dar 1.000 queries)
-        $devices = Device::with(['customer', 'gsmCard', 'deviceModel', 'platform', 'vehicle'])
-                         ->latest()
-                         ->paginate(20);
+        // 🧬 Buscando dispositivos com joins para mostrar Cliente e Modelo
+        $devices = DB::table('devices')
+            ->leftJoin('customers', 'devices.customer_id', '=', 'customers.id')
+            ->leftJoin('device_models', 'devices.device_model_id', '=', 'device_models.id')
+            ->leftJoin('gsm_cards', 'devices.gsm_card_id', '=', 'gsm_cards.id')
+            ->select(
+                'devices.*', 
+                'customers.name as customer_name', 
+                'device_models.name as model_name',
+                'gsm_cards.iccid as sim_iccid'
+            )
+            ->paginate(15);
 
         return view('devices.index', compact('devices'));
-    }
-
-    /**
-     * Detalhes do Rastreador (Onde aparece os Comandos SMS)
-     */
-    public function show($id)
-    {
-        $device = Device::with(['deviceModel.commands', 'gsmCard', 'platform', 'customer', 'vehicle'])
-                        ->findOrFail($id);
-
-        return view('devices.show', compact('device'));
     }
 }

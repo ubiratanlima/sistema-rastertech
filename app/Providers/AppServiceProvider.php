@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Pagination\Paginator::useBootstrapFour();
+
+        // 🚀 FORÇAR URL RAIZ (ESTABILIZAÇÃO DE PROXY/KONG)
+        if (config('app.url')) {
+            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+        }
     }
 }

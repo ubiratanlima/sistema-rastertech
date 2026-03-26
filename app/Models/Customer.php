@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Customer extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['name', 'document', 'is_default_stock'];
+    protected $fillable = ['name', 'document', 'code', 'is_default_stock'];
 
     public function vehicles() { return $this->hasMany(Vehicle::class); }
     public function devices() { return $this->hasMany(Device::class); }

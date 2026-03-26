@@ -1,27 +1,24 @@
 _format_version: "1.1"
-_transform: true
 
 services:
-  # 🚀 PORTAL PARA SUPABASE AUTH
-  - name: supabase-auth
-    url: http://supabase-auth:9999
+  # 🌐 ROTA DO DASHBOARD (AGORA VIA NGINX SIDECAR)
+  - name: rastertech-api
+    url: http://rastertech-web:80
     routes:
-      - name: auth-route
+      - name: main-dashboard
         paths:
-          - /auth/v1
+          - /
+          - /devices
+          - /sim-cards
+          - /customers
+          - /fleets
+        strip_path: false
 
-  # 🏎️ PORTAL PARA SUPABASE REST
-  - name: supabase-rest
+  # 🚀 ROTA DO POSTGREST (API REST)
+  - name: rastertech-rest
     url: http://supabase-rest:3000
     routes:
-      - name: rest-route
+      - name: rest-api
         paths:
-          - /rest/v1
-
-  # 📡 PORTAL PARA LARAVEL (API)
-  - name: rastertech-api
-    url: http://rastertech-app:80
-    routes:
-      - name: api-route
-        paths:
-          - /api
+          - /rest
+        strip_path: true
