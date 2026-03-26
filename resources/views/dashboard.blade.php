@@ -15,7 +15,7 @@
 @section('content')
     <div class="row m-0 mb-4 animate__animated animate__fadeIn align-items-center overflow-hidden">
         <div class="col-sm-12 p-0 p-sm-2">
-            <h1 class="m-0 text-bold" style="font-size: 2.2rem; color: #343a40;">
+            <h1 class="m-0 text-bold" style="font-size: 2.2rem;">
                 <i class="fas fa-terminal mr-2 text-primary"></i>Comando de Operações
             </h1>
             <p class="text-muted mb-0">Visão geral em tempo real da infraestrutura Rastertech.</p>
@@ -65,16 +65,20 @@
     <div class="row mt-4">
         <div class="col-md-5">
             <div class="card card-outline card-primary shadow-sm border-0" style="border-radius: 12px; border-top: 3px solid #007bff !important;">
-                <div class="card-header border-0 bg-transparent px-4 pt-4 pb-0">
-                    <h3 class="card-title text-bold" style="font-size: 1.1rem; color: #333;">Distribuição por Modelo</h3>
+                <div class="card-header border-0 bg-transparent px-4 py-3 d-flex align-items-center">
+                    <h3 class="card-title text-bold mb-0" style="font-size: 1.1rem;">
+                        <i class="fas fa-chart-pie mr-2 text-primary"></i>Distribuição por Modelo
+                    </h3>
                 </div>
                 <div class="card-body" style="height: 350px;"><canvas id="deviceChart"></canvas></div>
             </div>
         </div>
         <div class="col-md-7">
             <div class="card card-outline card-info shadow-sm border-0" style="border-radius: 12px; border-top: 3px solid #17a2b8 !important;">
-                <div class="card-header border-0 bg-transparent px-4 pt-4 pb-0">
-                    <h3 class="card-title text-bold" style="font-size: 1.1rem; color: #333;">Mapa Operacional</h3>
+                <div class="card-header border-0 bg-transparent px-4 py-3 d-flex align-items-center">
+                    <h3 class="card-title text-bold mb-0" style="font-size: 1.1rem;">
+                        <i class="fas fa-map-marked-alt mr-2 text-primary"></i>Mapa Operacional
+                    </h3>
                 </div>
                 <div class="card-body p-0" style="height: 350px;"><div id="map" style="width: 100%; height: 100%; border-radius: 0 0 12px 12px;"></div></div>
             </div>
@@ -89,31 +93,67 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var isLight = document.body.classList.contains('light-mode');
-        
-        // 📊 Donut Chart
-        var ctx = document.getElementById('deviceChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: {!! json_encode($chartLabels) !!},
-                datasets: [{ 
-                    data: {!! json_encode($chartData) !!}, 
-                    backgroundColor: ['#00ff88', '#00ccff', '#ff4d4d', '#a855f7', '#facc15'], 
-                    borderWidth: 0 
-                }]
-            },
-            options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: isLight ? '#000' : '#888b91' } } } }
-        });
+        var isDarkMode = document.body.classList.contains('dark-mode');
+        var deviceChart;
+        var map;
+        var mapTileLayer;
 
-        // 🛰️ Mapa
-        var map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-23.5505, -46.6333], 12);
-        var tileLayer = isLight ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-        L.tileLayer(tileLayer, { maxZoom: 19 }).addTo(map);
-        [[-23.5505, -46.6333], [-23.5600, -46.6500], [-23.5400, -46.6200]].forEach(p => { 
-            L.circleMarker(p, { color: '#00ff88', fillColor: '#00ff88', fillOpacity: 0.8, radius: 6 }).addTo(map); 
+        // 📊 CONFIGURAÇÃO DO GRÁFICO (REUSÁVEL)
+        function spawnChart(isDark) {
+            var ctx = document.getElementById('deviceChart').getContext('2d');
+            if (deviceChart) deviceChart.destroy();
+            
+            deviceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: {!! json_encode($chartLabels) !!},
+                    datasets: [{ 
+                        data: {!! json_encode($chartData) !!}, 
+                        backgroundColor: ['#00ff88', '#00ccff', '#ff4d4d', '#a855f7', '#facc15'], 
+                        borderWidth: 0 
+                    }]
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { 
+                            position: 'right', 
+                            labels: { color: isDark ? '#ffffff' : '#333333', font: { weight: 'bold' } } 
+                        } 
+                    } 
+                }
+            });
+        }
+
+        // 🛰️ CONFIGURAÇÃO DO MAPA (REUSÁVEL)
+        function spawnMap(isDark) {
+            if (!map) {
+                map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-23.5505, -46.6333], 12);
+                [[-23.5505, -46.6333], [-23.5600, -46.6500], [-23.5400, -46.6200]].forEach(p => { 
+                    L.circleMarker(p, { color: '#00ff88', fillColor: '#00ff88', fillOpacity: 0.8, radius: 6 }).addTo(map); 
+                });
+            }
+
+            if (mapTileLayer) map.removeLayer(mapTileLayer);
+            
+            var tileUrl = isDark 
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+                : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+            mapTileLayer = L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(map);
+            setTimeout(() => map.invalidateSize(), 500);
+        }
+
+        // 🏗️ INICIALIZAÇÃO
+        spawnChart(isDarkMode);
+        spawnMap(isDarkMode);
+
+        // 🌗 OUVINTE DE ECLIPSE (Tema em tempo real)
+        window.addEventListener('theme-changed', function(e) {
+            const isDark = (e.detail.theme === 'dark');
+            spawnChart(isDark);
+            spawnMap(isDark);
         });
-        setTimeout(function(){ map.invalidateSize(); }, 500);
     });
 </script>
 @endpush

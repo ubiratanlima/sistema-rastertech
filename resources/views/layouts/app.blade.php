@@ -13,10 +13,8 @@
 
     <style>
         :root { --primary-cyber: #00ff88; --dark-depth: #1a1a2e; }
-        .main-sidebar { background-color: var(--dark-depth) !important; }
         .nav-link.active { background-color: var(--primary-cyber) !important; color: #1a1a2e !important; }
         .profile-img { width: 35px; height: 35px; object-fit: cover; border: 2px solid var(--primary-cyber); }
-        .content-wrapper { background-color: #f4f6f9 !important; }
     </style>
     @stack('styles')
 </head>
@@ -29,6 +27,12 @@
             <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a></li>
         </ul>
         <ul class="navbar-nav ml-auto">
+            <!-- 🌗 TOGGLE DARK MODE -->
+            <li class="nav-item">
+                <a class="nav-link" href="#" id="dark-mode-toggle" title="Alternar Modo Escuro/Claro">
+                    <i class="fas fa-moon"></i>
+                </a>
+            </li>
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#"><i class="far fa-bell"></i><span class="badge badge-warning navbar-badge">15</span></a>
                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
@@ -41,8 +45,8 @@
     </nav>
 
     <!-- 🏗️ SIDEBAR -->
-    <aside class="main-sidebar sidebar-dark-primary elevation-4">
-        <a href="/" class="brand-link">
+    <aside class="main-sidebar sidebar-dark-primary elevation-4" id="main-sidebar">
+        <a href="/" class="brand-link" id="brand-logo-container">
             <i class="fas fa-satellite-dish ml-3 mr-2 text-primary"></i>
             <span class="brand-text font-weight-bold">RASTERTECH</span>
         </a>
@@ -105,6 +109,51 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+
+<script>
+    $(function() {
+        const body = $('body');
+        const navbar = $('.main-header');
+        const sidebar = $('#main-sidebar');
+        const toggleBtn = $('#dark-mode-toggle');
+        const icon = toggleBtn.find('i');
+
+        // 🧠 MEMÓRIA DE CORES: Recupera a preferência salva
+        if (localStorage.getItem('raster_theme') === 'dark') {
+            enableDarkMode();
+        }
+
+        toggleBtn.on('click', function(e) {
+            e.preventDefault();
+            if (body.hasClass('dark-mode')) {
+                disableDarkMode();
+            } else {
+                enableDarkMode();
+            }
+        });
+
+        function enableDarkMode() {
+            body.addClass('dark-mode');
+            navbar.removeClass('navbar-white navbar-light').addClass('navbar-dark navbar-black');
+            sidebar.removeClass('sidebar-light-primary').addClass('sidebar-dark-primary');
+            icon.removeClass('fa-moon').addClass('fa-sun');
+            localStorage.setItem('raster_theme', 'dark');
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'dark' } }));
+        }
+
+        function disableDarkMode() {
+            body.removeClass('dark-mode');
+            navbar.removeClass('navbar-dark navbar-black').addClass('navbar-white navbar-light');
+            sidebar.removeClass('sidebar-dark-primary').addClass('sidebar-light-primary');
+            icon.removeClass('fa-sun').addClass('fa-moon');
+            localStorage.setItem('raster_theme', 'light');
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'light' } }));
+        }
+    });
+</script>
+
 @stack('scripts')
+</body>
+</html>
 </body>
 </html>
