@@ -11,33 +11,29 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    libpq-dev \
-    libzip-dev \
     zip \
     unzip \
+    libpq-dev \
     libjpeg-dev \
-    libfreetype6-dev
+    libfreetype6-dev \
+    libwebp-dev \
+    libxpm-dev \
+    libexif-dev
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-# Note: Added 'pdo_pgsql' and 'pgsql' for Supabase connectivity
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd sockets zip
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
+    docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd sockets
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Create system user to run Composer and Artisan Commands (Consistent with your WSL)
+# Create system user to run Composer and Artisan Commands
 RUN useradd -G www-data,root -u $uid -d /home/$user $user
 RUN mkdir -p /home/$user/.composer && \
     chown -R $user:$user /home/$user
-
-# Install redis extension
-RUN pecl install -o -f redis \
-    &&  rm -rf /tmp/pear \
-    &&  docker-php-ext-enable redis
 
 # Set working directory
 WORKDIR /var/www

@@ -1,0 +1,2 @@
+-- Supabase JWT and Secrets Placeholder
+-- Fixed for Embraet project context.

@@ -1,0 +1,19 @@
+_format_version: "2.1"
+
+services:
+- name: supabase-rest
+  url: http://rastertech-rest:3000
+  routes:
+  - name: supabase-rest-route
+    paths:
+    - /rest/v1
+- name: supabase-auth
+  url: http://rastertech-auth:9999
+  routes:
+  - name: supabase-auth-route
+    paths:
+    - /auth/v1
+
+plugins:
+- name: cors
+- name: key-auth

@@ -1,0 +1,2 @@
+-- Supabase Analytics and Pooler Database Placeholder
+-- Completed for Embraet project.

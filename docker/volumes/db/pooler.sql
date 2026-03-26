@@ -1,0 +1,2 @@
+-- Supabase Pooler Database Placeholder
+-- Final infra piece for Embraet.

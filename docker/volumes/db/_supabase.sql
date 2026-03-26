@@ -1,0 +1,2 @@
+-- Supabase Internal, Analytics and Pooler Placeholder
+-- All files created for Embraet project.

@@ -1,410 +1,102 @@
-version: "3.7"
+version: '3.8'
 
 services:
-  # ----------------------------------------------------------------------------
-  # CORE: Laravel App (PHP 8.2-FPM)
-  # ----------------------------------------------------------------------------
-  app:
+  # 🏦 POSTGRES RASTERTECH (A PASTA DATA_V3 É VIRGEM!)
+  rastertech-db:
+    image: postgres:15
+    container_name: rastertech-db
+    restart: always
+    command: ["postgres", "-c", "listen_addresses=*"]
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./docker/volumes/db/zz-setup-embraet.sql:/docker-entrypoint-initdb.d/zz-setup-embraet.sql
+      - ./docker/volumes/db/data_v3:/var/lib/postgresql/data
+    networks:
+      - EmbraNet
+
+  # 🧠 REDIS
+  rastertech-redis:
+    image: redis:alpine
+    container_name: rastertech-redis
+    networks:
+      - EmbraNet
+
+  # 📡 KONG API GATEWAY
+  rastertech-kong:
+    image: kong:2.8.1
+    container_name: rastertech-kong
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - DASHBOARD_USERNAME=${KONG_USER}
+      - DASHBOARD_PASSWORD=${KONG_PASS}
+    volumes:
+      - ./docker/volumes/db/kong.yml:/etc/kong/kong.yml:ro
+    ports:
+      - "8010:8000"
+      - "8001:8001"
+    networks:
+      - EmbraNet
+
+  # 👤 SUPABASE AUTH
+  supabase-auth:
+    image: supabase/gotrue:v2.132.3
+    container_name: supabase-auth
+    depends_on:
+      - rastertech-db
+    restart: on-failure
+    environment:
+      - GOTRUE_DB_DRIVER=postgres
+      - GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:RastertechMasterInternal_123@rastertech-db:5432/postgres
+      - GOTRUE_SITE_URL=${APP_URL}
+      - GOTRUE_API_EXTERNAL_URL=${APP_URL}
+      - API_EXTERNAL_URL=${APP_URL}
+      - GOTRUE_JWT_SECRET=${JWT_SECRET}
+      - GOTRUE_JWT_EXP=3600
+      - GOTRUE_EXTERNAL_EMAIL_ENABLED=false
+      - GOTRUE_DB_MAX_POOL_SIZE=20
+      - GOTRUE_DB_MAX_IDLE_CONNS=2
+    networks:
+      - EmbraNet
+
+  # 🚀 REST INTERFACE
+  supabase-rest:
+    image: postgrest/postgrest:v10.1.1
+    container_name: supabase-rest
+    depends_on:
+      - rastertech-db
+    environment:
+      - PGRST_DB_URI=postgres://authenticator:RastertechMasterInternal_123@rastertech-db:5432/postgres
+      - PGRST_DB_SCHEMA=public
+      - PGRST_DB_ANON_ROLE=anon
+      - PGRST_JWT_SECRET=${JWT_SECRET}
+    networks:
+      - EmbraNet
+
+  # 🏎️ LARAVEL APP
+  rastertech-app:
     build:
       context: .
-      dockerfile: Dockerfile
-    image: sistema-rastertech-app
-    restart: unless-stopped
-    working_dir: /var/www
+      dockerfile: ./Dockerfile
+    container_name: rastertech-app
+    restart: always
     volumes:
-      - ./:/var/www
+      - .:/var/www
     environment:
-      - APP_ENV=${APP_ENV:-local}
-      - DB_CONNECTION=pgsql
-      - DB_HOST=supabase_db
-      - DB_PORT=5432
-      - REDIS_HOST=redis
-    networks:
-      - EmbraNet
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./:/var/www
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - APP_KEY=${APP_KEY}
+      - DB_PASSWORD=${DB_PASSWORD}
     depends_on:
-      - app
+      - rastertech-db
+      - rastertech-redis
     networks:
       - EmbraNet
-
-  redis:
-    image: redis:alpine
-    restart: unless-stopped
-    networks:
-      - EmbraNet
-
-  # ----------------------------------------------------------------------------
-  # BAAS: SUPABASE STACK (EMBRAET BRANDED)
-  # ----------------------------------------------------------------------------
-
-  supabase_studio:
-    image: supabase/studio:2025.11.10-sha-5291fe3
-    networks:
-      - EmbraNet
-    environment:
-      - HOSTNAME=0.0.0.0
-      - SUPABASE_URL=http://supabase_kong:8000
-      - SUPABASE_PUBLIC_URL=https://supabase.embraet.com.br
-      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.7fFNSuo7TP9K4STHKdS-JBAZVJfBAT1FG6yn6Iv0PTM
-      - SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3MTUwNTA4MDAsCiAgImV4cCI6IDE4NzI4MTcyMDAKfQ.PnDYHGVIF6uehcepan_Q84yhYDY9by0FJmymx9VoJ8k
-      - AUTH_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - DEFAULT_ORGANIZATION_NAME=EmbraetAcademy
-      - DEFAULT_PROJECT_NAME=SetupEmbraet
-      - POSTGRES_DB=postgres
-      - POSTGRES_HOST=supabase_db
-      - POSTGRES_PORT=5432
-      - POSTGRES_PASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - PG_META_CRYPTO_KEY=e88fd8b2c470022dc3f0be28a1ea715105d0bab68d1fe8ccf1a2a28b7c9668ae
-      - LOGFLARE_URL=http://supabase_analytics:4000
-      - LOGFLARE_API_KEY=a9efc6a5c8c857bfd8f7250276209e80
-      - LOGFLARE_PUBLIC_ACCESS_TOKEN=a20b88745a9e8a08fa02b707923f3c2c
-      - LOGFLARE_PRIVATE_ACCESS_TOKEN=a9efc6a5c8c857bfd8f7250276209e80
-      - NEXT_PUBLIC_ENABLE_LOGS=true
-      - NEXT_ANALYTICS_BACKEND_PROVIDER=postgres
-      - DEBUG=next:*
-      - STUDIO_PG_META_URL=http://supabase_meta:8080
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_kong:
-    image: kong:2.8.1
-    entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
-    volumes:
-      - /root/supabase/docker/volumes/api/kong.yml:/home/kong/temp.yml:ro,z
-    networks:
-      - EmbraNet
-    environment:
-      - DASHBOARD_USERNAME=ubiratanlima
-      - DASHBOARD_PASSWORD=m45t3rMASTER
-      - JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.7fFNSuo7TP9K4STHKdS-JBAZVJfBAT1FG6yn6Iv0PTM
-      - SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3MTUwNTA4MDAsCiAgImV4cCI6IDE4NzI4MTcyMDAKfQ.PnDYHGVIF6uehcepan_Q84yhYDY9by0FJmymx9VoJ8k
-      - KONG_DATABASE=off
-      - KONG_DECLARATIVE_CONFIG=/home/kong/kong.yml
-      - KONG_DNS_ORDER=LAST,A,CNAME
-      - KONG_PLUGINS=request-transformer,cors,key-auth,acl,basic-auth,request-termination,ip-restriction
-      - KONG_NGINX_PROXY_PROXY_BUFFER_SIZE=160k
-      - KONG_NGINX_PROXY_PROXY_BUFFERS=64 160k
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager  
-      labels:
-        - traefik.enable=true
-        - traefik.http.routers.supabase_kong.rule=Host(`supabase.embraet.com.br`) && PathPrefix(`/`)
-        - traefik.http.services.supabase_kong.loadbalancer.server.port=8000
-        - traefik.http.routers.supabase_kong.service=supabase_kong
-        - traefik.http.routers.supabase_kong.entrypoints=websecure
-        - traefik.http.routers.supabase_kong.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.supabase_kong.tls=true
-
-  supabase_auth:
-    image: supabase/gotrue:v2.182.1
-    networks:
-      - EmbraNet
-    environment:
-      - GOTRUE_API_HOST=0.0.0.0
-      - GOTRUE_API_PORT=9999
-      - API_EXTERNAL_URL=https://supabase.embraet.com.br
-      - GOTRUE_DB_DRIVER=postgres
-      - GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:567099a56bbd02ecaaff74dbe4edd2ca@supabase_db:5432/postgres
-      - GOTRUE_SITE_URL=https://supabase.embraet.com.br
-      - GOTRUE_URI_ALLOW_LIST=
-      - GOTRUE_DISABLE_SIGNUP=false
-      - GOTRUE_JWT_ADMIN_ROLES=service_role
-      - GOTRUE_JWT_AUD=authenticated
-      - GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated
-      - GOTRUE_JWT_EXP=31536000
-      - GOTRUE_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - GOTRUE_EXTERNAL_EMAIL_ENABLED=false
-      - GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED=false
-      - GOTRUE_MAILER_AUTOCONFIRM=true
-      - GOTRUE_EXTERNAL_SKIP_NONCE_CHECK=true
-      - GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=true
-      - GOTRUE_SMTP_MAX_FREQUENCY=1s
-      - GOTRUE_MAILER_URLPATHS_INVITE=/auth/v1/verify
-      - GOTRUE_MAILER_URLPATHS_CONFIRMATION=/auth/v1/verify
-      - GOTRUE_MAILER_URLPATHS_RECOVERY=/auth/v1/verify
-      - GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE=/auth/v1/verify
-      - GOTRUE_EXTERNAL_PHONE_ENABLED=false
-      - GOTRUE_SMS_AUTOCONFIRM=false
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_rest:
-    image: postgrest/postgrest:v13.0.7
-    command: ["postgrest"]
-    networks:
-      - EmbraNet
-    environment:
-      - PGRST_DB_URI=postgres://authenticator:567099a56bbd02ecaaff74dbe4edd2ca@supabase_db:5432/postgres
-      - PGRST_DB_SCHEMAS=public,storage,graphql_public
-      - PGRST_DB_ANON_ROLE=anon
-      - PGRST_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - PGRST_APP_SETTINGS_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - PGRST_APP_SETTINGS_JWT_EXP=31536000
-      - PGRST_DB_USE_LEGACY_GUCS=false
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_realtime:
-    image: supabase/realtime:v2.63.0
-    networks:
-      - EmbraNet
-    dns:
-      - 127.0.0.11
-    environment:
-      - PORT=4000
-      - API_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - SECRET_KEY_BASE=ad3c674faffb0d96045b0016864e4e1a18ed15bd828561eeb8379df759fa35d6
-      - APP_NAME=realtime
-      - DB_HOST=supabase_db
-      - DB_PORT=5432
-      - DB_USER=supabase_admin
-      - DB_PASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - DB_NAME=postgres
-      - DB_AFTER_CONNECT_QUERY=SET search_path TO _realtime
-      - DB_ENC_KEY=supabaserealtime
-      - ERL_AFLAGS=-proto_dist inet_tcp
-      - DNS_NODES="''"
-      - RLIMIT_NOFILE=10000
-      - SEED_SELF_HOST=true
-      - RUN_JANITOR=true
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_storage:
-    image: supabase/storage-api:v1.29.0
-    volumes:
-      - supabase_storage:/var/lib/storage:z
-    networks:
-      - EmbraNet
-    environment:
-      - ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.7fFNSuo7TP9K4STHKdS-JBAZVJfBAT1FG6yn6Iv0PTM
-      - SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3MTUwNTA4MDAsCiAgImV4cCI6IDE4NzI4MTcyMDAKfQ.PnDYHGVIF6uehcepan_Q84yhYDY9by0FJmymx9VoJ8k
-      - POSTGREST_URL=http://supabase_rest:3000
-      - PGRST_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - DATABASE_URL=postgres://supabase_storage_admin:567099a56bbd02ecaaff74dbe4edd2ca@supabase_db:5432/postgres
-      - REQUEST_ALLOW_X_FORWARDED_PATH=true
-      - FILE_SIZE_LIMIT=52428800
-      - STORAGE_BACKEND=file
-      - GLOBAL_S3_BUCKET=supabase
-      - FILE_STORAGE_BACKEND_PATH=/var/lib/storage
-      - REGION=eu-south
-      - TENANT_ID=stub
-      - ENABLE_IMAGE_TRANSFORMATION=true
-      - IMGPROXY_URL=http://supabase_imgproxy:5001
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_imgproxy:
-    image: darthsim/imgproxy:v3.8.0
-    volumes:
-      - /root/supabase/docker/volumes/storage:/var/lib/storage:z
-    networks:
-      - EmbraNet
-    environment:
-      - IMGPROXY_BIND=:5001
-      - IMGPROXY_LOCAL_FILESYSTEM_ROOT=/
-      - IMGPROXY_USE_ETAG=true
-      - IMGPROXY_ENABLE_WEBP_DETECTION=true
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_meta:
-    image: supabase/postgres-meta:v0.93.1
-    networks:
-      - EmbraNet
-    environment:
-      - PG_META_PORT=8080
-      - PG_META_DB_HOST=supabase_db
-      - PG_META_DB_PORT=5432
-      - PG_META_DB_NAME=postgres
-      - PG_META_DB_USER=supabase_admin
-      - PG_META_DB_PASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - CRYPTO_KEY=e88fd8b2c470022dc3f0be28a1ea715105d0bab68d1fe8ccf1a2a28b7c9668ae
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_functions:
-    image: supabase/edge-runtime:v1.69.23
-    command: ["start", "--main-service", "/home/deno/functions/main"]
-    volumes:
-      - /root/supabase/docker/volumes/functions:/home/deno/functions:Z
-    networks:
-      - EmbraNet
-    environment:
-      - VERIFY_JWT=false
-      - JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - SUPABASE_URL=http://supabase_kong:8000
-      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.7fFNSuo7TP9K4STHKdS-JBAZVJfBAT1FG6yn6Iv0PTM
-      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogInNlcnZpY2Vfcm9sZSIsCiAgImlzcyI6ICJzdXBhYmFzZSIsCiAgImlhdCI6IDE3MTUwNTA4MDAsCiAgImV4cCI6IDE4NzI4MTcyMDAKfQ.PnDYHGVIF6uehcepan_Q84yhYDY9by0FJmymx9VoJ8k
-      - SUPABASE_DB_URL=postgresql://postgres:567099a56bbd02ecaaff74dbe4edd2ca@supabase_db:5432/postgres
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_analytics:
-    image: supabase/logflare:1.22.6
-    networks:
-      - EmbraNet
-    environment:
-      - DB_USERNAME=supabase_admin
-      - DB_DATABASE=_supabase
-      - DB_HOSTNAME=supabase_db
-      - DB_PORT=5432
-      - DB_PASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - DB_SCHEMA=_analytics
-      - POSTGRES_BACKEND_URL=postgresql://supabase_admin:567099a56bbd02ecaaff74dbe4edd2ca@supabase_db:5432/_supabase
-      - POSTGRES_BACKEND_SCHEMA=_analytics
-      - LOGFLARE_FEATURE_FLAG_OVERRIDE=multibackend=true
-      - LOGFLARE_NODE_HOST=127.0.0.1
-      - LOGFLARE_PUBLIC_ACCESS_TOKEN=a20b88745a9e8a08fa02b707923f3c2c
-      - LOGFLARE_PRIVATE_ACCESS_TOKEN=a9efc6a5c8c857bfd8f7250276209e80
-      - LOGFLARE_SINGLE_TENANT=true
-      - LOGFLARE_SUPABASE_MODE=true
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_db:
-    image: supabase/postgres:15.8.1.085
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal"]
-    volumes:
-      - /root/supabase/docker/volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
-      - /root/supabase/docker/volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
-      - /root/supabase/docker/volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
-      - /root/supabase/docker/volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
-      - /root/supabase/docker/volumes/db/data:/var/lib/postgresql/data:Z
-      - /root/supabase/docker/volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
-      - /root/supabase/docker/volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
-      - /root/supabase/docker/volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
-      - supabase_db_config:/etc/postgresql-custom
-    networks:
-      - EmbraNet
-    environment:
-      - POSTGRES_HOST=/var/run/postgresql
-      - PGPORT=5432
-      - POSTGRES_PORT=5432
-      - PGPASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - POSTGRES_PASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - POSTGRES_DB=postgres
-      - PGDATABASE=postgres
-      - JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - JWT_EXP=31536000
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_vector:
-    image: timberio/vector:0.28.1-alpine
-    command: ["--config", "/etc/vector/vector.yml"]
-    volumes:
-      - /root/supabase/docker/volumes/logs/vector.yml:/etc/vector/vector.yml:ro,z
-      - /var/run/docker.sock:/var/run/docker.sock:ro,z
-    security_opt:
-      - "label=disable"
-    networks:
-      - EmbraNet
-    environment:
-      - LOGFLARE_PUBLIC_ACCESS_TOKEN=a20b88745a9e8a08fa02b707923f3c2c
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  supabase_supavisor:
-    image: supabase/supavisor:2.7.4
-    command: ["/bin/sh", "-c", "/app/bin/migrate && /app/bin/supavisor eval \"$$(cat /etc/pooler/pooler.exs)\" && /app/bin/server"]
-    volumes:
-      - /root/supabase/docker/volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro,z
-    networks:
-      - EmbraNet
-    environment:
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=567099a56bbd02ecaaff74dbe4edd2ca
-      - DATABASE_URL=ecto://supabase_admin:567099a56bbd02ecaaff74dbe4edd2ca@supabase_db:5432/_supabase
-      - CLUSTER_POSTGRES=true
-      - SECRET_KEY_BASE=ad3c674faffb0d96045b0016864e4e1a18ed15bd828561eeb8379df759fa35d6
-      - VAULT_ENC_KEY=F9xlx5wAjBjR7UitwwSPRV63eYQTCAtA
-      - API_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - METRICS_JWT_SECRET=a0bb727e45ccd2b0d92015d4710e6aa0fd71fce7
-      - REGION=local
-      - ERL_AFLAGS=-proto_dist inet_tcp
-      - POOLER_TENANT_ID=1
-      - POOLER_DEFAULT_POOL_SIZE=20
-      - POOLER_MAX_CLIENT_CONN=100
-      - POOLER_POOL_MODE=transaction
-      - DB_POOL_SIZE=5
-      - PORT=4000
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-# --------------------------- EMBRAET --------------------------- ##
-
-volumes:
-  supabase_db_config:
-    external: true
-    name: supabase_db_config
-  supabase_storage:
-    external: true
-    name: supabase_storage
 
 networks:
   EmbraNet:
-    external: true
-    name: EmbraNet
+    driver: bridge
