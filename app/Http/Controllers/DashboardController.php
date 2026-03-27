@@ -27,9 +27,16 @@ class DashboardController extends Controller
         $chartLabels = $modelDistribution->pluck('model_name')->toArray();
         $chartData = $modelDistribution->pluck('total')->toArray();
 
-        // Simulando dados de telemetria
-        $onlineNow = round($totalDevices * 0.73);
-        $criticalAlerts = 12;
+        // 🛰️ Telemetria Real (Última Posição de cada Dispositivo)
+        $latestPositions = DB::table('device_positions')
+            ->join('devices', 'device_positions.device_id', '=', 'devices.id')
+            ->select('device_positions.latitude', 'device_positions.longitude', 'devices.imei')
+            ->latest('device_positions.created_at')
+            ->take(50)
+            ->get();
+
+        $onlineNow = DB::table('devices')->where('status', 'active')->count();
+        $criticalAlerts = DB::table('gsm_cards')->where('status', 'suspended')->count();
 
         return view('dashboard', compact(
             'totalDevices', 
@@ -37,7 +44,8 @@ class DashboardController extends Controller
             'onlineNow', 
             'criticalAlerts',
             'chartLabels',
-            'chartData'
+            'chartData',
+            'latestPositions'
         ));
     }
 }

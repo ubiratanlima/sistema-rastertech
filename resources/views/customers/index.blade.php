@@ -50,57 +50,57 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0" id="tableClientes">
                     <thead style="background: #343a40; color: white;">
-                        <tr>
+                        <tr class="font-weight-bold text-uppercase">
                             <th class="py-3 pl-4 text-center d-none d-md-table-cell border-0" style="width: 70px;">#</th>
-                            <th class="py-3 pl-3 pl-sm-4 text-uppercase small font-weight-bold border-0" style="letter-spacing: 1px;">CLIENTE</th>
-                            <th class="py-3 text-uppercase small font-weight-bold border-0 d-none d-md-table-cell text-center" style="letter-spacing: 1px;">COD. CLIENTE</th>
-                            <th class="py-3 text-center text-uppercase small font-weight-bold border-0" style="letter-spacing: 1px;">
+                            <th class="py-3 pl-3 pl-sm-4 border-0" style="letter-spacing: 1px;">CLIENTE</th>
+                            <th class="py-3 border-0 d-none d-md-table-cell text-center" style="letter-spacing: 1px;">COD. CLIENTE</th>
+                            <th class="py-3 text-center border-0" style="letter-spacing: 1px;">
                                 <span class="d-none d-md-inline">EQUIPAMENTOS RASTREADOS</span>
                                 <span class="d-inline d-md-none">EQUIP.</span>
                             </th>
-                            <th class="py-3 text-center text-uppercase small font-weight-bold border-0" style="letter-spacing: 1px;">AÇÕES</th>
+                            <th class="py-3 text-center border-0" style="letter-spacing: 1px;">AÇÕES</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($customers as $customer)
                         @php $isInactive = $customer->device_count == 0; @endphp
                         <tr class="customer-row {{ $isInactive ? 'inactive-row d-none' : 'active-row' }}" style="border-bottom: 1px solid #f2f2f2;">
-                            <td class="py-4 text-center align-middle d-none d-md-table-cell text-bold text-dark" style="font-size: 1.1rem;">{{ $customer->id }}</td>
+                            <td class="py-4 text-center align-middle d-none d-md-table-cell text-dark">{{ $customer->id }}</td>
                             <td class="py-4 pl-3 pl-sm-4">
                                 <div class="d-flex align-items-center">
                                     <div class="avatar-circle mr-2 mr-sm-3 bg-{{ ['primary', 'success', 'info', 'warning', 'danger'][($customer->id % 5)] }}" style="width: 35px; height: 35px; min-width: 35px;">
                                         {{ substr($customer->name, 0, 1) }}
                                     </div>
                                     <div class="d-flex flex-column overflow-hidden">
-                                        <span class="text-bold text-dark d-none d-sm-inline" title="{{ $customer->name }}" style="font-size: 1.1rem; color: #333;">
+                                        <span class="text-dark d-none d-sm-inline" title="{{ $customer->name }}" style="color: #333;">
                                             {{ $customer->name }}
                                         </span>
-                                        <span class="text-bold text-dark d-inline d-sm-none" title="{{ $customer->name }}" style="font-size: 1rem; color: #333;">
+                                        <span class="text-dark d-inline d-sm-none" title="{{ $customer->name }}" style="color: #333;">
                                             {{ \Illuminate\Support\Str::limit($customer->name, 10, '...') }}
                                         </span>
                                     </div>
                                 </div>
                             </td>
                             <td class="py-4 align-middle d-none d-md-table-cell text-center">
-                                <code class="text-primary font-weight-bold" style="font-size: 0.95rem; background: #eef2f7; padding: 4px 8px; border-radius: 4px;">{{ $customer->code ?? str_pad($customer->id, 12, '0', STR_PAD_LEFT) }}</code>
+                                <span class="text-primary">{{ $customer->code ?? str_pad($customer->id, 12, '0', STR_PAD_LEFT) }}</span>
                             </td>
                             <td class="py-4 text-center align-middle">
-                                <span class="badge badge-pill badge-light border px-2 px-sm-4 py-2 text-primary font-weight-bold shadow-sm" style="font-size: 0.9rem; background: #f8f9fa;">
+                                <span class="badge badge-pill badge-light border px-2 px-sm-4 py-2 text-primary shadow-sm" style="background: #f8f9fa;">
                                     <i class="fas fa-microchip mr-1 mr-sm-2" style="opacity: 0.7;"></i>
                                     {{ $customer->device_count }}<span class="d-none d-sm-inline"> unidades</span>
                                 </span>
                             </td>
                             <td class="py-4 text-center align-middle">
                                 <div class="d-flex justify-content-center align-items-center">
-                                    <div class="btn-group shadow-sm" style="border-radius: 6px; overflow: hidden;">
-                                        <button class="btn btn-sm btn-info px-2 px-sm-3" title="Visualizar Detalhes"><i class="fas fa-eye"></i></button>
-                                        <button class="btn btn-sm btn-primary px-2 px-sm-3" title="Editar"><i class="fas fa-edit"></i></button>
+                                    <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                        <button class="btn btn-light btn-square border-right" title="Visualizar Detalhes"><i class="fas fa-eye fa-lg text-info"></i></button>
+                                        <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
                                         
-                                        <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Deseja realmente inativar este cliente? Esta ação preservará os dados históricos.')">
+                                        <form action="{{ route('customers.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('Deseja realmente inativar este cliente? Esta ação preservará os dados históricos.')" class="m-0">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger px-3 d-none d-lg-inline h-100" title="Inativar Cliente">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit" class="btn btn-light btn-square" title="Inativar Cliente">
+                                                <i class="fas fa-trash fa-lg text-danger"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -125,6 +125,18 @@
 </div>
 
 <style>
+    .btn-square {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .btn-group.shadow-sm {
+        border-radius: 8px !important;
+        overflow: hidden;
+    }
     .card-indigo { border-top: 3px solid #6610f2 !important; }
     .avatar-circle {
         border-radius: 50%;

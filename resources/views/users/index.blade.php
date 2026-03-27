@@ -51,8 +51,8 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
-                            <th class="text-left px-4">ADMIMISTRADOR</th>
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
+                            <th class="text-left px-4">ADMINISTRADOR</th>
                             <th class="text-left">CARGO</th>
                             <th class="text-left">E-MAIL</th>
                             <th style="width: 100px;">AÇÕES</th>
@@ -65,34 +65,34 @@
                                 <div class="d-flex align-items-center">
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random&color=fff" class="img-circle mr-3 border" style="width: 35px; height: 35px;">
                                     <div>
-                                        <div class="text-bold {{ auth()->id() == $user->id ? 'text-primary' : '' }}">
+                                        <div class="{{ auth()->id() == $user->id ? 'text-primary' : '' }}">
                                             {{ $user->name }}
                                             @if(auth()->id() == $user->id)
-                                                <span class="badge badge-primary text-xs ml-1">VOCÊ</span>
+                                                <span class="badge badge-primary ml-1">VOCÊ</span>
                                             @endif
                                         </div>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
                             <td class="align-middle text-left">
-                                <span class="badge badge-light border text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">{{ $user->role ?? 'NÃO DEFINIDO' }}</span>
+                                <span class="badge badge-light border text-uppercase" style="letter-spacing: 0.5px;">{{ $user->role ?? 'NÃO DEFINIDO' }}</span>
                             </td>
                             <td class="align-middle text-left">
                                 <span class="text-muted">{{ $user->email }}</span>
                             </td>
                             <td class="text-center align-middle">
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Remover acesso administrativo deste usuário?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-xs btn-outline-danger shadow-sm" style="border-radius: 6px;" {{ auth()->id() == $user->id ? 'disabled' : '' }}>
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
+                                <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                    <button class="btn btn-light btn-square border-right" title="Editar Usuário"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="m-0" onsubmit="return confirm('Inativar este acesso?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir" {{ auth()->id() == $user->id ? 'disabled' : '' }}><i class="fas fa-trash fa-lg text-danger"></i></button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="3" class="text-center py-5 text-muted">Nenhum administrador detectado no quartel-general.</td>
+                            <td colspan="4" class="text-center py-5 text-muted">Nenhum administrador detectado no quartel-general.</td>
                         </tr>
                         @endforelse
                     </tbody>

@@ -43,13 +43,16 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
                             <th class="d-none d-md-table-cell">ID</th>
-                            <th class="d-none d-lg-table-cell text-left px-4">ICCID (SERIAL)</th>
+                            <th class="d-none d-lg-table-cell text-left px-4">ICCID</th>
                             <th class="text-left px-4">NÚMERO</th>
-                            <th>OPERADORA</th>
+                            <th class="d-none d-md-table-cell">OPERADORA</th>
+                            <th class="d-none d-md-table-cell text-center">PROPRIETÁRIO</th>
+                            <th class="d-none d-md-table-cell text-center">EQUIPAMENTO</th>
+                            <th class="d-md-none">VÍNCULO</th>
                             <th class="d-none d-sm-table-cell">STATUS</th>
-                            <th style="width: 120px;">AÇÕES</th>
+                            <th style="width: 140px;">AÇÕES</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -57,44 +60,53 @@
                         <tr>
                             <td class="text-center align-middle d-none d-md-table-cell text-muted">{{ $sim->id }}</td>
                             <td class="align-middle d-none d-lg-table-cell px-4">
-                                <code class="small text-pink">{{ $sim->iccid ?? 'N/A' }}</code>
+                                <span class="text-pink">{{ $sim->iccid ?? 'N/A' }}</span>
                             </td>
                             <td class="align-middle px-4">
-                                <div class="text-bold text-primary">{{ $sim->phone_number ?? '---' }}</div>
-                                <div class="d-block d-lg-none small text-muted">ICCID: {{ \Illuminate\Support\Str::limit($sim->iccid, 8) }}</div>
+                                <div class="text-primary">{{ $sim->phone_number ?? '---' }}</div>
+                                <div class="d-block d-md-none text-muted">ICCID: {{ \Illuminate\Support\Str::limit($sim->iccid, 8) }}</div>
                             </td>
-                            <td class="text-center align-middle">
+                            <td class="text-center align-middle d-none d-md-table-cell">
                                 <span class="badge badge-light border px-2 py-1 text-uppercase font-weight-normal">
-                                    <i class="fas fa-signal mr-1 text-primary small"></i> {{ $sim->operator }}
+                                    {{ $sim->operator }}
                                 </span>
                             </td>
+
+                            <!-- 🖥️ VISÃO DESKTOP: VÍNCULOS -->
+                            <td class="align-middle d-none d-md-table-cell text-center">
+                                {{ $sim->customer_name ?? 'ESTOQUE' }}
+                            </td>
+                            <td class="text-center align-middle d-none d-md-table-cell">
+                                <span class="text-indigo">{{ $sim->rtech_code ?? '---' }}</span>
+                            </td>
+
+                            <!-- 📱 VISÃO MOBILE: RESUMIDA -->
+                            <td class="align-middle d-md-none">
+                                {{ \Illuminate\Support\Str::limit($sim->customer_name ?? 'ESTOQUE', 10) }}
+                            </td>
+
                             <td class="text-center align-middle d-none d-sm-table-cell">
-                                @php
-                                    $statusConfig = [
-                                        'active' => ['class' => 'bg-success', 'label' => 'ATIVO'],
-                                        'inactive' => ['class' => 'bg-warning', 'label' => 'ESTOQUE'],
-                                        'suspended' => ['class' => 'bg-danger', 'label' => 'SUSPENSO'],
-                                    ][$sim->status] ?? ['class' => 'bg-secondary', 'label' => 'PENDENTE'];
-                                @endphp
-                                <span class="badge {{ $statusConfig['class'] }} px-3 py-1 shadow-sm">
-                                    {{ $statusConfig['label'] }}
+                                <span class="badge {{ $sim->status === 'active' ? 'bg-success' : 'bg-warning' }} px-3 py-1 shadow-sm">
+                                    {{ $sim->status === 'active' ? 'ATIVO' : 'ESTOQUE' }}
                                 </span>
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <button class="btn btn-xs btn-light border-right" title="Editar"><i class="fas fa-edit text-warning"></i></button>
-                                    <button class="btn btn-xs btn-light border-right" title="Vincular"><i class="fas fa-link text-info"></i></button>
-                                    <form action="{{ route('sim-cards.destroy', $sim->id) }}" method="POST" onsubmit="return confirm('Deseja realmente inativar este chip?')">
+                                    <button class="btn btn-light btn-square border-right" title="Raio-X" onclick="showChipDetails('{{ $sim->iccid }}', '{{ $sim->phone_number }}', '{{ $sim->operator }}', '{{ $sim->customer_name ?? 'ESTOQUE' }}', '{{ $sim->rtech_code ?? '---' }}')">
+                                        <i class="fas fa-eye fa-lg text-info"></i>
+                                    </button>
+                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <form action="{{ route('sim-cards.destroy', $sim->id) }}" method="POST" class="m-0" onsubmit="return confirm('Deseja realmente inativar este chip?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-light" title="Excluir"><i class="fas fa-trash text-danger"></i></button>
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir"><i class="fas fa-trash fa-lg text-danger"></i></button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="fas fa-sim-card fa-3x text-muted mb-3"></i>
                                 <h4 class="text-muted">Nenhum chip encontrado</h4>
                             </td>
@@ -110,6 +122,16 @@
         </div>
         @endif
     </div>
+
+<style>
+    .btn-square {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
 
     <!-- 📟 MODAL: REGISTRO PREMIUM -->
     <div class="modal fade animate__animated animate__fadeIn" id="modalNovoChip" tabindex="-1" role="dialog">
@@ -163,20 +185,85 @@
             </div>
         </div>
     </div>
-</div>
 
-<style>
-    /* 🌓 ADAPTAÇÃO DARK MODE RASTERTECH */
-    .dark-mode .table td { border-color: rgba(255,255,255,0.05); color: #e0e0e0; }
-    .dark-mode .btn-light { background: #1a1a2e; border-color: #2d2d44; color: #fff; }
-    .dark-mode .btn-light:hover { background: #2d2d44; }
-    .dark-mode code.text-pink { background: #16213e; color: #ff007f; border: 1px solid #33213e; }
-    .dark-mode .modal-content { background: #1a1a2e; color: #fff; }
-    .dark-mode .modal-body { background: #1a1a2e; }
-    .dark-mode .form-control { background: #16213e; border-color: #2d2d44; color: #fff; }
-    
-    .btn-group .btn { padding: 8px 12px; }
-    .animate__animated { --animate-duration: 0.6s; }
-    code.text-pink { background: #fff0f5; padding: 2px 5px; border-radius: 4px; color: #e83e8c; font-weight: bold; }
-</style>
+    <!-- 🏢 MODAL DE DETALHES DO CHIP (RAIO-X RASTERTECH) -->
+    <div class="modal fade" id="modalChipDetails" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+                <div class="modal-header bg-dark text-white border-0" style="border-radius: 15px 15px 0 0;">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-sim-card mr-2 text-warning"></i>Dossiê Logístico</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4" id="modalChipBody">
+                    <!-- Dinâmico via JS -->
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-dark shadow-sm px-4" style="border-radius: 8px; font-weight: 600;" data-dismiss="modal">FECHAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* 🎨 DESIGN SYSTEM RASTERTECH (BOTÕES PADRONIZADOS) */
+        .btn-rastertech { 
+            background: #ffc107; 
+            color: #212529; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            transition: all 0.3s ease;
+            border: none;
+            padding: 8px 18px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+        .btn-rastertech:hover { 
+            background: #e0a800; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,193,7,0.3);
+        }
+
+        .text-indigo { color: #6610f2; }
+
+        /* 🌓 ADAPTAÇÃO DARK MODE RASTERTECH */
+        .dark-mode .table td { border-color: rgba(255,255,255,0.05); color: #e0e0e0; }
+        .dark-mode .btn-light { background: #1a1a2e; border-color: #2d2d44; color: #fff; }
+        .dark-mode .btn-light:hover { background: #2d2d44; }
+        .dark-mode code.text-pink { background: #16213e; color: #ff007f; border: 1px solid #33213e; }
+        .dark-mode .modal-content { background: #1a1a2e; color: #fff; }
+        
+        .btn-group .btn { padding: 10px 14px; }
+        .animate__animated { --animate-duration: 0.6s; }
+        code.text-pink { background: #fff0f5; padding: 2px 5px; border-radius: 4px; color: #e83e8c; }
+    </style>
+
+    <script>
+        function showChipDetails(iccid, phone, operator, customer, code) {
+            const body = `
+                <div class="mb-3 p-3 bg-light rounded shadow-sm border-left" style="border-left: 4px solid #ffc107 !important;">
+                    <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">SERIAL ICCID</label>
+                    <div class="h6 font-weight-bold text-dark mb-0">${iccid}</div>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="small text-muted mb-1 d-block font-weight-bold">NÚMERO LINHA</label>
+                        <div class="font-weight-bold">${phone || 'SEM NÚMERO'}</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="small text-muted mb-1 d-block font-weight-bold">OPERADORA</label>
+                        <div class="badge badge-warning px-3">${operator}</div>
+                    </div>
+                </div>
+                <div class="mb-0 p-3" style="border: 2px dashed #ddd; border-radius: 10px; background: #fff;">
+                    <label class="small text-muted mb-1 d-block font-weight-bold">POSSE OPERACIONAL</label>
+                    <div class="font-weight-bold text-dark mb-1"><i class="fas fa-user-tie mr-2 text-warning"></i>${customer}</div>
+                    <div class="font-weight-bold text-indigo"><i class="fas fa-barcode mr-2"></i>${code}</div>
+                </div>
+            `;
+            document.getElementById('modalChipBody').innerHTML = body;
+            $('#modalChipDetails').modal('show');
+        }
+    </script>
 @endsection

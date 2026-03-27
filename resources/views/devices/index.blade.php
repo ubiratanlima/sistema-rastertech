@@ -43,7 +43,7 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
                             <th class="text-left px-4">IMEI / IDENTIFICADOR</th>
                             <th class="d-none d-md-table-cell">MODELO</th>
                             <th class="d-none d-lg-table-cell">CHIP (ICCID)</th>
@@ -56,8 +56,8 @@
                         @foreach($devices as $device)
                         <tr>
                             <td class="align-middle px-4">
-                                <div class="text-bold text-primary">{{ $device->imei }}</div>
-                                <div class="d-block d-md-none small text-muted">{{ $device->model_name ?? 'N/A' }}</div>
+                                <div class="text-primary">{{ $device->imei }}</div>
+                                <div class="d-block d-md-none text-muted">{{ $device->model_name ?? 'N/A' }}</div>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
                                 <span class="badge badge-light border px-2 py-1 text-uppercase font-weight-normal">
@@ -65,11 +65,11 @@
                                 </span>
                             </td>
                             <td class="text-center align-middle d-none d-lg-table-cell">
-                                <code class="small text-pink">{{ \Illuminate\Support\Str::limit($device->iccid ?? 'Sem Chip', 12) }}</code>
+                                <span class="text-pink">{{ \Illuminate\Support\Str::limit($device->iccid ?? 'Sem Chip', 12) }}</span>
                             </td>
                             <td class="align-middle">
-                                <div class="text-dark font-weight-bold d-none d-sm-block">{{ $device->customer_name ?? 'Estoque Central' }}</div>
-                                <div class="text-dark font-weight-bold d-block d-sm-none">{{ \Illuminate\Support\Str::limit($device->customer_name ?? 'Estoque', 10) }}</div>
+                                <div class="text-dark d-none d-sm-block">{{ $device->customer_name ?? 'Estoque Central' }}</div>
+                                <div class="text-dark d-block d-sm-none">{{ \Illuminate\Support\Str::limit($device->customer_name ?? 'Estoque', 10) }}</div>
                             </td>
                             <td class="text-center align-middle d-none d-sm-table-cell">
                                 <span class="badge {{ $device->customer_id ? 'bg-success' : 'bg-warning' }} px-3 py-1 shadow-sm">
@@ -78,12 +78,12 @@
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <button class="btn btn-xs btn-light border-right" title="Editar"><i class="fas fa-edit text-warning"></i></button>
-                                    <button class="btn btn-xs btn-light border-right" title="Link"><i class="fas fa-plug text-info"></i></button>
-                                    <form action="{{ route('devices.destroy', $device->id) }}" method="POST" onsubmit="return confirm('Inativar equipamento?')">
+                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <button class="btn btn-light btn-square border-right" title="Link"><i class="fas fa-plug fa-lg text-info"></i></button>
+                                    <form action="{{ route('devices.destroy', $device->id) }}" method="POST" class="m-0" onsubmit="return confirm('Inativar equipamento?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-light" title="Excluir"><i class="fas fa-trash text-danger"></i></button>
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir"><i class="fas fa-trash fa-lg text-danger"></i></button>
                                     </form>
                                 </div>
                             </td>
@@ -102,6 +102,15 @@
 </div>
 
 <style>
+    .btn-square {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
     /* 🌓 ADAPTAÇÃO DARK MODE RASTERTECH */
     .dark-mode .table td { border-color: rgba(255,255,255,0.05); color: #e0e0e0; }
     .dark-mode .btn-light { background: #1a1a2e; border-color: #2d2d44; color: #fff; }
@@ -109,8 +118,7 @@
     .dark-mode code.text-pink { background: #16213e; color: #ff007f; border: 1px solid #33213e; }
     .dark-mode .text-dark { color: #fff !important; }
     
-    .btn-group .btn { padding: 8px 12px; }
     .animate__animated { --animate-duration: 0.6s; }
-    code.text-pink { background: #fff0f5; padding: 2px 5px; border-radius: 4px; color: #e83e8c; font-weight: bold; }
+    code.text-pink { background: #fff0f5; padding: 2px 5px; border-radius: 4px; color: #e83e8c; }
 </style>
 @endsection

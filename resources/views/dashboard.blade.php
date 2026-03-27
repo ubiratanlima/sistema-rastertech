@@ -128,9 +128,16 @@
         // 🛰️ CONFIGURAÇÃO DO MAPA (REUSÁVEL)
         function spawnMap(isDark) {
             if (!map) {
-                map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-23.5505, -46.6333], 12);
-                [[-23.5505, -46.6333], [-23.5600, -46.6500], [-23.5400, -46.6200]].forEach(p => { 
-                    L.circleMarker(p, { color: '#00ff88', fillColor: '#00ff88', fillOpacity: 0.8, radius: 6 }).addTo(map); 
+                map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-23.5505, -46.6333], 10);
+                var positions = {!! json_encode($latestPositions) !!};
+                
+                positions.forEach(p => { 
+                    L.circleMarker([p.latitude, p.longitude], { 
+                        color: '#00ff88', 
+                        fillColor: '#00ff88', 
+                        fillOpacity: 0.8, 
+                        radius: 6 
+                    }).addTo(map).bindPopup("<b>IMEI:</b> " + p.imei); 
                 });
             }
 

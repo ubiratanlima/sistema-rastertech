@@ -51,7 +51,7 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
                             <th class="text-left px-4">NOME DO PARCEIRO</th>
                             <th>TIPO</th>
                             <th class="d-none d-md-table-cell">HARDWARE</th>
@@ -63,7 +63,7 @@
                         @forelse($providers as $provider)
                         <tr>
                             <td class="align-middle px-4">
-                                <div class="text-bold text-primary">{{ $provider->name }}</div>
+                                <div class="text-primary">{{ $provider->name }}</div>
                             </td>
                             <td class="text-center align-middle">
                                 <span class="badge {{ $provider->type == 'hardware' ? 'bg-info' : ($provider->type == 'connectivity' ? 'bg-success' : 'bg-secondary') }} px-2 py-1 text-uppercase">
@@ -78,11 +78,11 @@
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <button class="btn btn-xs btn-light border-right" title="Editar"><i class="fas fa-edit text-warning"></i></button>
-                                    <form action="{{ route('providers.destroy', $provider->id) }}" method="POST" onsubmit="return confirm('Inativar este fornecedor? Esta ação é irreversível.')">
+                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <form action="{{ route('providers.destroy', $provider->id) }}" method="POST" class="m-0" onsubmit="return confirm('Deseja realmente inativar este fornecedor?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-light" title="Remover"><i class="fas fa-trash text-danger"></i></button>
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir"><i class="fas fa-trash fa-lg text-danger"></i></button>
                                     </form>
                                 </div>
                             </td>

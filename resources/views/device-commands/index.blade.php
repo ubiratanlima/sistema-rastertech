@@ -63,19 +63,19 @@
                                 <div class="text-bold">{{ $command->description }}</div>
                             </td>
                             <td class="align-middle d-none d-md-table-cell">
-                                <code class="p-2 bg-light border rounded text-dark d-block" style="font-family: 'Courier New', Courier, monospace;">
+                                <span class="p-2 bg-light border rounded text-dark d-block">
                                     {{ $command->command_template }}
-                                </code>
+                                </span>
                             </td>
                             <td class="text-center align-middle">
-                                <span class="badge badge-light border">#{{ $command->execution_order }}</span>
-                            </td>
-                            <td class="text-center align-middle">
-                                <form action="{{ route('device-commands.destroy', $command->id) }}" method="POST" onsubmit="return confirm('Remover este template da biblioteca?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-xs btn-outline-danger shadow-sm" style="border-radius: 6px;"><i class="fas fa-trash"></i></button>
-                                </form>
+                                <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <form action="{{ route('device-commands.destroy', $command->id) }}" method="POST" class="m-0" onsubmit="return confirm('Deseja realmente excluir este comando?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir"><i class="fas fa-trash fa-lg text-danger"></i></button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty

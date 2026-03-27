@@ -51,7 +51,7 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
                             <th class="text-left px-4">NOME DO MODELO</th>
                             <th>FABRICANTE</th>
                             <th class="d-none d-md-table-cell">ESTOQUE FÍSICO</th>
@@ -62,7 +62,7 @@
                         @forelse($models as $model)
                         <tr>
                             <td class="align-middle px-4">
-                                <div class="text-bold text-dark">{{ $model->name }}</div>
+                                <div class="text-dark">{{ $model->name }}</div>
                             </td>
                             <td class="text-center align-middle">
                                 <span class="badge badge-secondary px-2 py-1 text-uppercase">
@@ -74,11 +74,11 @@
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <button class="btn btn-xs btn-light border-right" title="Editar"><i class="fas fa-edit text-warning"></i></button>
-                                    <form action="{{ route('device-models.destroy', $model->id) }}" method="POST" onsubmit="return confirm('Inativar este modelo de hardware? Esta ação afetará a biblioteca técnica.')">
+                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <form action="{{ route('device-models.destroy', $model->id) }}" method="POST" class="m-0" onsubmit="return confirm('Inativar este modelo?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-light" title="Remover"><i class="fas fa-trash text-danger"></i></button>
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir"><i class="fas fa-trash fa-lg text-danger"></i></button>
                                     </form>
                                 </div>
                             </td>

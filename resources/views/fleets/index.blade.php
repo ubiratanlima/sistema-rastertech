@@ -51,31 +51,31 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
-                            <th style="width: 140px;">PLACA</th>
-                            <th class="d-none d-md-table-cell">MARCA / MODELO</th>
-                            <th>CLIENTE</th>
-                            <th class="d-none d-lg-table-cell">RASTRADOR (IMEI)</th>
-                            <th class="d-none d-xl-table-cell">CONECTIVIDADE</th>
-                            <th class="d-none d-sm-table-cell text-center">STATUS</th>
-                            <th style="width: 120px;">AÇÕES</th>
+                        <tr class="text-uppercase font-weight-bold" style="background-color: rgba(0,0,0,0.02);">
+                            <th class="text-center" style="width: 140px;">PLACA</th>
+                            <th class="text-center d-none d-md-table-cell">MARCA / MODELO</th>
+                            <th class="text-center">CLIENTE</th>
+                            <th class="text-center d-none d-lg-table-cell">RASTRADOR (IMEI)</th>
+                            <th class="text-center d-none d-xl-table-cell">CONECTIVIDADE</th>
+                            <th class="text-center d-none d-sm-table-cell">STATUS</th>
+                            <th class="text-center" style="width: 120px;">AÇÕES</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($vehicles as $vehicle)
                         <tr>
                             <td class="text-center align-middle">
-                                <div class="plate-container shadow-sm mx-auto">
+                                <div class="mercosul-plate shadow-sm mx-auto">
                                     <div class="plate-header">BRASIL</div>
                                     <div class="plate-number">{{ strtoupper($vehicle->plate) }}</div>
                                 </div>
                             </td>
-                            <td class="align-middle d-none d-md-table-cell">
-                                <div class="text-bold">{{ $vehicle->brand ?? '---' }}</div>
-                                <div class="small text-muted text-uppercase">{{ $vehicle->vehicle_model ?? '---' }}</div>
+                            <td class="text-center align-middle d-none d-md-table-cell">
+                                <div class="text-dark">{{ $vehicle->brand ?? '---' }}</div>
+                                <div class="text-muted text-uppercase">{{ $vehicle->vehicle_model ?? '---' }}</div>
                             </td>
-                            <td class="align-middle">
-                                <div class="text-bold text-primary">
+                            <td class="text-center align-middle">
+                                <div class="text-primary">
                                     <span class="d-none d-sm-inline">{{ $vehicle->customer_name }}</span>
                                     <span class="d-inline d-sm-none" title="{{ $vehicle->customer_name }}">
                                         {{ \Illuminate\Support\Str::limit($vehicle->customer_name, 10) }}
@@ -84,18 +84,18 @@
                             </td>
                             <td class="text-center align-middle d-none d-lg-table-cell">
                                 @if($vehicle->device_imei)
-                                    <code class="text-dark font-weight-bold">{{ $vehicle->device_imei }}</code>
+                                    <span class="text-dark">{{ $vehicle->device_imei }}</span>
                                 @else
-                                    <span class="text-muted small">---</span>
+                                    <span class="text-muted">---</span>
                                 @endif
                             </td>
                             <td class="text-center align-middle d-none d-xl-table-cell">
                                 @if($vehicle->sim_number)
-                                    <div class="small">
+                                    <div>
                                         <i class="fas fa-sim-card mr-1 text-info"></i>{{ $vehicle->sim_number }}
                                     </div>
                                 @else
-                                    <span class="text-muted small">Sem Chip</span>
+                                    <span class="text-muted">Sem Chip</span>
                                 @endif
                             </td>
                             <td class="text-center align-middle d-none d-sm-table-cell">
@@ -112,13 +112,13 @@
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <a href="#" class="btn btn-xs btn-light border-right" title="Visualizar"><i class="fas fa-eye text-primary"></i></a>
-                                    <a href="#" class="btn btn-xs btn-light border-right" title="Editar"><i class="fas fa-edit text-warning"></i></a>
-                                    <form action="{{ route('fleets.destroy', $vehicle->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Inativar veículo {{ $vehicle->plate }}?');">
+                                    <a href="#" class="btn btn-light btn-square border-right" title="Visualizar"><i class="fas fa-eye fa-lg text-info"></i></a>
+                                    <a href="#" class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></a>
+                                    <form action="{{ route('fleets.destroy', $vehicle->id) }}" method="POST" class="m-0" onsubmit="return confirm('Inativar veículo {{ $vehicle->plate }}?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-light" title="Inativar">
-                                            <i class="fas fa-trash text-danger"></i>
+                                        <button type="submit" class="btn btn-light btn-square" title="Inativar">
+                                            <i class="fas fa-trash fa-lg text-danger"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -138,19 +138,58 @@
         </div>
         @if($vehicles->hasPages())
         <div class="card-footer bg-transparent border-0 py-3">
-            <div class="float-right">{{ $vehicles->links() }}</div>
+            {{ $vehicles->links() }}
         </div>
         @endif
     </div>
 </div>
 
 <style>
-    /* 🇧🇷 ESTILO DA PLACA MERCOSUL RASTERTECH */
-    .plate-container { 
-        display: block; border: 2px solid #333; border-radius: 4px; background: #fff; width: 110px; overflow: hidden; font-family: 'Arial Black', Gadget, sans-serif; 
+    .btn-square {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
     }
-    .plate-header { background: #003399; color: white; font-size: 7px; padding: 1px 0; text-align: center; letter-spacing: 1px; font-weight: bold; }
-    .plate-number { color: #000; font-weight: bold; font-size: 16px; padding: 1px 0; text-align: center; letter-spacing: 1px; }
+
+    /* 🇧🇷 ESTILO DA PLACA MERCOSUL (OFICIAL RASTERTECH) */
+    .mercosul-plate {
+        width: 120px;
+        height: 44px;
+        border: 2px solid #333;
+        border-radius: 6px;
+        background: white;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        border-bottom-width: 3px;
+    }
+
+    .plate-header {
+        background: #003399;
+        color: white;
+        font-size: 7px;
+        text-align: center;
+        padding: 2px 0;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    .plate-number {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Arial Black', sans-serif;
+        font-size: 1.2rem;
+        color: #000;
+        letter-spacing: 1.5px;
+        padding-top: 1px;
+    }
     
     /* 🌓 ADAPTAÇÃO DARK MODE */
     .dark-mode .table td { border-color: rgba(255,255,255,0.05); color: #e0e0e0; }

@@ -51,7 +51,7 @@
             <div class="table-responsive" style="overflow-x: hidden;">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr class="text-center text-sm" style="background-color: rgba(0,0,0,0.02);">
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
                             <th class="text-left px-4">SISTEMA</th>
                             <th>IP DO SERVIDOR</th>
                             <th class="d-none d-md-table-cell">URL DE ACESSO</th>
@@ -63,19 +63,19 @@
                         @forelse($platforms as $platform)
                         <tr>
                             <td class="align-middle px-4">
-                                <div class="text-bold text-info">{{ $platform->name }}</div>
-                                <small class="text-muted">{{ $platform->supplier_name ?? 'Próprio' }}</small>
+                                <div class="text-info">{{ $platform->name }}</div>
+                                <div class="text-muted">{{ $platform->supplier_name ?? 'Próprio' }}</div>
                             </td>
-                            <td class="text-center align-middle font-italic text-sm">
-                                <code>{{ $platform->server_ip }}</code>
+                            <td class="text-center align-middle font-italic">
+                                <span>{{ $platform->server_ip }}</span>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
                                 @if($platform->url)
-                                    <a href="{{ $platform->url }}" target="_blank" class="text-xs text-info">
+                                    <a href="{{ $platform->url }}" target="_blank" class="text-info">
                                         {{ Str::limit($platform->url, 25) }} <i class="fas fa-external-link-alt ml-1"></i>
                                     </a>
                                 @else
-                                    <span class="text-muted text-xs">N/A</span>
+                                    <span class="text-muted">N/A</span>
                                 @endif
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
@@ -83,11 +83,11 @@
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <button class="btn btn-xs btn-light border-right" title="Editar"><i class="fas fa-edit text-warning"></i></button>
-                                    <form action="{{ route('platforms.destroy', $platform->id) }}" method="POST" onsubmit="return confirm('ATENÇÃO: Remover este servidor pode afetar a rota de dados. Prosseguir?')">
+                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                    <form action="{{ route('platforms.destroy', $platform->id) }}" method="POST" class="m-0" onsubmit="return confirm('Inativar esta plataforma?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-xs btn-light" title="Remover"><i class="fas fa-trash text-danger"></i></button>
+                                        <button type="submit" class="btn btn-light btn-square" title="Excluir"><i class="fas fa-trash fa-lg text-danger"></i></button>
                                     </form>
                                 </div>
                             </td>

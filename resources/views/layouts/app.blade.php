@@ -18,11 +18,11 @@
     </style>
     @stack('styles')
 </head>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini layout-fixed {{ (auth()->check() && auth()->user()->theme == 'dark') ? 'dark-mode' : '' }}">
 <div class="wrapper">
 
     <!-- ⚓ NAVBAR -->
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom-0 shadow-sm">
+    <nav class="main-header navbar navbar-expand {{ (auth()->check() && auth()->user()->theme == 'dark') ? 'navbar-dark navbar-black' : 'navbar-white navbar-light' }} border-bottom-0 shadow-sm">
         <ul class="navbar-nav">
             <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a></li>
         </ul>
@@ -30,7 +30,7 @@
             <!-- 🌗 TOGGLE DARK MODE -->
             <li class="nav-item">
                 <a class="nav-link" href="#" id="dark-mode-toggle" title="Alternar Modo Escuro/Claro">
-                    <i class="fas fa-moon"></i>
+                    <i class="fas {{ (auth()->check() && auth()->user()->theme == 'dark') ? 'fa-sun' : 'fa-moon' }}"></i>
                 </a>
             </li>
             <li class="nav-item dropdown">
@@ -45,7 +45,7 @@
     </nav>
 
     <!-- 🏗️ SIDEBAR -->
-    <aside class="main-sidebar sidebar-dark-primary elevation-4" id="main-sidebar">
+    <aside class="main-sidebar {{ (auth()->check() && auth()->user()->theme == 'dark') ? 'sidebar-dark-primary' : 'sidebar-light-primary' }} elevation-4" id="main-sidebar">
         <a href="/" class="brand-link" id="brand-logo-container">
             <i class="fas fa-satellite-dish ml-3 mr-2 text-primary"></i>
             <span class="brand-text font-weight-bold">RASTERTECH</span>
@@ -78,7 +78,7 @@
                         <a href="/fleets" class="nav-link {{ request()->is('fleets*') ? 'active' : '' }}"><i class="nav-icon fas fa-truck-moving"></i><p>Frotas</p></a>
                     </li>
                     <li class="nav-item">
-                        <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Acessos</p></a>
+                        <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Credenciais APPs</p></a>
                     </li>
 
                     <li class="nav-header">DEPARTAMENTO TÉCNICO</li>
@@ -94,6 +94,16 @@
                     <li class="nav-item">
                         <a href="/device-commands" class="nav-link {{ request()->is('device-commands*') ? 'active' : '' }}"><i class="nav-icon fas fa-comment-dots"></i><p>Comandos SMS</p></a>
                     </li>
+
+                    @if(in_array(auth()->user()->role ?? 'atendente', ['admin', 'gestor', 'operador', 'atendente']))
+                    <li class="nav-header">ATENDIMENTOS</li>
+                    <li class="nav-item">
+                        <a href="/support/customers" class="nav-link {{ request()->is('support/customers*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-headset text-warning"></i>
+                            <p>Clientes Ativos</p>
+                        </a>
+                    </li>
+                    @endif
 
                     <li class="nav-header">ADMINISTRAÇÃO</li>
                     <li class="nav-item">
@@ -143,39 +153,44 @@
         const body = $('body');
         const navbar = $('.main-header');
         const sidebar = $('#main-sidebar');
-        const toggleBtn = $('#dark-mode-toggle');
-        const icon = toggleBtn.find('i');
 
-        // 🧠 MEMÓRIA DE CORES: Recupera a preferência salva
-        if (localStorage.getItem('raster_theme') === 'dark') {
-            enableDarkMode();
-        }
-
-        toggleBtn.on('click', function(e) {
+        // 🔥 COMANDO DE TEMA: Captura o clique de forma robusta e imediata
+        $(document).on('click', '#dark-mode-toggle', function(e) {
             e.preventDefault();
+            const btn = $(this);
+            const icon = btn.find('i');
+
             if (body.hasClass('dark-mode')) {
-                disableDarkMode();
+                // MUDAR PARA TEMA CLARO 🌙 (Aparecer Lua para poder escurecer depois)
+                body.removeClass('dark-mode');
+                navbar.removeClass('navbar-dark navbar-black').addClass('navbar-white navbar-light');
+                sidebar.removeClass('sidebar-dark-primary').addClass('sidebar-light-primary');
+                icon.removeClass('fa-sun').addClass('fa-moon');
+                saveThemeProgressively('light');
+                window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'light' } }));
             } else {
-                enableDarkMode();
+                // MUDAR PARA TEMA ESCURO ☀️ (Aparecer Sol para poder clarear depois)
+                body.addClass('dark-mode');
+                navbar.removeClass('navbar-white navbar-light').addClass('navbar-dark navbar-black');
+                sidebar.removeClass('sidebar-light-primary').addClass('sidebar-dark-primary');
+                icon.removeClass('fa-moon').addClass('fa-sun');
+                saveThemeProgressively('dark');
+                window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'dark' } }));
             }
         });
 
-        function enableDarkMode() {
-            body.addClass('dark-mode');
-            navbar.removeClass('navbar-white navbar-light').addClass('navbar-dark navbar-black');
-            sidebar.removeClass('sidebar-light-primary').addClass('sidebar-dark-primary');
-            icon.removeClass('fa-moon').addClass('fa-sun');
-            localStorage.setItem('raster_theme', 'dark');
-            window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'dark' } }));
-        }
+        function saveThemeProgressively(theme) {
+            fetch('{{ route("user.update-theme") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ theme: theme })
+            });
 
-        function disableDarkMode() {
-            body.removeClass('dark-mode');
-            navbar.removeClass('navbar-dark navbar-black').addClass('navbar-white navbar-light');
-            sidebar.removeClass('sidebar-dark-primary').addClass('sidebar-light-primary');
-            icon.removeClass('fa-sun').addClass('fa-moon');
-            localStorage.setItem('raster_theme', 'light');
-            window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'light' } }));
+            // Sincroniza o localStorage como redundância secundária
+            localStorage.setItem('raster_theme', theme);
         }
     });
 </script>

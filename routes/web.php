@@ -13,6 +13,7 @@ use App\Http\Controllers\DeviceCommandController;
 use App\Http\Controllers\CustomerSubUserController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SupportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,9 +66,13 @@ Route::delete('/customer-sub-users/{id}', [CustomerSubUserController::class, 'de
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 Route::post('/users', [UserController::class, 'store'])->name('users.store');
 Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+Route::post('/update-theme', [UserController::class, 'updateTheme'])->name('user.update-theme');
 
 // 📊 INTELIGÊNCIA: AUDITORIA E REPORTS
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+// 🎧 ATENDIMENTO E SUPORTE TÁTICO
+Route::get('/support/customers', [SupportController::class, 'index'])->name('support.customers');
 
 // Futuras rotas de Gestão (SIM Cards, Clientes, Frotas)
 // Route::get('/sims', [SimCardController::class, 'index'])->name('sims.index');

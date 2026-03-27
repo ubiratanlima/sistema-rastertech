@@ -17,12 +17,12 @@
     <div class="row m-0 mb-4 animate__animated animate__fadeIn align-items-center overflow-hidden flex-nowrap">
         <div class="col-8 col-sm-6 p-0 p-sm-2">
             <h1 class="m-0 text-bold d-none d-sm-block" style="font-size: 2.2rem;">
-                <i class="fas fa-users-cog mr-2 text-teal"></i>Acessos Externos
+                <i class="fas fa-users-cog mr-2 text-teal"></i>Credenciais de Aplicativos
             </h1>
             <h1 class="m-0 text-bold d-block d-sm-none" style="font-size: 1.55rem; white-space: nowrap; letter-spacing: -1.5px;">
-                <i class="fas fa-users-cog mr-1 text-teal"></i>Equipes
+                <i class="fas fa-users-cog mr-1 text-teal"></i>Credenciais
             </h1>
-            <p class="text-muted mb-0 d-none d-sm-block">Gerenciamento de usuários secundários e perfis de clientes.</p>
+            <p class="text-muted mb-0 d-none d-sm-block">Gerenciamento de acessos secundários e aplicativos de monitoramento.</p>
         </div>
         <div class="col-4 col-sm-6 text-right p-0 pr-sm-2">
             <button class="btn btn-teal shadow-sm px-3 py-2 text-white" style="border-radius: 8px; font-weight: 600; background-color: #20c997; border-color: #20c997;" data-toggle="modal" data-target="#modalNovoAcesso">
@@ -64,7 +64,7 @@
                                 </span>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
-                                <code>{{ $user->external_username }}</code>
+                                <span>{{ $user->external_username }}</span>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
                                 <span class="badge {{ $user->external_password ? 'badge-success' : 'badge-danger' }} px-2 py-1">

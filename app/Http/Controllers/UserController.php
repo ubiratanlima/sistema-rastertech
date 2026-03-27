@@ -54,4 +54,20 @@ class UserController extends Controller
             ->route('users.index')
             ->with('success', 'Acesso administrativo removido com sucesso.');
     }
+
+    /**
+     * Atualiza a preferência de tema (Claro/Escuro) do usuário.
+     */
+    public function updateTheme(Request $request)
+    {
+        $validated = $request->validate([
+            'theme' => 'required|in:light,dark'
+        ]);
+
+        $user = auth()->user();
+        $user->theme = $validated['theme'];
+        $user->save();
+
+        return response()->json(['success' => true]);
+    }
 }

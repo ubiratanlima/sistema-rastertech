@@ -19,6 +19,7 @@ class SimCardController extends Controller
             ->select(
                 'gsm_cards.*',
                 'devices.imei as imei_vincidulado',
+                'devices.model_description as rtech_code',
                 'customers.name as customer_name'
             )
             ->paginate(15)

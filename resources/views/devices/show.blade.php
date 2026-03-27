@@ -60,7 +60,7 @@
                                         @endphp
                                         <tr>
                                             <td><b>{{ $command->description }}</b></td>
-                                            <td><code class="text-success">{{ $final_command }}</code></td>
+                                            <td><span class="text-success">{{ $final_command }}</span></td>
                                             <td class="text-center">
                                                 <button class="btn btn-xs btn-outline-success" onclick="navigator.clipboard.writeText('{{ $final_command }}'); alert('Comando Copiado!');">
                                                     <i class="fas fa-copy"></i>
