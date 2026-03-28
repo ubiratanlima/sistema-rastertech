@@ -34,6 +34,7 @@ services:
       - KONG_PROXY_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_NGINX_PROXY_CLIENT_MAX_BODY_SIZE=50m
       - DASHBOARD_USERNAME=${KONG_USER}
       - DASHBOARD_PASSWORD=${KONG_PASS}
     volumes:
@@ -87,6 +88,7 @@ services:
     restart: always
     volumes:
       - .:/var/www
+      - ./docker/php/99-rastertech.ini:/usr/local/etc/php/conf.d/99-rastertech.ini:ro
     environment:
       - APP_KEY=${APP_KEY}
       - DB_PASSWORD=${DB_PASSWORD}

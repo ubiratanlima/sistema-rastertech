@@ -23,6 +23,9 @@ class User extends Authenticatable
         'role',
         'theme',
         'password',
+        'customer_id',
+        'external_username',
+        'external_password',
     ];
 
     /**

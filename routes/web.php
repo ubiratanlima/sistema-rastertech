@@ -14,6 +14,7 @@ use App\Http\Controllers\CustomerSubUserController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\Portal\CustomerPortalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,11 @@ Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->name('devi
 
 // 📟 GESTÃO DE ATIVOS: CARTÕES SIM (CHIPS)
 Route::get('/sim-cards', [SimCardController::class, 'index'])->name('sim-cards.index');
+Route::post('/sim-cards', [SimCardController::class, 'store'])->name('sim-cards.store');
+Route::get('/sim-cards/trash', [SimCardController::class, 'trash'])->name('sim-cards.trash');
+Route::put('/sim-cards/{id}/restore', [SimCardController::class, 'restore'])->name('sim-cards.restore');
+Route::delete('/sim-cards/{id}/force', [SimCardController::class, 'forceDelete'])->name('sim-cards.force-delete');
+Route::put('/sim-cards/{id}', [SimCardController::class, 'update'])->name('sim-cards.update');
 Route::delete('/sim-cards/{id}', [SimCardController::class, 'destroy'])->name('sim-cards.destroy');
 
 // 👥 ADMINISTRAÇÃO: CLIENTES E FROTAS
@@ -74,6 +80,21 @@ Route::get('/reports', [ReportController::class, 'index'])->name('reports.index'
 // 🎧 ATENDIMENTO E SUPORTE TÁTICO
 Route::get('/support/customers', [SupportController::class, 'index'])->name('support.customers');
 
-// Futuras rotas de Gestão (SIM Cards, Clientes, Frotas)
-// Route::get('/sims', [SimCardController::class, 'index'])->name('sims.index');
-// Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+// 🌐 PORTAL DO CLIENTE (EXPERIÊNCIA PWA)
+Route::group(['prefix' => 'portal', 'as' => 'portal.'], function() {
+    Route::get('/', [CustomerPortalController::class, 'index'])->name('dashboard');
+    Route::post('/save-driver', [CustomerPortalController::class, 'saveDriver'])->name('driver.save');
+    Route::get('/view/{component}', [CustomerPortalController::class, 'loadComponent'])->name('view');
+    
+    // Perfil e WhatsApps
+    Route::post('/profile/update', [CustomerPortalController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/component/whatsapp/add', [CustomerPortalController::class, 'addWhatsapp'])->name('whatsapp.add');
+    Route::post('/component/whatsapp/delete/{id}', [CustomerPortalController::class, 'deleteWhatsapp'])->name('whatsapp.delete');
+
+    // Gestão de Motoristas
+    Route::post('/drivers', [CustomerPortalController::class, 'storeDriver'])->name('drivers.store');
+    Route::delete('/drivers/{id}', [CustomerPortalController::class, 'deleteDriver'])->name('drivers.delete');
+
+    // Checklist Operacional
+    Route::post('/checklist', [CustomerPortalController::class, 'storeChecklist'])->name('checklist.store');
+});

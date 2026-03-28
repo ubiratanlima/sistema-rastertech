@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GsmCard extends Model
 {
@@ -15,7 +16,19 @@ class GsmCard extends Model
         'iccid',
         'phone_number',
         'operator',
+        'apn',
+        'apn_user',
+        'apn_pass',
+        'pin',
+        'puk',
+        'pin2',
+        'puk2',
         'status',
+        'cancellation_reason',
+        'cancelled_at',
+        'provider_id',
+        'customer_id',
+        'device_id'
     ];
 
     /**
@@ -24,5 +37,13 @@ class GsmCard extends Model
     public function device(): HasOne
     {
         return $this->hasOne(Device::class);
+    }
+
+    /**
+     * Relacionamento: O Chip pode pertencer diretamente a um Cliente.
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

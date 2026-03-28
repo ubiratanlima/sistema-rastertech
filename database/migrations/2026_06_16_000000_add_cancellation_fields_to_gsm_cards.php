@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->nullable()->after('email');
+        Schema::table('gsm_cards', function (Blueprint $row) {
+            $row->text('cancellation_reason')->nullable()->after('status');
+            $row->timestamp('cancelled_at')->nullable()->after('cancellation_reason');
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
+        Schema::table('gsm_cards', function (Blueprint $row) {
+            $row->dropColumn(['cancellation_reason', 'cancelled_at']);
         });
     }
 };

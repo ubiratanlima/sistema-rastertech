@@ -32,6 +32,33 @@ class DatabaseSeeder extends Seeder
         $customers = Customer::factory(50)->create();
         $deviceModels = DeviceModel::all();
 
+        // 🎯 GERAÇÃO DE ECOSSISTEMA DO CLIENTE (PORTAL)
+        foreach ($customers as $index => $c) {
+            // 👤 Usuário Gestor (Login do Portal)
+            User::create([
+                'name' => "Gestor {$c->name}",
+                'email' => "cliente{$index}@portal.com",
+                'role' => 'customer',
+                'customer_id' => $c->id,
+                'external_username' => 'rtech_' . strtolower(str_replace([' ', '.'], '_', $c->name)) . '_' . $c->id,
+                'external_password' => 'secret_' . ($c->code ?? '1234'),
+                'password' => bcrypt('cliente123'),
+            ]);
+
+            // 🚛 Motoristas Vinculados
+            \App\Models\PortalDriver::factory(5)->create(['customer_id' => $c->id]);
+
+            // 📱 Números de WhatsApp Autorizados
+            for ($j = 1; $j <= 3; $j++) {
+                \App\Models\CustomerWhatsappNumber::create([
+                    'customer_id' => $c->id,
+                    'whatsapp_number' => '129' . fake()->numerify('########'),
+                    'contact_name' => fake()->name(),
+                    'label' => fake()->randomElement(['LOGÍSTICA', 'COMERCIAL', 'FINANCEIRO', 'SUPORTE'])
+                ]);
+            }
+        }
+
         // 4. VEÍCULOS
         foreach ($customers as $c) {
             Vehicle::factory(4)->create(['customer_id' => $c->id]);
@@ -56,7 +83,7 @@ class DatabaseSeeder extends Seeder
                 // Só vincula se estiver instalado
                 'platform_id' => $isInstalled ? $platforms->random()->id : null,
                 'port_number' => $isInstalled ? fake()->numerify('####') : null,
-                'gsm_card_id' => $isInstalled ? $cards->get($i)->id : null, // (0-299)
+                'gsm_card_id' => $isInstalled ? $cards->get($i)->id : null, 
                 'customer_id' => $isInstalled ? $customers->random()->id : $stock->id,
                 'vehicle_id' => $isInstalled ? $vehicles->random()->id : null,
                 
@@ -65,7 +92,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 200 Chips sobraram no estoque sem rastreador (200-499 na coleção $cards)
-        User::factory(200)->create();
+        User::factory(5)->create();
     }
 }

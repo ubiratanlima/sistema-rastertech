@@ -24,14 +24,29 @@ class ProviderController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|max:100',
-            'type' => 'required|in:hardware,connectivity,software'
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|max:100',
+                'type' => 'required|in:hardware,connectivity,software'
+            ]);
 
-        Provider::create($validated);
+            $provider = Provider::create($validated);
 
-        return redirect()->back()->with('success', '🏢 Fornecedor cadastrado com sucesso na base de Engenharia!');
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => '🏢 Fornecedor registrado com sucesso!',
+                    'provider' => $provider
+                ]);
+            }
+
+            return redirect()->back()->with('success', '🏢 Fornecedor cadastrado com sucesso na base de Engenharia!');
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            throw $e;
+        }
     }
 
     /**

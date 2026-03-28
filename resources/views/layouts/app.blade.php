@@ -83,6 +83,9 @@
 
                     <li class="nav-header">DEPARTAMENTO TÉCNICO</li>
                     <li class="nav-item">
+                        <a href="/portal" class="nav-link {{ request()->is('portal*') ? 'bg-indigo text-white shadow' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>PORTAL DO CLIENTE</p></a>
+                    </li>
+                    <li class="nav-item">
                         <a href="/providers" class="nav-link {{ request()->is('providers*') ? 'active' : '' }}"><i class="nav-icon fas fa-industry"></i><p>Fornecedores</p></a>
                     </li>
                     <li class="nav-item">
@@ -146,6 +149,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
 <script>

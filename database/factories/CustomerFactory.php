@@ -12,9 +12,9 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
-            'document' => $this->faker->numerify('###########'), 
-            'code' => $this->faker->numerify('############'), 
+            'name' => $this->faker->company(),
+            'document' => $this->faker->numerify('##############'), 
+            'code' => $this->faker->numerify('#####'), 
             'is_default_stock' => false,
         ];
     }
