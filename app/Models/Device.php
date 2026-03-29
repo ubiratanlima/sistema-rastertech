@@ -21,7 +21,13 @@ class Device extends Model
         'customer_id',
         'vehicle_id',
         'provider_id',
-        'status'
+        'status',
+        'cancellation_reason',
+        'cancelled_at'
+    ];
+
+    protected $casts = [
+        'cancelled_at' => 'datetime'
     ];
 
     public function deviceModel(): BelongsTo { return $this->belongsTo(DeviceModel::class); }

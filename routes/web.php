@@ -25,8 +25,11 @@ use App\Http\Controllers\Portal\CustomerPortalController;
 // 🚀 DASHBOARD DINÂMICO
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-// 🖥️ GESTÃO DE ATIVOS: DISPOSITIVOS
+// 🖥️ GESTÃO DE ATIVOS: DISPOSITIVOS (HARDWARE)
 Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
+Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
+Route::put('/devices/{id}', [DeviceController::class, 'update'])->name('devices.update');
+Route::put('/devices/{id}/restore', [DeviceController::class, 'restore'])->name('devices.restore');
 Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->name('devices.destroy');
 
 // 📟 GESTÃO DE ATIVOS: CARTÕES SIM (CHIPS)

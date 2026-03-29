@@ -176,6 +176,24 @@ Sempre que for adicionado um novo estado (status) a uma coluna existente em tabe
 
 ---
 
+## 9. INCIDENTE: SQLSTATE[42703] - Coluna Inexistente (Relacionamento Inverso)
+### 🚩 Problema:
+Ao carregar a tela de Inventário de Equipamentos, o sistema travava com erro 500 no `DeviceController`. O erro indicava que a coluna `device_id` não existia na tabela `gsm_cards`.
+
+### 🔍 Causa Raiz:
+Tentativa de buscar chips disponíveis usando um link direto (`whereNull('device_id')`). Entretanto, na arquitetura Rastertech, a chave estrangeira reside na tabela `devices` (`gsm_card_id`). O `gsm_cards` **não possui** o ID do equipamento.
+
+### ✅ Solução:
+**Migração para Relacional Eloquent**: Substituído o filtro de coluna bruta pelo método `whereDoesntHave('device')`. Isso faz com que o Laravel verifique a existência do vínculo na tabela oposta de forma automática e performática.
+
+# 🛡️ DIRETIVA DE ANÁLISE OBRIGATÓRIA: LÓGICA DE RELACIONAMENTO INVERSO
+### 📜 Regra Mandatória:
+Sempre que for necessário filtrar registros "livres" ou "órfãos" em tabelas com relacionamento 1:1 (ex: Chips vs Equipamentos):
+1. **Identificar o Dono da FK**: Verificar qual das duas tabelas realmente possui o campo `_id`. Nunca assuma que o vínculo é bidirecional no nível de colunas do SQL.
+2. **Abstração Eloquent**: Em vez de `whereNull('coluna_que_nao_existe')`, utilize obrigatoriamente os métodos `whereHas()` ou `whereDoesntHave()`. Isso blinda o código contra mudanças futuras no schema do banco de dados.
+
+---
+
 # 🛡️ DOUTRINA DA NEUTRALIDADE DE INFRAESTRUTURA (OBRIGATÓRIO)
 ### 🚩 Problema Recorrente:
 O uso de auxiliares do Laravel como `route()` ou `pagination()` gera URLs absolutas baseadas no `APP_URL` do `.env`. Isso faz com que a porta `:8000` (comum em ambientes locais como WSL/Docker) seja removida dos links, quebrando a navegação.

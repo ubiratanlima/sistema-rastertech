@@ -34,35 +34,68 @@ O sistema gera comandos automaticamente unindo:
 
 ## 5. Padrões de Robustez Operacional
 
-### 5.1 Doutrina da Neutralidade de Infraestrutura
-**DIRETIVA OBRIGATÓRIA**: Proibido o uso de `route()` ou `url()` para assets/links internos. Use caminhos relativos (Ex: `/sim-cards`). Todos os paginadores devem usar `->withPath()`.
+### 5.1 Doutrina da Neutralidade de Infraestrutura (Port 8000 Conflict Resolution)
+**DIRETIVA OBRIGATÓRIA**: Para evitar o "Drift de URL" causado pelo mapeamento de portas (ex: Kong na Porta 8000 vs Browser), é **proibido** o uso de `route()` ou `url()` para assets/links internos. 
+- Use exclusivamente **Caminhos Relativos** (Ex: `/devices`). 
+- Todos os paginadores devem injetar `->withPath('/devices')` para neutralizar a raiz da URL.
 
-### 5.2 Motor de Consulta Universal
-Sempre inicializar consultas de inventário com `withTrashed()` para garantir a visibilidade de ativos inativos/estornados.
+### 5.2 Padrão Universal de Listagens 1.0 (The Golden Layout)
+**DIRETIVA OBRIGATÓRIA**: Todas as listagens táticas devem seguir milimetricamente este Blueprint:
+- **Títulos (H1)**: `text-bold`, Tamanho `2.2rem` (Desktop) / `1.55rem` (Mobile). Texto secundário em `text-muted`.
+- **Card Principal**: `card-outline card-primary` com `border-0`. Header em `bg-transparent px-4 py-3`.
+- **Card Title**: `text-bold`, Tamanho `1.1rem`.
+- **Botões de Ação Superior**: Altura fixa de **31px** (`btn-sm`). Seletor de visão com `ml-5`.
+- **Anatomia da Tabela**:
+    - **Header**: `text-uppercase font-weight-bold`, Background `rgba(0,0,0,0.02)`.
+    - **Células ID**: `text-muted`, centralizado, small text, **sem negrito**.
+    - **Identificador Principal (IMEI/Chip)**: `text-primary`, **font-weight-bold**, centralizado.
+    - **Conetividade (SIM/ICCID)**: `text-pink`, **font-weight-bold**, layout pixel-perfect.
+    - **Células de Metadados (Modelo/Cliente)**: `text-dark`, peso normal, alinhamento centralizado.
+    - **Ações**: Coluna sempre centralizada (`text-center`). Grupo unificado (`btn-group`) com ícones `fa-lg`.
+- **Doutrina de Dados (Data Casting Standard)**:
+    - **Casting Mandatário**: Campos de data não nativos (ex: `cancelled_at`) devem ser obrigatoriamente definidos em `protected $casts` no Modelo Eloquent como `datetime`.
+    - **Engenharia vs Remendo**: Proibido usar `Carbon::parse()` ou formatação manual de strings na View. O dado deve chegar ao Blade já como um objeto funcional (Carbon).
+- **Protocolo de Botões e Ações (The Action Suite)**:
+    - **👁️ Dossiê (Info/Cyan)**: Classe `text-info`. Acesso a metadados e histórico técnico.
+    - **🛠️ Gestão (Warning/Yellow)**: Classe `text-warning`. Edição de hardware, IMEI e vínculos.
+    - **🚫 Power (Danger/Red)**: Classe `text-danger`. Gatilho de inativação (Soft-Delete) com auditoria.
+    - **♻️ Undo (Success/Green)**: Classe `text-success`. Restauração de ativos da lixeira.
+- **Ordenação Tática (Sorting)**:
+    - **Links**: Uso de `request()->fullUrlWithQuery()` para manter filtros ativos.
+    - **Dados Numéricos (ID)**: Ícones `fa-sort-numeric-down` / `fa-sort-numeric-up-alt`.
+    - **Dados Textuais (Strings)**: Ícones `fa-sort-alpha-down` / `fa-sort-alpha-up-alt`.
+    - **Estado Inativo**: Ícone `fa-sort-amount-down text-muted` para colunas não ordenadas.
+- **Componentes**: Placa Mercosul estilizada para identificação de veículos.
 
-### 5.3 Protocolo de Comando Docker (MEMÓRIA DE APRENDIZADO)
-**DIRETIVA OBRIGATÓRIA**: Para execuções de comandos `artisan` dentro da infraestrutura Rastertech, o comando padrão e único é:
+### 5.3 Protocolo de Auditoria e Integridade
+**DIRETIVA OBRIGATÓRIA**:
+- Ações destrutivas (Inativação/Cancelamento) exigem justificativa (mínimo 5 caracteres).
+- Desvínculos de hardware/veículo exigem "Motivo da Desinstalação".
+- Uso de `whereDoesntHave('relação')` em vez de `whereNull` para busca relacional reversa.
+- Consultas de inventário SEMPRE com `withTrashed()`.
+
+### 5.4 Protocolo de Comando Docker
+Para execuções `artisan`, o comando padrão e único é:
 `docker exec -it rastertech-app php artisan [comando]`
 
 ---
 
 ## 6. Log de Evolução de Aprendizado (AI Memory)
-1. **[2026-03-27]** Ghost Assets: Resolvido com `withTrashed()`.
-2. **[2026-03-28]** Docker Command Drift: Registrada a necessidade de usar `docker exec -it` em vez de `docker-compose exec` para garantir compatibilidade com o ambiente de produção do usuário.
+1. **[2026-03-28]** Drift de URL (Port 8000): Identificado que o helper `route()` gera URLs absolutas que quebram em ambientes com Gateway Kong (Porta 8000). Solução: Caminhos Relativos.
+2. **[2026-03-28]** Drift de Validação: Resolvido o erro de booleano no AJAX enviando `1/0`.
+3. **[2026-03-28]** Integridade Rigorosa: Identificada a restrição `NOT NULL` do banco para `customer_id`.
+4. **[2026-03-28]** Drift Temporário (String Casting): Resolvida falha de execução de `format()` em campos de data não nativos através do uso de `protected $casts` no modelo.
 
-| Data | Erro | Causa | Solução |
-| :--- | :--- | :--- | :--- |
-| 28/03/26 | Class Not Found (Provider/Customer) | Modelos não importados no Controlador | Adicionado `use App\Models\...` ao topo do controlador |
-| 28/03/26 | Erro de Stack do Blade | Duplicidade de `@endpush` no footer da View | Removido `@endpush` excedente |
-| 28/03/26 | Falha no Registro (Campos PIN/PUK) | Colunas inexistentes no Banco de Dados (Migração não rodada) | Criação da migração e registro do protocolo Docker |
-| 28/03/26 | Erro de Comando (Docker Drift) | Tentativa de uso de docker-compose em vez de docker exec | **REGISTRADO NA MEMÓRIA**: Usar sempre `docker exec -it rastertech-app php artisan` |
-| 28/03/26 | Ordenação Unidirecional (Single Click) | Operador `+` de união no PHP ignorando novos parâmetros | Substituído por `array_merge()` no SimCardController |
-| 28/03/26 | Chips sem Visibilidade (Estoque) | Filtro binário (Ativo/Inativo) ocultando status `inactive` | Implementado Filtro Tri-Estado (Ativo/Estoque/Lixeira) |
-| 28/03/26 | Erro Interno (Check Violation) | Constraint `gsm_cards_status_check` bloqueando o status `canceled` | Nova Migração + Seeder para liberar status `canceled` no PGSQL |
-| 28/03/26 | Coluna de Cliente Inexistente | Tabela `gsm_cards` original não possuía vínculo direto com Clientes | Adição da coluna `customer_id` via Migração/Seeder e Integração Eloquent |
-| 28/03/26 | Perda de Dados (Cancelamento) | Fechamento acidental do modal limpava o motivo digitado | Implementado motor de **Draft Persistence** via `localStorage` |
+| Data | Incidente | Solução Técnica |
+| :--- | :--- | :--- |
+| 28/03/26 | String Casting Failure | Implementação mandatória de `protected $casts` no modelo `Device`. |
+| 28/03/26 | URL/Route Drift (Port 8000) | Abandono de `route()` em favor de caminhos relativos em todo o ecossistema. |
+| 28/03/26 | Not null violation (Customer) | Mapeamento do "Estoque Geral" para ID real de cliente. |
+| 28/03/26 | Boolean Validation Drift | Normalização de sinal de desvínculo para Inteiro (1/0) no JS. |
+| 28/03/26 | Class Not Found (Controller) | Importação manual de modelos ausentes. |
+| 28/03/26 | Invisible Stock Chips | Implementado Filtro Tri-Estado no seletor de visão. |
+| 28/03/26 | Loss of Audit Context | Implementado Draft Persistence via `localStorage`. |
 ---
 **Status**: Fase 1 (Arquitetura & Infraestrutura) - CONCLUÍDA.
 **Status de Estabilidade**: BLINDAGEM DE PORTA E REGISTROS ATIVA.
 **Autor**: Antigravity AI (Pair Programming com Ubiratan).
-
