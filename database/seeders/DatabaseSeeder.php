@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
             $isInstalled = $i < 300; 
             
             Device::create([
+                'internal_code' => 'RTECH-' . str_pad($i + 1, 5, '0', STR_PAD_LEFT),
                 'imei' => '864' . fake()->unique()->numerify('############'),
                 'model_description' => 'Equipamento Rev. ' . ($i % 5),
                 'device_model_id' => $deviceModels->random()->id,

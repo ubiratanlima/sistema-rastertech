@@ -6,13 +6,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class Device extends Model
 {
     use HasFactory, SoftDeletes;
+    
+    /**
+     * 🛰️ Engine de Identificação Universal Rastertech
+     */
+    protected static function booted()
+    {
+        static::creating(function ($device) {
+            if (empty($device->internal_code)) {
+                $lastId = DB::table('devices')->max('id') ?? 0;
+                $device->internal_code = 'RTECH-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+            }
+        });
+    }
 
     protected $fillable = [
         'imei',
+        'internal_code',
         'model_description',
         'device_model_id',
         'platform_id',

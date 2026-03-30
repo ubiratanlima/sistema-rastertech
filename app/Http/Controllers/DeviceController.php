@@ -32,11 +32,12 @@ class DeviceController extends Controller
             ->leftJoin('gsm_cards', 'devices.gsm_card_id', '=', 'gsm_cards.id')
             ->leftJoin('device_models', 'devices.device_model_id', '=', 'device_models.id');
 
-        // 🔍 Busca Multi-DADOS (IMEI ou Cliente)
+        // 🔍 Busca Multi-DADOS (IMEI, RTECH CODE ou Cliente)
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
                 $q->where('customers.name', 'ILIKE', "%$search%")
-                  ->orWhere('devices.imei', 'ILIKE', "%$search%");
+                  ->orWhere('devices.imei', 'ILIKE', "%$search%")
+                  ->orWhere('devices.internal_code', 'ILIKE', "%$search%");
             });
         }
 
@@ -65,6 +66,7 @@ class DeviceController extends Controller
         $sortColumns = [
             'id' => 'devices.id',
             'imei' => 'devices.imei',
+            'internal_code' => 'devices.internal_code',
             'status' => 'devices.status',
             'cliente' => 'customers.name',
             'modelo' => 'device_models.name',
@@ -135,6 +137,7 @@ class DeviceController extends Controller
         try {
             $validated = $request->validate([
                 'imei' => 'required|max:50|unique:devices,imei,' . $id,
+                'internal_code' => 'required|max:20|unique:devices,internal_code,' . $id,
                 'status' => 'required|in:active,inactive,canceled',
                 'customer_id' => 'nullable|exists:customers,id',
                 'cancellation_reason' => 'nullable|string',

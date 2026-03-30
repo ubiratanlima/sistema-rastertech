@@ -30,7 +30,7 @@
                     <input type="hidden" name="view" value="{{ $view }}">
                     <!-- 🔍 PESQUISAR POR IDENTIFICADOR/CLIENTE -->
                     <div class="input-group input-group-sm" style="width: 250px;">
-                        <input type="text" name="search" class="form-control" placeholder="Filtrar por IMEI ou Cliente..." value="{{ $search }}">
+                        <input type="text" name="search" class="form-control" placeholder="Filtrar por RTECH, IMEI ou Cliente..." value="{{ $search }}">
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-default shadow-none border">
                                 <i class="fas fa-search"></i>
@@ -77,8 +77,8 @@
                                 </a>
                             </th>
                             <th class="text-left px-4">
-                                <a href="?sort=imei&direction={{ $sort == 'imei' && $direction == 'asc' ? 'desc' : 'asc' }}&view={{ $view }}&search={{ $search }}" class="sort-link text-dark">
-                                    IMEI / IDENTIFICADOR {!! $sort == 'imei' ? ($direction == 'asc' ? '<i class="fas fa-sort-up ml-1 text-primary"></i>' : '<i class="fas fa-sort-down ml-1 text-primary"></i>') : '<i class="fas fa-sort ml-1 opacity-50"></i>' !!}
+                                <a href="?sort=internal_code&direction={{ $sort == 'internal_code' && $direction == 'asc' ? 'desc' : 'asc' }}&view={{ $view }}&search={{ $search }}" class="sort-link text-dark">
+                                    RTECH CODE {!! $sort == 'internal_code' ? ($direction == 'asc' ? '<i class="fas fa-sort-up ml-1 text-primary"></i>' : '<i class="fas fa-sort-down ml-1 text-primary"></i>') : '<i class="fas fa-sort ml-1 opacity-50"></i>' !!}
                                 </a>
                             </th>
                             <th class="d-none d-md-table-cell">
@@ -109,9 +109,9 @@
                         <tr>
                             <td class="text-center align-middle d-none d-md-table-cell text-muted">{{ $device->id }}</td>
                             <td class="align-middle px-4">
-                                <div class="text-primary">{{ $device->imei }}</div>
-                                <div class="d-block d-md-none text-muted small text-uppercase" style="font-size: 0.65rem;">
-                                    {{ $device->deviceModel->name ?? $device->model_description ?? 'PADRÃO' }}
+                                <div class="text-primary font-weight-bold" style="font-size: 1rem;">{{ $device->internal_code }}</div>
+                                <div class="text-muted small text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                    IMEI: {{ $device->imei }}
                                 </div>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
@@ -143,6 +143,7 @@
                                     <!-- 👁️ DOSSIÊ TÁTICO -->
                                     <button class="btn btn-light btn-square border-right" title="Dossiê Técnico" onclick="openDeviceDossier(this)"
                                             data-id="{{ $device->id }}"
+                                            data-internal-code="{{ $device->internal_code }}"
                                             data-imei="{{ $device->imei }}"
                                             data-model="{{ $device->deviceModel->name ?? $device->model_description ?? 'PADRÃO' }}"
                                             data-sim="{{ $device->gsmCard->iccid ?? '---' }}"
@@ -170,6 +171,7 @@
                                         <button class="btn btn-light btn-square border-right" title="Editar Hardware" 
                                                 onclick="openDeviceEdit(this)"
                                                 data-id="{{ $device->id }}"
+                                                data-internal-code="{{ $device->internal_code }}"
                                                 data-imei="{{ $device->imei }}"
                                                 data-model-id="{{ $device->device_model_id }}"
                                                 data-gsm-card-id="{{ $device->gsm_card_id }}"
@@ -543,12 +545,15 @@
                         <div class="col-7 pr-2">
                             <label class="small text-muted mb-2 d-block font-weight-bold text-uppercase">Rastreador em USO</label>
                             <div class="rounded shadow-sm px-3 d-flex flex-column justify-content-center align-items-center position-relative" style="background: #1e293b; height: 120px; border-radius: 15px !important; border: 2px solid #334155;">
-                                <div class="text-uppercase mb-2 text-center" style="color: rgba(148, 163, 184, 0.4); font-size: 0.6rem; font-weight: 900; letter-spacing: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.8); width: 100%;">
+                                <div class="text-uppercase mb-1 text-center" style="color: #94a3b8; font-size: 1.35rem; font-weight: 900; letter-spacing: 1px; width: 100%;">
+                                    ${data.internalCode}
+                                </div>
+                                <div class="text-uppercase mb-2 text-center" style="color: rgba(148, 163, 184, 0.4); font-size: 0.55rem; font-weight: 700; letter-spacing: 2px; width: 100%;">
                                     ${data.model} CORE / V1.0
                                 </div>
                                 <div class="d-flex align-items-center justify-content-center w-100">
-                                    <i class="fas fa-microchip mr-2" style="color: #94a3b8; font-size: 2rem;"></i>
-                                    <span style="color: #94a3b8; font-size: 1.1rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${data.imei}</span>
+                                    <i class="fas fa-microchip mr-2" style="color: #94a3b8; font-size: 1.5rem;"></i>
+                                    <span style="color: #94a3b8; font-size: 1rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${data.imei}</span>
                                 </div>
                                 <div style="position: absolute; bottom: 8px; right: 15px; color: #475569; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px; opacity: 0.6;">ANATEL</div>
                             </div>
@@ -605,6 +610,7 @@
     window.openDeviceEdit = function(el) {
         const btn = $(el);
         const id = btn.data('id');
+        const currentInternalCode = btn.data('internal-code');
         const currentImei = btn.data('imei');
         const currentStatus = btn.data('status');
         const currentCustomerId = btn.data('customer-id');
@@ -720,9 +726,15 @@
             },
             html: `
                 <div class="text-left px-2">
-                    <div class="form-group mb-3 bg-light p-2 rounded text-center border">
-                        <label class="small text-muted mb-0 d-block font-weight-bold text-uppercase">Identificador do Ativo</label>
-                        <code class="h6 font-weight-bold text-primary">${currentImei}</code>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                             <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">RTECH CODE</label>
+                             <input type="text" id="edit_internal_code_device" class="form-control font-weight-bold text-primary" value="${currentInternalCode}" style="border-radius: 8px; height: 45px; background: #f0f7ff; border: 1px solid #007bff;">
+                        </div>
+                        <div class="col-6">
+                             <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">IMEI / ANATEL</label>
+                             <input type="text" id="edit_imei_device" class="form-control font-weight-bold" value="${currentImei}" style="border-radius: 8px; height: 45px;">
+                        </div>
                     </div>
                     
                     <div class="row mb-3">
@@ -744,14 +756,15 @@
                         <div class="col-7">
                             <label class="font-weight-bold small text-muted text-uppercase mb-2">Rastreador em USO</label>
                             <div class="rounded shadow-sm px-3 d-flex flex-column justify-content-center align-items-center position-relative" style="background: #1e293b; height: 120px; border-radius: 15px !important; border: 2px solid #334155;">
-                                <div class="text-uppercase mb-2 text-center" style="color: rgba(148, 163, 184, 0.4); font-size: 0.7rem; font-weight: 900; letter-spacing: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.8); width: 100%;">
+                                <div class="text-uppercase mb-1 text-center" style="color: #94a3b8; font-size: 1.4rem; font-weight: 900; letter-spacing: 1px; width: 100%;">
+                                    ${currentInternalCode}
+                                </div>
+                                <div class="text-uppercase mb-2 text-center" style="color: rgba(148, 163, 184, 0.4); font-size: 0.55rem; font-weight: 700; letter-spacing: 2px; width: 100%;">
                                     ${modelName} CORE / V1.0
                                 </div>
                                 <div class="d-flex align-items-center justify-content-center w-100">
-                                    <i class="fas fa-microchip mr-2" style="color: #94a3b8; font-size: 2rem;"></i>
-                                    <input type="text" id="edit_imei_device" class="form-control text-center" 
-                                           value="${currentImei}" 
-                                           style="background: transparent; border: none; color: #94a3b8; font-size: 1.1rem; font-weight: 800; padding: 0; width: 180px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                                    <i class="fas fa-microchip mr-2" style="color: #94a3b8; font-size: 1.8rem;"></i>
+                                    <span style="color: #94a3b8; font-size: 0.9rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${currentImei}</span>
                                 </div>
                                 <div style="position: absolute; bottom: 10px; right: 15px; color: #475569; font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; opacity: 0.6;">ANATEL</div>
                             </div>
@@ -802,6 +815,7 @@
                     url: `/devices/${id}`,
                     method: 'PUT',
                     data: {
+                        internal_code: $('#edit_internal_code_device').val(),
                         imei: $('#edit_imei_device').val(),
                         status: status,
                         customer_id: $('#edit_customer_device').val() || null,

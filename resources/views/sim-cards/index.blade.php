@@ -663,7 +663,14 @@
                 }).then(() => {
                     Swal.fire({ icon: 'success', title: 'INATIVADO', showConfirmButton: false, timer: 1500 }).then(() => location.reload());
                 }).catch(err => {
-                    Swal.fire('ERRO', err.responseJSON?.message || 'Falha ao inativar', 'error');
+                    Swal.fire({
+                        title: `
+                            <div class="mb-3"><i class="fas fa-exclamation-triangle" style="color: #f39c12; font-size: 5.5rem;"></i></div>
+                            <span style="color: #f39c12; font-weight: 800; font-size: 1.8rem;">AÇÃO PROIBIDA</span>`,
+                        html: `<div class="mt-2" style="font-size: 1.1rem; color: #555;">${err.responseJSON?.message || 'Operação bloqueada pelo sistema.'}</div>`,
+                        confirmButtonText: 'ENTENDI',
+                        confirmButtonColor: '#f39c12'
+                    });
                 });
             }
         });

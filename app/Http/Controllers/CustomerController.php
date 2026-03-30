@@ -14,15 +14,10 @@ class CustomerController extends Controller
      */
     public function index()
     {
-        $customers = Customer::withCount('devices')
+        $customers = Customer::withCount(['devices', 'vehicles', 'subUsers'])
             ->orderBy('id', 'desc')
             ->paginate(15)
             ->withPath('/customers');
-
-        // Renomeando device_count para manter compatibilidade com a view de telemetria
-        foreach($customers as $customer) {
-            $customer->device_count = $customer->devices_count;
-        }
 
         return view('customers.index', compact('customers'));
     }
