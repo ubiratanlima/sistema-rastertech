@@ -15,6 +15,18 @@
         :root { --primary-cyber: #00ff88; --dark-depth: #1a1a2e; }
         .nav-link.active { background-color: var(--primary-cyber) !important; color: #1a1a2e !important; }
         .profile-img { width: 35px; height: 35px; object-fit: cover; border: 2px solid var(--primary-cyber); }
+
+        /* 🛰️ DINAMISMO DO LOGO RASTERTECH */
+        .brand-link { height: 60px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 !important; }
+        .brand-image-raster { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        
+        /* MODO EXPANDIDO: LOGO COMPLETO */
+        .sidebar-mini:not(.sidebar-collapse) .brand-image-raster { width: 180px !important; height: auto !important; object-fit: contain; object-position: left; margin-left: 15px; }
+        .sidebar-mini:not(.sidebar-collapse) .brand-text { display: none !important; } /* A escrita já está na imagem */
+
+        /* MODO COLAPSADO: APENAS EMBLEMA */
+        .sidebar-collapse .brand-image-raster { width: 38px !important; height: 38px !important; object-fit: cover; object-position: left; margin-left: 0 !important; border-radius: 8px; }
+        .sidebar-collapse .brand-link { justify-content: center; }
     </style>
     @stack('styles')
 </head>
@@ -46,9 +58,8 @@
 
     <!-- 🏗️ SIDEBAR -->
     <aside class="main-sidebar {{ (auth()->check() && auth()->user()->theme == 'dark') ? 'sidebar-dark-primary' : 'sidebar-light-primary' }} elevation-4" id="main-sidebar">
-        <a href="/" class="brand-link" id="brand-logo-container">
-            <i class="fas fa-satellite-dish ml-3 mr-2 text-primary"></i>
-            <span class="brand-text font-weight-bold">RASTERTECH</span>
+        <a href="/" class="brand-link">
+            <img src="{{ asset('img/logo_rastertech.png') }}" alt="Rastertech Logo" class="brand-image-raster">
         </a>
         <div class="sidebar">
             <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">

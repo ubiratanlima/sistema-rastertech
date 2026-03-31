@@ -1,0 +1,44 @@
+/* 🛰️ DINAMISMO DO LOGO RASTERTECH - PADRÃO GLOBAL */
+.brand-link { 
+    height: 60px !important; 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    overflow: hidden !important; 
+    padding: 0 !important; 
+    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+.brand-image-raster { 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); 
+}
+
+/* MODO EXPANDIDO: LOGO COMPLETO (Recorta a proporção para mostrar escrita) */
+.sidebar-mini:not(.sidebar-collapse) .main-sidebar .brand-link .brand-image-raster { 
+    width: 180px !important; 
+    height: auto !important; 
+    max-height: 40px !important;
+    object-fit: contain !important; 
+    object-position: left !important; 
+    margin-left: 15px !important; 
+}
+
+/* Esconde o texto do AdminLTE já que o logo tem escrita */
+.sidebar-mini:not(.sidebar-collapse) .main-sidebar .brand-link .brand-text { 
+    display: none !important; 
+}
+
+/* MODO COLAPSADO: APENAS EMBLEMA (Crop inteligente à esquerda) */
+.sidebar-collapse .main-sidebar .brand-link .brand-image-raster { 
+    width: 38px !important; 
+    height: 38px !important; 
+    object-fit: cover !important; 
+    object-position: left !important; 
+    margin-left: 0 !important; 
+    border-radius: 8px !important; 
+}
+
+.sidebar-collapse .main-sidebar .brand-link { 
+    justify-content: center !important; 
+}
