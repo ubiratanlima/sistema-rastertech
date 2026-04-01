@@ -43,6 +43,8 @@ Route::delete('/sim-cards/{id}', [SimCardController::class, 'destroy'])->name('s
 
 // 👥 ADMINISTRAÇÃO: CLIENTES E FROTAS
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 
 // 🚗 GESTÃO DE FROTAS (VEÍCULOS)
@@ -85,6 +87,10 @@ Route::get('/support/customers', [SupportController::class, 'index'])->name('sup
 
 // 🌐 PORTAL DO CLIENTE (EXPERIÊNCIA PWA)
 Route::group(['prefix' => 'portal', 'as' => 'portal.'], function() {
+    Route::get('/check-customers', function() {
+        return response()->json(Schema::getColumnListing('customers'));
+    });
+
     Route::get('/', [CustomerPortalController::class, 'index'])->name('dashboard');
     Route::post('/save-driver', [CustomerPortalController::class, 'saveDriver'])->name('driver.save');
     Route::get('/view/{component}', [CustomerPortalController::class, 'loadComponent'])->name('view');

@@ -1,283 +1,250 @@
 @extends('layouts.app')
 
-@section('title', 'Portfólio de Clientes')
+@section('title', 'Gestão de Clientes | Rastertech')
 
 @section('content')
-<div class="container-fluid pt-3 px-4">
-    <!-- 🚀 CABEÇALHO LIMPO (MESMO PADRÃO DEVICES) -->
-    <div class="row m-0 mb-4 animate__animated animate__fadeIn align-items-center">
-        <div class="col-12 p-0">
-            <h1 class="m-0 text-bold d-none d-sm-block text-dark" style="font-size: 2.2rem; letter-spacing: -1.2px;">
-                <i class="fas fa-users mr-2 text-primary opacity-80"></i>Clientes & Frotas
+<div class="container-fluid">
+    
+    <!-- 🏗️ CABEÇALHO DA PÁGINA -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-sm-6">
+            <h1 class="m-0 font-weight-bold text-dark">
+                <i class="fas fa-users-cog mr-2 text-primary"></i>Clientes & Frotas
             </h1>
-            <h1 class="m-0 text-bold d-block d-sm-none" style="font-size: 1.6rem; letter-spacing: -1.2px;">
-                <i class="fas fa-users mr-1 text-primary"></i>Clientes
-            </h1>
-            <p class="text-muted mb-0 font-weight-bold" style="font-size: 1.05rem; opacity: 0.8;">Gerenciamento de proprietários, carteira de ativos e custódia de patrimônio.</p>
+            <p class="text-muted small mb-0">Monitoramento e custódia de ativos ativos no sistema.</p>
+        </div>
+        <div class="col-sm-6 text-right">
+            <button type="button" class="btn btn-primary px-4 shadow-sm font-weight-bold" onclick="openCreateCustomerModal()" style="border-radius: 8px;">
+                <i class="fas fa-plus-circle mr-2"></i>NOVO CLIENTE
+            </button>
         </div>
     </div>
 
-    <!-- 📊 GRID DE CLIENTES (PADRÃO UNIVERSAL 1.0) -->
-    <div class="card card-outline card-primary shadow-sm border-0 animate__animated animate__fadeInUp" style="border-radius: 12px; overflow: hidden;">
-        <!-- 🛠️ CARD HEADER: BARRA DE AÇÕES INTEGRADA -->
-        <div class="card-header border-0 bg-transparent px-4 py-3 d-flex align-items-center">
-            <h3 class="card-title text-bold mb-0" style="font-size: 1.1rem; color: #334155;">
-                <i class="fas fa-list mr-2 text-primary opacity-50"></i>Gestão de Custódia
-            </h3>
-
+    <!-- 📊 CARD PRINCIPAL: LISTAGEM -->
+    <div class="card border-0 shadow-sm" style="border-radius: 15px; overflow: hidden;">
+        <div class="card-header bg-white border-0 py-3 d-flex align-items-center">
+            <h3 class="card-title font-weight-bold mb-0"><i class="fas fa-list-ul mr-2 text-primary"></i>Portfólio de Atendimento</h3>
             <div class="card-tools ml-auto">
                 <form action="/customers" method="GET" class="d-flex align-items-center">
-                    <!-- 🔍 PESQUISAR POR CLIENTE / DOCUMENTO -->
                     <div class="input-group input-group-sm" style="width: 250px;">
-                        <input type="text" name="search" class="form-control" placeholder="Filtrar por Nome ou Doc..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control" placeholder="Localizar registro..." value="{{ request('search') }}">
                         <div class="input-group-append">
-                            <button type="submit" class="btn btn-default shadow-none border">
-                                <i class="fas fa-search"></i>
-                            </button>
+                            <button type="submit" class="btn btn-primary shadow-none"><i class="fas fa-search"></i></button>
                         </div>
                     </div>
-
-                    <!-- ➕ NOVO CLIENTE -->
-                    <button type="button" 
-                            class="btn btn-sm btn-primary ml-3 px-3 font-weight-bold shadow-sm"
-                            onclick="location.href='/customers/create'"
-                            style="border-radius: 6px; height: 31px; display: flex; align-items: center; border: none; background: #007bff;">
-                        <i class="fas fa-plus-circle mr-2"></i> NOVO CLIENTE
-                    </button>
                 </form>
             </div>
         </div>
 
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead>
-                        <tr class="text-center text-dark font-weight-bold text-uppercase border-bottom" style="background-color: rgba(15, 23, 42, 0.02); font-size: 0.75rem; letter-spacing: 1.5px;">
-                            <th class="py-3 d-none d-md-table-cell" style="width: 60px;">ID</th>
-                            <th class="text-left px-4">IDENTIFICAÇÃO / CLIENTE</th>
-                            <th class="d-none d-lg-table-cell">DETALHES CADASTRÁIS</th>
-                            <th class="text-center">ESTRUTURA DE ATIVOS</th>
-                            <th class="text-center" style="width: 140px;">STATUS</th>
-                            <th class="text-center" style="width: 140px;">AÇÕES</th>
+                <table class="table table-hover mb-0" id="customerTable">
+                    <thead class="bg-light">
+                        <tr class="text-muted text-uppercase small font-weight-bold">
+                            <th class="py-3 px-4" style="width: 80px;">ID</th>
+                            <th class="py-3">DADOS DO CLIENTE</th>
+                            <th class="py-3 text-center">VEÍCULOS</th>
+                            <th class="py-3 text-center">PLATAFORMA</th>
+                            <th class="py-3 text-center" style="width: 200px;">AÇÕES OPERACIONAIS</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($customers as $customer)
-                        <tr>
-                            <td class="text-center align-middle d-none d-md-table-cell text-muted small">{{ $customer->id }}</td>
-                            <td class="align-middle px-4">
+                        <!-- 🏁 LINHA MASTER -->
+                        <tr class="accordion-toggle cursor-pointer" data-toggle="collapse" data-target="#row-detail-{{ $customer->id }}" style="transition: background 0.3s;">
+                            <td class="align-middle px-4 font-weight-bold text-muted">{{ $customer->id }}</td>
+                            <td class="align-middle">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-capsule mr-3 d-flex align-items-center justify-content-center text-white font-weight-bold" 
-                                         style="width: 38px; height: 38px; min-width: 38px; border-radius: 10px; background: linear-gradient(135deg, {{ ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][$customer->id % 5] }} 0%, {{ ['#1d4ed8', '#047857', '#b45309', '#b91c1c', '#6d28d9'][$customer->id % 5] }} 100%);">
+                                    <div class="avatar-box mr-3 d-flex align-items-center justify-content-center text-white font-weight-bold" 
+                                         style="width: 40px; height: 40px; border-radius: 10px; background: #1e293b;">
                                         {{ substr($customer->name, 0, 1) }}
                                     </div>
                                     <div>
-                                        <div class="text-primary font-weight-bold" style="font-size: 1rem; line-height: 1.1;">{{ $customer->name }}</div>
-                                        <div class="small text-muted font-weight-bold opacity-60" style="font-size: 0.65rem; letter-spacing: 0.5px;">Ref: {{ $customer->code ?? 'N/A' }}</div>
+                                        <div class="font-weight-bold text-dark">{{ $customer->name }}</div>
+                                        <div class="small text-muted">{{ $customer->company_name ?? $customer->email }}</div>
                                     </div>
+                                    <i class="fas fa-chevron-down ml-auto text-primary opacity-50"></i>
                                 </div>
                             </td>
-                            <td class="text-center align-middle d-none d-lg-table-cell">
-                                <span class="badge badge-light border px-2 py-1 text-uppercase font-weight-normal text-muted" style="font-size: 0.7rem;">
-                                    {{ $customer->document ?? '---' }}
+                            <td class="text-center align-middle">
+                                <span class="badge badge-light border px-3 py-1" style="font-size: 0.9rem;">
+                                    <i class="fas fa-car mr-2 text-primary"></i>{{ $customer->vehicles_count }}
                                 </span>
                             </td>
                             <td class="text-center align-middle">
-                                <div class="badge badge-light border px-3 py-1 font-weight-bold shadow-xs" style="border-radius: 8px;">
-                                    <i class="fas fa-microchip mr-2 text-primary opacity-50"></i>{{ $customer->devices_count }} | 
-                                    <i class="fas fa-truck ml-2 mr-2 text-info opacity-50"></i>{{ $customer->vehicles_count }}
-                                </div>
+                                @php
+                                    $firstDevice = $customer->vehicles->flatMap->devices->first();
+                                    $platformName = $firstDevice?->platform?->name ?? 'OPERAÇÃO MANUAL';
+                                @endphp
+                                <span class="badge px-3 py-1 font-weight-bold" style="border: 1px solid #6610f2; color: #6610f2; font-size: 0.7rem; background: #f8f0ff;">
+                                    {{ $platformName }}
+                                </span>
                             </td>
                             <td class="text-center align-middle">
-                                @if($customer->is_default_stock)
-                                    <span class="badge bg-dark px-3 py-1 shadow-sm" style="font-size: 0.65rem;">INVENTÁRIO</span>
-                                @else
-                                    <span class="badge bg-success px-3 py-1 shadow-sm" style="font-size: 0.65rem;">ATIVO</span>
-                                @endif
-                            </td>
-                            <td class="text-center align-middle">
-                                <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <!-- 👁️ DOSSIÊ -->
-                                    <button class="btn btn-light btn-square border-right" title="Dossiê de Cliente" onclick="openCustomerDossier(this)"
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-light border bg-white" 
+                                            onclick="viewDossier(this)" 
                                             data-id="{{ $customer->id }}"
                                             data-name="{{ $customer->name }}"
-                                            data-document="{{ $customer->document }}"
+                                            data-email="{{ $customer->email }}"
+                                            data-doc="{{ $customer->document }}"
                                             data-code="{{ $customer->code }}"
-                                            data-devices="{{ $customer->devices_count }}"
                                             data-vehicles="{{ $customer->vehicles_count }}"
-                                            data-users="{{ $customer->sub_users_count }}"
-                                            data-created="{{ $customer->created_at->format('d/m/Y H:i') }}">
+                                            data-platform="{{ $platformName }}"
+                                            title="Ver Dossiê">
                                         <i class="fas fa-eye text-info"></i>
                                     </button>
-
-                                    <!-- ⚙️ CONFIG -->
-                                    <button class="btn btn-light btn-square border-right" title="Configurações" onclick="openCustomerEdit(this)"
+                                    <button class="btn btn-sm btn-light border bg-white" 
+                                            onclick="editCustomer(this)" 
                                             data-id="{{ $customer->id }}"
                                             data-name="{{ $customer->name }}"
-                                            data-document="{{ $customer->document }}"
+                                            data-company="{{ $customer->company_name }}"
+                                            data-email="{{ $customer->email }}"
+                                            data-doc="{{ $customer->document }}"
+                                            data-cell="{{ $customer->cell_phone }}"
+                                            data-landline="{{ $customer->landline_phone }}"
+                                            data-zip="{{ $customer->zip_code }}"
+                                            data-street="{{ $customer->street }}"
+                                            data-number="{{ $customer->number }}"
+                                            data-neigh="{{ $customer->neighborhood }}"
+                                            data-city="{{ $customer->city }}"
                                             data-code="{{ $customer->code }}"
-                                            data-stock="{{ $customer->is_default_stock }}">
+                                            data-notes="{{ $customer->notes }}"
+                                            title="Editar Dados">
                                         <i class="fas fa-tools text-warning"></i>
                                     </button>
+                                    <button class="btn btn-sm btn-light border bg-white" onclick="confirmDelete({{ $customer->id }})" title="Inativar">
+                                        <i class="fas fa-power-off text-danger"></i>
+                                    </button>
+                                </div>
+                                <form id="form-delete-{{ $customer->id }}" action="{{ route('customers.destroy', $customer->id) }}" method="POST" class="d-none">@csrf @method('DELETE')</form>
+                            </td>
+                        </tr>
 
-                                    <!-- 🗑️ INATIVAR -->
-                                    <form action="/customers/{{ $customer->id }}" method="POST" onsubmit="return confirm('Deseja realmente inativar este cliente? Esta ação preservará os dados históricos.')" class="m-0 d-inline">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-light btn-square text-danger" title="Inativar Cliente">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
+                        <!-- 🛠️ LINHA DETALHE (ACORDEÃO) -->
+                        <tr class="detail-row">
+                            <td colspan="5" class="p-0 border-0">
+                                <div id="row-detail-{{ $customer->id }}" class="collapse" data-parent="#customerTable">
+                                    <div class="px-5 py-4 bg-light shadow-inner">
+                                        <div class="card border-0 shadow-sm mb-0">
+                                            <div class="card-body p-0">
+                                                <table class="table table-sm table-borderless mb-0">
+                                                    <thead>
+                                                        <tr class="bg-dark text-white tiny-text uppercase" style="letter-spacing: 1px;">
+                                                            <th class="pl-4 py-2">ID Ativo</th>
+                                                            <th class="py-2">Placa</th>
+                                                            <th class="py-2">Hardware</th>
+                                                            <th class="py-2">IMEI</th>
+                                                            <th class="py-2">ICCID / SIM</th>
+                                                            <th class="text-right pr-4 py-2">Gerenciar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($customer->vehicles as $vehicle)
+                                                        <tr class="border-bottom bg-white">
+                                                            <td class="pl-4 align-middle text-muted small font-weight-bold">{{ $vehicle->id }}</td>
+                                                            <td class="align-middle"><span class="badge badge-dark px-2 py-1" style="font-family: monospace;">{{ $vehicle->plate }}</span></td>
+                                                            <td class="align-middle small">{{ $vehicle->devices->first()?->deviceModel?->name ?? 'N/A' }}</td>
+                                                            <td class="align-middle text-primary small font-weight-bold">{{ $vehicle->devices->first()?->imei ?? '---' }}</td>
+                                                            <td class="align-middle small text-muted">{{ $vehicle->devices->first()?->gsmCard?->phone_number ?? '---' }}</td>
+                                                            <td class="text-right pr-4 align-middle">
+                                                                <button class="btn btn-xs btn-outline-info px-3" onclick="viewVehicle({{ $vehicle->id }})">DETALHES</button>
+                                                            </td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr>
+                                                            <td colspan="6" class="text-center py-4 text-muted small"><i class="fas fa-ghost mr-2"></i>Nenhum veículo vinculado.</td>
+                                                        </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="text-center py-5 text-muted font-italic">Nenhum cliente registrado na carteira.</td></tr>
+                        <tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-users-slash fa-3x mb-3 opacity-30"></i><br>Nenhum cliente encontrado.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-transparent border-0 px-4 py-3">
-            <div class="float-right">{{ $customers->links() }}</div>
-        </div>
+        <div class="card-footer bg-white border-0 py-3">{{ $customers->links() }}</div>
     </div>
 </div>
 
-<style>
-    body { background-color: #f8fafc !important; }
-    .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-    .animate__animated { --animate-duration: 0.6s; }
-    .table th { border-top: none !important; }
-    .avatar-capsule { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-    .avatar-capsule:hover { transform: scale(1.1) rotate(5deg); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important; }
-</style>
-
-@endsection
+<!-- 📦 MODAIS -->
+@include('customers.modals.edit')
 
 @push('scripts')
 <script>
-    /**
-     * 👁️ DOSSIÊ DE CLIENTE
-     */
-    window.openCustomerDossier = function(el) {
-        const data = $(el).data();
-        
+    window.openCreateCustomerModal = () => Swal.fire('Novo Registro', 'Em breve: Interface de Cadastro Integrada', 'info');
+    
+    window.viewDossier = function(el) {
+        const d = $(el).data();
         Swal.fire({
-            title: '<i class="fas fa-user-shield mr-2 text-primary"></i> DOSSIÊ DE CLIENTE',
+            title: `<span style="font-weight: 800;">DOSSIÊ: ${d.name}</span>`,
             width: '600px',
+            html: `
+                <div class="text-left py-3" style="font-family: Inter, sans-serif;">
+                    <div class="row px-3">
+                        <div class="col-6 mb-3"><label class="small text-muted mb-1 d-block text-uppercase">EMAIL</label><div class="h6 font-weight-bold">${d.email || 'N/I'}</div></div>
+                        <div class="col-6 mb-3"><label class="small text-muted mb-1 d-block text-uppercase">DOC (CPF/CNPJ)</label><div class="h6 font-weight-bold">${d.doc || 'N/I'}</div></div>
+                        <div class="col-6 mb-3"><label class="small text-muted mb-1 d-block text-uppercase">CÓDIGO DE SEGURANÇA</label><div class="h6 font-weight-bold">${d.code || 'N/A'}</div></div>
+                        <div class="col-6 mb-3"><label class="small text-muted mb-1 d-block text-uppercase">TOTAL VEÍCULOS</label><div class="h6 font-weight-bold text-primary"><i class="fas fa-car mr-2"></i>${d.vehicles}</div></div>
+                        <div class="col-12 mb-0"><label class="small text-muted mb-1 d-block text-uppercase">PLATAFORMA</label><span class="badge bg-indigo text-white px-3 py-1">${d.platform}</span></div>
+                    </div>
+                </div>
+            `,
             confirmButtonText: 'FECHAR',
-            confirmButtonColor: '#6c757d',
-            html: `
-                <div class="text-left px-2" style="font-family: 'Source Sans Pro', sans-serif;">
-                    <!-- 💎 CABEÇALHO MESTRE -->
-                    <div class="mb-4 p-4 border rounded shadow-xs text-center" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px !important;">
-                        <div class="avatar-circle mx-auto mb-3 shadow d-flex align-items-center justify-content-center text-white font-weight-bold h1" style="width: 80px; height: 80px; border-radius: 20px; background: #007bff;">
-                            ${data.name.substring(0,1)}
-                        </div>
-                        <h4 class="font-weight-bold text-dark mb-1">${data.name}</h4>
-                        <div class="small text-muted font-weight-bold text-uppercase" style="letter-spacing: 2px;">REG: ${data.code || '---'}</div>
-                    </div>
-
-                    <!-- 📦 ESTRUTURA DE ATIVOS (GRID 3) -->
-                    <div class="row no-gutters mb-4 text-center">
-                        <div class="col-4 pr-1">
-                            <div class="p-3 border rounded shadow-xs" style="background: #f8fafc; border-radius: 15px !important;">
-                                <div class="small text-muted font-weight-bold text-uppercase mb-1" style="font-size: 0.6rem;">Rastreadores</div>
-                                <div class="h4 font-weight-bold text-primary mb-0">${data.devices}</div>
-                            </div>
-                        </div>
-                        <div class="col-4 px-1">
-                            <div class="p-3 border rounded shadow-xs" style="background: #f8fafc; border-radius: 15px !important;">
-                                <div class="small text-muted font-weight-bold text-uppercase mb-1" style="font-size: 0.6rem;">Veículos</div>
-                                <div class="h4 font-weight-bold text-info mb-0">${data.vehicles}</div>
-                            </div>
-                        </div>
-                        <div class="col-4 pl-1">
-                            <div class="p-3 border rounded shadow-xs" style="background: #f8fafc; border-radius: 15px !important;">
-                                <div class="small text-muted font-weight-bold text-uppercase mb-1" style="font-size: 0.6rem;">Usuários</div>
-                                <div class="h4 font-weight-bold text-dark mb-0">${data.users}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 📑 INFORMAÇÕES CADASTRÁIS -->
-                    <div class="p-4 bg-light rounded border-left" style="border-left: 4px solid #007bff !important; border-radius: 12px !important;">
-                        <div class="mb-3">
-                            <label class="small text-muted mb-0 d-block font-weight-bold text-uppercase">Documento Mestre</label>
-                            <div class="h6 font-weight-bold">${data.document || 'NÃO INFORMADO'}</div>
-                        </div>
-                        <div>
-                            <label class="small text-muted mb-0 d-block font-weight-bold text-uppercase">Registro Inicial na Plataforma</label>
-                            <div class="h6 font-weight-bold">${data.created}</div>
-                        </div>
-                    </div>
-                </div>`
+            confirmButtonColor: '#1e293b'
         });
-    }
+    };
 
-    /**
-     * 🛠️ EDIÇÃO DE CLIENTE
-     */
-    window.openCustomerEdit = function(el) {
-        const data = $(el).data();
-        
+    window.editCustomer = function(el) {
+        const d = $(el).data();
+        const f = $('#formEditCustomer');
+        f.attr('action', `/customers/${d.id}`);
+        $('#edit_name').val(d.name);
+        $('#edit_company').val(d.company);
+        $('#edit_email').val(d.email);
+        $('#edit_doc').val(d.doc);
+        $('#edit_cell').val(d.cell);
+        $('#edit_landline').val(d.landline);
+        $('#edit_zip').val(d.zip);
+        $('#edit_street').val(d.street);
+        $('#edit_number').val(d.number);
+        $('#edit_neigh').val(d.neigh);
+        $('#edit_city').val(d.city);
+        $('#edit_code').val(d.code);
+        $('#edit_notes').val(d.notes);
+        $('#modalEditCustomer').modal('show');
+    };
+
+    window.confirmDelete = function(id) {
         Swal.fire({
-            title: '<i class="fas fa-edit mr-2 text-warning"></i> CONFIGURAÇÕES DE CLIENTE',
-            width: '550px',
-            html: `
-                <div class="text-left px-2" style="font-family: 'Source Sans Pro', sans-serif;">
-                    <div class="row">
-                        <div class="col-12 mb-3">
-                            <label class="font-weight-bold small text-muted text-uppercase mb-1">NOME DA INSTITUIÇÃO / CLIENTE</label>
-                            <input type="text" id="edit_cust_name" class="form-control form-control-sm border-0 bg-light p-3" value="${data.name}" style="height: 45px; border-radius: 10px;">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="font-weight-bold small text-muted text-uppercase mb-1">DOCUMENTO (CPF/CNPJ)</label>
-                            <input type="text" id="edit_cust_doc" class="form-control form-control-sm border-0 bg-light" value="${data.document}" style="height: 40px; border-radius: 8px;">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="font-weight-bold small text-muted text-uppercase mb-1">CÓDIGO INTERNO</label>
-                            <input type="text" id="edit_cust_code" class="form-control form-control-sm border-0 bg-light" value="${data.code}" style="height: 40px; border-radius: 8px;">
-                        </div>
-                        <div class="col-12">
-                            <div class="p-3 border rounded d-flex align-items-center justify-content-between" style="border-radius: 12px !important; background: #fefce8; border: 1px solid #fef08a;">
-                                <div>
-                                    <div class="font-weight-bold text-warning-emphasis small text-uppercase">PERFIL DE ESTOQUE INTERNO</div>
-                                    <div class="text-muted" style="font-size: 0.7rem;">Define se este cliente representa o inventário tático de ativos da própria Rastertech.</div>
-                                </div>
-                                <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
-                                    <input type="checkbox" class="custom-control-input" id="edit_cust_stock" ${data.stock ? 'checked' : ''}>
-                                    <label class="custom-control-label" for="edit_cust_stock"></label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`,
+            title: 'Você tem certeza?',
+            text: "O cliente será removido logicamente da base.",
+            icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'SALVAR CONFIGURAÇÕES',
-            confirmButtonColor: '#28a745',
-            showLoaderOnConfirm: true,
-            preConfirm: () => {
-                const name = $('#edit_cust_name').val();
-                if (!name) return Swal.showValidationMessage('O nome do cliente é obrigatório');
-                
-                return $.ajax({
-                    url: `/customers/${data.id}`,
-                    method: 'PUT',
-                    data: {
-                        name: name,
-                        document: $('#edit_cust_doc').val(),
-                        code: $('#edit_cust_code').val(),
-                        is_default_stock: $('#edit_cust_stock').is(':checked') ? 1 : 0,
-                        _token: '{{ csrf_token() }}'
-                    }
-                }).catch(() => Swal.showValidationMessage('Falha ao atualizar o portfólio. Verifique a integridade.'));
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire('SUCESSO!', 'Portfólio atualizado com êxito.', 'success').then(() => location.reload());
-            }
-        });
-    }
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sim, inativar!'
+        }).then((res) => { if(res.isConfirmed) document.getElementById(`form-delete-${id}`).submit(); });
+    };
+</script>
+
+<script>
+    @if(session('success')) Swal.fire({ icon: 'success', title: 'Sucesso', text: "{{ session('success') }}", timer: 2000, showConfirmButton: false }); @endif
+    @if(session('error')) Swal.fire({ icon: 'error', title: 'Erro de Operação', text: "{{ session('error') }}" }); @endif
 </script>
 @endpush
+
+<style>
+    .tiny-text { font-size: 0.65rem; }
+    .shadow-inner { box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+    .cursor-pointer { cursor: pointer; }
+    .accordion-toggle[aria-expanded="true"] { background: rgba(59, 130, 246, 0.05); border-left: 4px solid #3b82f6; }
+</style>
+@endsection
