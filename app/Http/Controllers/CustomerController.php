@@ -9,15 +9,36 @@ use App\Models\Customer;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = Customer::withCount(['devices', 'vehicles', 'gsmCards', 'subUsers'])
-            ->with(['vehicles.devices.deviceModel', 'vehicles.devices.gsmCard', 'vehicles.devices.platform', 'subUsers'])
-            ->orderBy('id', 'desc')
-            ->paginate(15)
-            ->withPath('/customers');
+        $search = $request->input('search');
+        $view = $request->input('view', 'active');
+        $sort = $request->input('sort', 'id');
+        $direction = $request->input('direction', 'desc');
 
-        return view('customers.index', compact('customers'));
+        $query = Customer::withCount(['devices', 'vehicles', 'gsmCards', 'subUsers'])
+            ->with(['vehicles.devices.deviceModel', 'vehicles.devices.gsmCard', 'vehicles.devices.platform', 'subUsers']);
+
+        // 👁️ FILTRO DE VISÃO (TRI-ESTADO)
+        if ($view === 'trash') {
+            $query->onlyTrashed();
+        }
+
+        // 🔍 MOTOR DE BUSCA
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('company_name', 'like', "%{$search}%")
+                  ->orWhere('document', 'like', "%{$search}%");
+            });
+        }
+
+        // ↕️ MOTOR DE ORDENAÇÃO
+        $customers = $query->orderBy($sort, $direction)
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('customers.index', compact('customers', 'search', 'view', 'sort', 'direction'));
     }
 
     public function destroy(Customer $customer)
