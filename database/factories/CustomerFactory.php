@@ -12,10 +12,18 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->company(),
+            'name' => $this->faker->unique()->company(),
+            'company_name' => $this->faker->companySuffix(),
+            'email' => $this->faker->unique()->companyEmail(),
             'document' => $this->faker->numerify('##############'), 
             'code' => $this->faker->numerify('#####'), 
-            'is_default_stock' => false,
+            'cell_phone' => $this->faker->numerify('129########'),
+            'landline_phone' => $this->faker->numerify('123#######'),
+            'zip_code' => $this->faker->numerify('12#####-###'), // Just placeholder structure
+            'street' => $this->faker->streetName(),
+            'number' => $this->faker->buildingNumber(),
+            'neighborhood' => $this->faker->citySuffix(),
+            'city' => $this->faker->city(),
         ];
     }
 }

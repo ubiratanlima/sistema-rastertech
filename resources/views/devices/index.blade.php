@@ -798,7 +798,7 @@
                 const status = $('#edit_status_device').val();
                 const reason = $('#edit_reason_device').val();
                 const unlinkReason = $('#unlink_reason').val();
-                const isUnlinking = $('#unlink_section').is(':visible');
+                const isUnlinking = $('#unlink_form_device').is(':visible');
                 const isUnlinkingChip = $('#unlink_chip_hidden').val() === '1';
 
                 if (status === 'canceled' && (!reason || reason.trim().length < 5)) {

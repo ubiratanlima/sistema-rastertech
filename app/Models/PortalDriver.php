@@ -13,6 +13,8 @@ class PortalDriver extends Model
     protected $fillable = [
         'customer_id',
         'sub_user_id',
+        'email',
+        'whatsapp',
         'name',
         'father_name',
         'mother_name',

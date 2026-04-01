@@ -43,6 +43,9 @@ Route::delete('/sim-cards/{id}', [SimCardController::class, 'destroy'])->name('s
 
 // 👥 ADMINISTRAÇÃO: CLIENTES E FROTAS
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+Route::post('/customers/{customer}/members', [CustomerController::class, 'storeMember'])->name('customers.members.store');
+Route::put('/customers/{customer}/members/{memberId}/toggle', [CustomerController::class, 'toggleMember'])->name('customers.members.toggle');
+Route::get('/customers/{customer}/dossier', [CustomerController::class, 'dossier'])->name('customers.dossier');
 Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
 Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');

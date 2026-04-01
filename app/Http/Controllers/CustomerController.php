@@ -36,9 +36,97 @@ class CustomerController extends Controller
         // ↕️ MOTOR DE ORDENAÇÃO
         $customers = $query->orderBy($sort, $direction)
             ->paginate(15)
+            ->withPath('/customers')
             ->withQueryString();
 
-        return view('customers.index', compact('customers', 'search', 'view', 'sort', 'direction'));
+        $freeDevices = \App\Models\Device::whereNull('vehicle_id')->orderBy('internal_code')->get(['id', 'internal_code', 'imei']);
+        $freeSims = \App\Models\GsmCard::whereDoesntHave('device')->orderBy('iccid')->get(['id', 'iccid', 'phone_number']);
+
+        return view('customers.index', compact('customers', 'search', 'view', 'sort', 'direction', 'freeDevices', 'freeSims'));
+    }
+
+    public function dossier(Customer $customer)
+    {
+        $customer->load(['subUsers' => fn($q) => $q->withTrashed(), 'drivers' => fn($q) => $q->withTrashed()]);
+        return response()->json($customer);
+    }
+
+    /**
+     * Registro e Sincronização de Membros da Equipe
+     */
+    public function storeMember(Request $request, Customer $customer)
+    {
+        $data = $request->validate([
+            'role' => 'required|in:driver,operator',
+            'name' => 'required|string|max:100',
+            'username' => 'required|string|max:50',
+            'password' => 'nullable|string|min:8',
+            'document' => 'required|string|max:20',
+            'email' => 'nullable|email|max:100',
+            'whatsapp' => 'nullable|string|max:25'
+        ]);
+
+        if ($data['role'] === 'driver') {
+            // 🚛 GRAVAÇÃO MOTORISTA
+            $member = $customer->drivers()->updateOrCreate(
+                ['cnh_number' => $data['document']],
+                [
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'whatsapp' => $data['whatsapp'],
+                    'status' => 'active'
+                ]
+            );
+            
+            // Criar acesso de portal se houver senha
+            if ($data['password']) {
+                $customer->subUsers()->updateOrCreate(
+                    ['nickname' => $data['username']],
+                    [
+                        'name' => $data['name'],
+                        'role' => 'driver',
+                        'external_username' => $data['username'],
+                        'external_password' => bcrypt($data['password']),
+                        'email' => $data['email'],
+                    ]
+                );
+            }
+        } else {
+            // 🛡️ GRAVAÇÃO OPERADOR (SUB-USUÁRIO)
+            $member = $customer->subUsers()->updateOrCreate(
+                ['nickname' => $data['username']],
+                [
+                    'name' => $data['name'],
+                    'role' => 'operator',
+                    'external_username' => $data['username'],
+                    'external_password' => $data['password'] ? bcrypt($data['password']) : null,
+                    'email' => $data['email'],
+                    'whatsapp' => $data['whatsapp']
+                ]
+            );
+        }
+
+        return response()->json(['success' => true, 'message' => "Integrante {$data['name']} sincronizado!"]);
+    }
+
+    public function toggleMember(Request $request, Customer $customer, $memberId)
+    {
+        $role = $request->input('role');
+        if ($role === 'driver') {
+            $member = $customer->drivers()->withTrashed()->findOrFail($memberId);
+        } else {
+            $member = $customer->subUsers()->withTrashed()->findOrFail($memberId);
+        }
+
+        if ($member->trashed()) {
+            $member->restore();
+            $status = 'Ativado';
+        } else {
+            $member->delete();
+            $status = 'Inativado';
+        }
+        
+        return response()->json(['success' => true, 'message' => "Integrante $status com sucesso!"]);
     }
 
     public function destroy(Customer $customer)
@@ -47,16 +135,18 @@ class CustomerController extends Controller
         $hasVehicles = $customer->vehicles()->count() > 0;
         $hasDevices = $customer->devices()->count() > 0;
         $hasChips = $customer->gsmCards()->count() > 0;
-        $hasSubUsers = $customer->subUsers()->count() > 0;
+        $teamCount = $customer->subUsers()->count() + $customer->drivers()->count();
+        $hasTeam = $teamCount > 0;
 
-        if ($hasVehicles || $hasDevices || $hasChips || $hasSubUsers) {
-            $msg = "BLOQUEIO DE SEGURANÇA: Este cliente possui ";
+        if ($hasVehicles || $hasDevices || $hasChips || $hasTeam) {
             $parts = [];
             if ($hasVehicles) $parts[] = $customer->vehicles()->count() . " veículo(s)";
             if ($hasDevices) $parts[] = $customer->devices()->count() . " unidade(s) rastreada(s)";
             if ($hasChips) $parts[] = $customer->gsmCards()->count() . " chip(s)";
+            if ($hasTeam) $parts[] = $teamCount . " membro(s) de equipe";
             
-            return redirect()->back()->with('error', $msg . implode(", ", $parts) . " vinculado(s). Limpe a custódia para inativar.");
+            $text = "Você não pode inativar este cliente, pois ele possui " . implode(", ", $parts) . " ativos.";
+            return redirect()->back()->with('warning_block', $text);
         }
 
         $customer->delete();
@@ -68,7 +158,7 @@ class CustomerController extends Controller
         $rules = [
             'name' => 'required|string|max:100',
             'company_name' => 'nullable|string|max:200',
-            'email' => 'nullable|email|max:100',
+            'email' => 'required|string|max:255',
             'document' => 'nullable|string|max:20',
             'code' => 'nullable|string|max:50',
             'cell_phone' => 'nullable|string|max:25',
@@ -92,7 +182,7 @@ class CustomerController extends Controller
         $rules = [
             'name' => 'required|string|max:100',
             'company_name' => 'nullable|string|max:200',
-            'email' => 'nullable|email|max:100',
+            'email' => 'required|string|max:255',
             'document' => 'nullable|string|max:20',
             'code' => 'nullable|string|max:50',
             'cell_phone' => 'nullable|string|max:25',

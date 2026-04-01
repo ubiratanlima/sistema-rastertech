@@ -22,9 +22,6 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('m45t3rMASTER'),
         ]);
 
-        // 2. CLIENTE PADRÃO (ESTOQUE GERAL)
-        $stock = Customer::firstOrCreate(['name' => 'EMBRAET ESTOQUE GERAL'], ['is_default_stock' => true]);
-
         // 3. INFRAESTRUTURA
         $this->call(DeviceModelSeeder::class);
         $providers = Provider::factory(10)->create();
@@ -85,7 +82,7 @@ class DatabaseSeeder extends Seeder
                 'platform_id' => $isInstalled ? $platforms->random()->id : null,
                 'port_number' => $isInstalled ? fake()->numerify('####') : null,
                 'gsm_card_id' => $isInstalled ? $cards->get($i)->id : null, 
-                'customer_id' => $isInstalled ? $customers->random()->id : $stock->id,
+                'customer_id' => $isInstalled ? $customers->random()->id : null,
                 'vehicle_id' => $isInstalled ? $vehicles->random()->id : null,
                 
                 'provider_id' => $providers->random()->id,
