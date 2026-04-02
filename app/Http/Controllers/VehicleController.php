@@ -10,27 +10,36 @@ class VehicleController extends Controller
     /**
      * Lista a Frota unificada (Veículo + Cliente + Rastreador + Chip).
      */
-    public function index()
+    public function index(Request $request)
     {
-        $vehicles = DB::table('vehicles')
-            ->join('customers', 'vehicles.customer_id', '=', 'customers.id')
-            ->leftJoin('devices', 'vehicles.id', '=', 'devices.vehicle_id')
-            ->leftJoin('gsm_cards', 'devices.gsm_card_id', '=', 'gsm_cards.id')
-            ->select(
-                'vehicles.id',
-                'vehicles.plate',
-                'vehicles.brand',
-                'vehicles.model as vehicle_model',
-                'customers.name as customer_name',
-                'devices.imei as device_imei',
-                'devices.status as device_status',
-                'gsm_cards.phone_number as sim_number',
-                'gsm_cards.operator as sim_operator'
-            )
-            ->paginate(15)
-            ->withPath('/fleets');
+        $search = $request->input('search');
+        $sort = $request->input('sort', 'id');
+        $direction = $request->input('direction', 'desc');
 
-        return view('fleets.index', compact('vehicles'));
+        $query = \App\Models\Vehicle::with(['customer', 'devices.gsmCard.provider', 'devices.deviceModel', 'devices.platform']);
+
+        if ($search) {
+            $searchLower = strtolower($search);
+            $query->where(function($q) use ($searchLower) {
+                $q->where(DB::raw('LOWER(plate)'), 'like', "%{$searchLower}%")
+                  ->orWhere(DB::raw('LOWER(brand)'), 'like', "%{$searchLower}%")
+                  ->orWhere(DB::raw('LOWER(model)'), 'like', "%{$searchLower}%")
+                  ->orWhereHas('customer', function($cq) use ($searchLower) {
+                      $cq->where(DB::raw('LOWER(name)'), 'like', "%{$searchLower}%")
+                        ->orWhere(DB::raw('LOWER(company_name)'), 'like', "%{$searchLower}%");
+                  });
+            });
+        }
+
+        $vehicles = $query->orderBy($sort, $direction)
+            ->paginate(15)
+            ->withPath('/fleets')
+            ->withQueryString();
+
+        $freeDevices = \App\Models\Device::whereNull('vehicle_id')->orderBy('internal_code')->get(['id', 'internal_code', 'imei']);
+        $freeSims = \App\Models\GsmCard::whereDoesntHave('device')->orderBy('iccid')->get(['id', 'iccid', 'phone_number']);
+
+        return view('fleets.index', compact('vehicles', 'search', 'sort', 'direction', 'freeDevices', 'freeSims'));
     }
 
     /**

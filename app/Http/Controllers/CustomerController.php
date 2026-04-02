@@ -26,10 +26,11 @@ class CustomerController extends Controller
 
         // 🔍 MOTOR DE BUSCA
         if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('company_name', 'like', "%{$search}%")
-                  ->orWhere('document', 'like', "%{$search}%");
+            $searchLower = strtolower($search);
+            $query->where(function($q) use ($searchLower) {
+                $q->where(DB::raw('LOWER(name)'), 'like', "%{$searchLower}%")
+                  ->orWhere(DB::raw('LOWER(company_name)'), 'like', "%{$searchLower}%")
+                  ->orWhere(DB::raw('LOWER(document)'), 'like', "%{$searchLower}%");
             });
         }
 

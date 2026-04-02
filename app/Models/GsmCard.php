@@ -46,4 +46,12 @@ class GsmCard extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    /**
+     * Relacionamento: O Chip possui um Fornecedor/Operadora.
+     */
+    public function provider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class);
+    }
 }
