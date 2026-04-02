@@ -11,6 +11,7 @@ use App\Models\Device;
 use App\Models\DeviceModel;
 use App\Models\Platform;
 use App\Models\Provider;
+use App\Models\CustomerSubUser;
 
 class DatabaseSeeder extends Seeder
 {
@@ -54,6 +55,11 @@ class DatabaseSeeder extends Seeder
                     'label' => fake()->randomElement(['LOGÍSTICA', 'COMERCIAL', 'FINANCEIRO', 'SUPORTE'])
                 ]);
             }
+            // 🔑 Gera 2 a 4 Credenciais de Apps por Cliente
+            CustomerSubUser::factory(rand(2, 4))->create([
+                'customer_id' => $c->id,
+                'platform_id' => $platforms->random()->id
+            ]);
         }
 
         // 4. VEÍCULOS

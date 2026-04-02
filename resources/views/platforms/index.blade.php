@@ -135,9 +135,17 @@
                             <label class="text-xs text-uppercase text-muted font-weight-bold">URL de Acesso (Login)</label>
                             <input type="url" name="url" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="https://plataforma.clound.com">
                         </div>
-                        <div class="col-12 form-group mb-0">
+                        <div class="col-12 form-group mb-3">
                             <label class="text-xs text-uppercase text-muted font-weight-bold">Nome do Fornecedor / Infra</label>
-                            <input type="text" name="supplier_name" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="Ex: AWS, Google Cloud, Gurtam">
+                            <input type="text" name="supplier_name" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="Ex: AWS, Google Cloud">
+                        </div>
+                        <div class="col-6 form-group mb-0">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold text-success"><i class="fab fa-android mr-1"></i> Link Google Play</label>
+                            <input type="url" name="app_android_url" class="form-control form-control-sm border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="https://play.google.com/...">
+                        </div>
+                        <div class="col-6 form-group mb-0">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold text-info"><i class="fab fa-apple mr-1"></i> Link Apple Store</label>
+                            <input type="url" name="app_ios_url" class="form-control form-control-sm border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="https://apps.apple.com/...">
                         </div>
                     </div>
                 </div>

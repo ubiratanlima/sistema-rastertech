@@ -16,7 +16,7 @@ class CustomerFactory extends Factory
             'company_name' => $this->faker->companySuffix(),
             'email' => $this->faker->unique()->companyEmail(),
             'document' => $this->faker->numerify('##############'), 
-            'code' => $this->faker->numerify('#####'), 
+            'code' => (string) $this->faker->unique()->numberBetween(10000, 99999), 
             'cell_phone' => $this->faker->numerify('129########'),
             'landline_phone' => $this->faker->numerify('123#######'),
             'zip_code' => $this->faker->numerify('12#####-###'), // Just placeholder structure

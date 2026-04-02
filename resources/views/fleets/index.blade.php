@@ -48,10 +48,22 @@
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="fleetTable">
                     <thead>
-                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02); font-size: 0.75rem;">
-                            <th style="width: 140px;">PLACA</th>
-                            <th class="text-left px-4">VEÍCULO / FABRICANTE</th>
-                            <th style="width: 200px;">PROPRIETÁRIO</th>
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02); font-size: 1rem;">
+                            <th style="width: 140px;">
+                                <a href="?{{ http_build_query(array_merge(request()->query(), ['sort' => 'plate', 'direction' => ($sort == 'plate' && $direction == 'asc') ? 'desc' : 'asc'])) }}" class="text-dark">
+                                    PLACA <i class="fas fa-sort{{ $sort == 'plate' ? ($direction == 'asc' ? '-up' : '-down') : '' }} ml-1 opacity-50"></i>
+                                </a>
+                            </th>
+                            <th class="text-left px-4">
+                                <a href="?{{ http_build_query(array_merge(request()->query(), ['sort' => 'brand', 'direction' => ($sort == 'brand' && $direction == 'asc') ? 'desc' : 'asc'])) }}" class="text-dark">
+                                    VEÍCULO / FABRICANTE <i class="fas fa-sort{{ $sort == 'brand' ? ($direction == 'asc' ? '-up' : '-down') : '' }} ml-1 opacity-50"></i>
+                                </a>
+                            </th>
+                            <th style="width: 200px;">
+                                <a href="?{{ http_build_query(array_merge(request()->query(), ['sort' => 'customer_id', 'direction' => ($sort == 'customer_id' && $direction == 'asc') ? 'desc' : 'asc'])) }}" class="text-dark">
+                                    PROPRIETÁRIO <i class="fas fa-sort{{ $sort == 'customer_id' ? ($direction == 'asc' ? '-up' : '-down') : '' }} ml-1 opacity-50"></i>
+                                </a>
+                            </th>
                             <th style="width: 180px;">RST (INTERNAL)</th>
                             <th style="width: 180px;">STATUS RST</th>
                             <th style="width: 150px;">AÇÕES</th>

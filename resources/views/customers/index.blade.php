@@ -57,7 +57,7 @@
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="customerTable">
                     <thead>
-                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02); font-size: 0.75rem;">
+                        <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02); font-size: 1rem;">
                             <th style="width: 80px;">
                                 <a href="?{{ http_build_query(array_merge(request()->query(), ['sort' => 'id', 'direction' => ($sort == 'id' && $direction == 'asc') ? 'desc' : 'asc'])) }}" class="text-dark">
                                     ID <i class="fas fa-sort{{ $sort == 'id' ? ($direction == 'asc' ? '-up' : '-down') : '' }} ml-1 opacity-50"></i>

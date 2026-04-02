@@ -26,9 +26,11 @@ class PlatformController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|max:100',
-            'url' => 'nullable|url|max:255',
             'server_ip' => 'required|max:45',
-            'supplier_name' => 'nullable|max:100'
+            'url' => 'nullable|url',
+            'supplier_name' => 'nullable|max:100',
+            'app_android_url' => 'nullable|url',
+            'app_ios_url' => 'nullable|url',
         ]);
 
         Platform::create($validated);

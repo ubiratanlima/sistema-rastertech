@@ -74,7 +74,10 @@ Route::delete('/device-commands/{id}', [DeviceCommandController::class, 'destroy
 // 👥 GESTÃO: ACESSOS DE CLIENTES (SUB-USUÁRIOS)
 Route::get('/customer-sub-users', [CustomerSubUserController::class, 'index'])->name('customer-sub-users.index');
 Route::post('/customer-sub-users', [CustomerSubUserController::class, 'store'])->name('customer-sub-users.store');
+Route::put('/customer-sub-users/{id}', [CustomerSubUserController::class, 'update'])->name('customer-sub-users.update');
+Route::put('/customer-sub-users/{id}/restore', [CustomerSubUserController::class, 'restore'])->name('customer-sub-users.restore');
 Route::delete('/customer-sub-users/{id}', [CustomerSubUserController::class, 'destroy'])->name('customer-sub-users.destroy');
+Route::get('/customer-sub-users/verify/{token}', [CustomerSubUserController::class, 'verifyEmail'])->name('customer-sub-users.verify');
 
 // 🛡️ ADMINISTRAÇÃO: COMANDO CENTRAL
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -110,3 +113,15 @@ Route::group(['prefix' => 'portal', 'as' => 'portal.'], function() {
     // Checklist Operacional
     Route::post('/checklist', [CustomerPortalController::class, 'storeChecklist'])->name('checklist.store');
 });
+
+// ⚙️ CONFIGURAÇÕES DO SISTEMA
+use App\Http\Controllers\SystemSettingsController;
+Route::get('/settings', [SystemSettingsController::class, 'index'])->name('settings.index');
+Route::put('/settings', [SystemSettingsController::class, 'update'])->name('settings.update');
+
+// 🛡️ AUTENTICAÇÃO TÁTICA RASTERTECH
+use App\Http\Controllers\Auth\LoginController;
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+

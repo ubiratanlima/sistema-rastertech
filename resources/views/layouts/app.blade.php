@@ -126,6 +126,9 @@
                     <li class="nav-item">
                         <a href="/reports" class="nav-link {{ request()->is('reports*') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice"></i><p>Relatórios</p></a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('settings.index') }}" class="nav-link {{ request()->is('settings*') ? 'active' : '' }}"><i class="nav-icon fas fa-cog"></i><p>Configurações</p></a>
+                    </li>
                 </ul>
             </nav>
         </div>

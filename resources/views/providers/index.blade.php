@@ -61,13 +61,14 @@
                     </thead>
                     <tbody>
                         @forelse($providers as $provider)
-                        <tr>
+                        <tr class="provider-row">
                             <td class="align-middle px-4">
                                 <div class="text-primary">{{ $provider->name }}</div>
+                                <small class="text-muted d-block">{{ $provider->email ?? 'sem contato' }}</small>
                             </td>
                             <td class="text-center align-middle">
-                                <span class="badge {{ $provider->type == 'hardware' ? 'bg-info' : ($provider->type == 'connectivity' ? 'bg-success' : 'bg-secondary') }} px-2 py-1 text-uppercase">
-                                    {{ $provider->type }}
+                                <span class="badge provider-type-badge provider-type-{{ $provider->type }} text-uppercase">
+                                    {{ ucfirst($provider->type) }}
                                 </span>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
@@ -77,8 +78,9 @@
                                 <span class="badge badge-light border">{{ $provider->gsm_cards_count }} un</span>
                             </td>
                             <td class="text-center align-middle">
-                                <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                    <button class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
+                                <div class="btn-group shadow-sm provider-actions" style="border-radius: 8px; overflow: hidden;">
+                                    <button type="button" class="btn btn-light btn-square btn-view-provider" title="Ver Detalhes" data-provider-id="{{ $provider->id }}"><i class="fas fa-eye fa-lg text-info"></i></button>
+                                    <button type="button" class="btn btn-light btn-square border-right" title="Editar"><i class="fas fa-tools fa-lg text-warning"></i></button>
                                     <form action="{{ route('providers.destroy', $provider->id) }}" method="POST" class="m-0" onsubmit="return confirm('Deseja realmente inativar este fornecedor?')">
                                         @csrf
                                         @method('DELETE')
@@ -139,6 +141,87 @@
     </div>
 </div>
 
+    <!-- 🔎 MODAL FIGURE - VISUALIZAR FORNECEDOR -->
+    <div class="modal fade" id="modalVisualizarFornecedor" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header bg-info text-white border-0 py-3">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-eye mr-2"></i>Detalhes do Fornecedor</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <dl class="row">
+                        <dt class="col-sm-4 text-muted">Nome</dt>
+                        <dd class="col-sm-8" id="providerName">-</dd>
+
+                        <dt class="col-sm-4 text-muted">Tipo</dt>
+                        <dd class="col-sm-8" id="providerType">-</dd>
+
+                        <dt class="col-sm-4 text-muted">Hardware</dt>
+                        <dd class="col-sm-8" id="providerDevices">-</dd>
+
+                        <dt class="col-sm-4 text-muted">Frota / Chips</dt>
+                        <dd class="col-sm-8" id="providerGsmCards">-</dd>
+
+                        <dt class="col-sm-4 text-muted">Status</dt>
+                        <dd class="col-sm-8" id="providerStatus">-</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer border-0 p-3 bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @php
+        $providerData = $providers->mapWithKeys(function ($provider) {
+            return [$provider->id => [
+                'name' => $provider->name,
+                'type' => $provider->type,
+                'devices_count' => $provider->devices_count,
+                'gsm_cards_count' => $provider->gsm_cards_count,
+                'status' => $provider->status ?? 'ativo',
+            ]];
+        });
+    @endphp
+
+    <script>
+        const providerData = @json($providerData);
+
+        $(document).ready(function(){
+            $(document).on('click', '.btn-view-provider', function(event){
+                event.preventDefault();
+
+                const providerId = $(this).attr('data-provider-id');
+                console.log('🔎 click btn-view-provider, providerId:', providerId);
+
+                const provider = providerData[providerId];
+                console.log('📦 provider payload:', provider);
+
+                if (!provider) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Fornecedor não encontrado',
+                        text: 'Não foi possível encontrar os dados do fornecedor.',
+                        confirmButtonText: 'Fechar'
+                    });
+                    return;
+                }
+
+                $('#providerName').text(provider.name || '-');
+                $('#providerType').text((provider.type || '-').toUpperCase());
+                $('#providerDevices').text((provider.devices_count || 0) + ' un');
+                $('#providerGsmCards').text((provider.gsm_cards_count || 0) + ' un');
+                $('#providerStatus').text(provider.status || 'ativo');
+
+                $('#modalVisualizarFornecedor').modal('show');
+            });
+        });
+    </script>
+
 <style>
     /* 🌓 ADAPTAÇÃO DARK MODE RASTERTECH */
     .dark-mode .table td { border-color: rgba(255,255,255,0.05); color: #e0e0e0; }
@@ -148,6 +231,21 @@
     .dark-mode .modal-body input, .dark-mode .modal-body select { background: #16213e !important; color: #fff !important; border: 1px solid #2d2d44 !important; }
     .dark-mode .modal-footer { background: #16213e !important; }
     
+    .provider-type-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.4rem 0.7rem;
+        border-radius: 1rem;
+        color: #fff;
+        letter-spacing: 0.02em;
+    }
+    .provider-type-hardware { background: #17a2b8; }
+    .provider-type-connectivity { background: #28a745; }
+    .provider-type-software { background: #6c757d; }
+
+    .provider-row:hover { background: rgba(0, 123, 255, 0.04); }
+    .provider-actions .btn { width: 44px; height: 44px; border-radius: 10px; }
+
     .btn-group .btn { padding: 8px 12px; }
     .animate__animated { --animate-duration: 0.6s; }
 </style>
