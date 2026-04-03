@@ -30,15 +30,9 @@ class SupportController extends Controller
         // Filtro tático rápido (Nome, CNPJ/CPF ou RTECH CODE do equipamento vinculado)
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('customers.name', 'like', "%{$search}%")
-                  ->orWhere('customers.document', 'like', "%{$search}%")
-                  ->orWhereExists(function ($sub) use ($search) {
-                      $sub->select(DB::raw(1))
-                          ->from('devices')
-                          ->join('vehicles as v_sub', 'devices.id', '=', 'v_sub.id')
-                          ->whereColumn('v_sub.customer_id', 'customers.id')
-                          ->where('devices.model_description', 'like', "%{$search}%");
-                  });
+                $q->where('customers.name', 'ILIKE', "%{$search}%")
+                  ->orWhere('customers.document', 'ILIKE', "%{$search}%")
+                  ->orWhere('customers.code', 'ILIKE', "%{$search}%");
             });
         }
 

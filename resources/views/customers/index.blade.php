@@ -134,9 +134,9 @@
                         <tr class="detail-row">
                             <td colspan="5" class="p-0 border-0">
                                 <div id="row-detail-{{ $customer->id }}" class="collapse" data-parent="#customerTable">
-                                    <div class="bg-light shadow-inner">
+                                    <div class="shadow-inner">
                                         <div class="table-responsive overflow-hidden mb-0 border-0">
-                                            <table class="table table-sm table-striped table-borderless mb-0">
+                                            <table class="table table-sm table-borderless table-zebra mb-0">
                                                 <thead style="background: rgba(0,0,0,0.03); border-bottom: 2px solid #dee2e6;">
                                                     <tr class="text-dark text-uppercase text-center font-weight-bold" style="font-size: 0.95rem; letter-spacing: 2px;">
                                                         <th class="py-3 px-3" style="width: 80px;">ID</th>
@@ -149,7 +149,7 @@
                                                 </thead>
                                                 <tbody>
                                                     @forelse($customer->vehicles as $vehicle)
-                                                    <tr class="text-center" style="transition: 0.2s;">
+                                                    <tr class="text-center">
                                                         <td class="align-middle text-muted" style="font-size: 0.95rem;">{{ $vehicle->id }}</td>
                                                         <td class="align-middle text-left px-3">
                                                             <div class="mercosul-plate shadow-sm">
@@ -891,5 +891,11 @@
     
     /* 🛡️ LIMPEZA DE FOCUS */
     td[data-toggle="collapse"] { outline: none !important; box-shadow: none !important; -webkit-tap-highlight-color: transparent; }
+
+    /* 🦓 SISTEMA DE ZEBRADO */
+    .table-zebra tbody tr:nth-child(odd)  { background-color: #e2e5eb; }
+    .table-zebra tbody tr:nth-child(even) { background-color: #f8f9fa; }
+    .table-zebra tbody tr { transition: background-color 0.2s ease; }
+    .table-zebra tbody tr:hover { background-color: #cfd5e8; }
 </style>
 @endsection

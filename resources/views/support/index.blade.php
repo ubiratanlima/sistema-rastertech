@@ -6,30 +6,39 @@
 <div class="container-fluid">
     <!-- 🎧 CABEÇALHO TÁTICO -->
     <div class="row m-0 mb-4 animate__animated animate__fadeIn align-items-center">
-        <div class="col-md-6 p-0">
+        <div class="col-12 p-0">
             <h1 class="m-0 text-bold" style="font-size: 2rem;">
                 <i class="fas fa-headset mr-2 text-warning"></i>Atendimento ao Cliente
             </h1>
             <p class="text-muted mb-0">Gestão de suporte e intervenção técnica em tempo real.</p>
         </div>
-        <div class="col-md-6 p-0 mt-3 mt-md-0">
-            <form action="{{ route('support.customers') }}" method="GET" class="input-group shadow-sm">
-                <input type="text" name="search" class="form-control border-0" placeholder="Buscar por RTECH, Nome ou CPF/CNPJ..." value="{{ $search }}" style="height: 50px; border-radius: 10px 0 0 10px;">
-                <div class="input-group-append">
-                    <button class="btn btn-warning px-4" type="submit" style="border-radius: 0 10px 10px 0;">
-                        <i class="fas fa-search mr-2"></i> FILTRAR
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <!-- 🏗️ GRID DE ATENDIMENTO (ACORDEON) -->
     <div class="card card-outline card-warning shadow-sm border-0 animate__animated animate__fadeInUp" style="border-radius: 12px; overflow: hidden;">
-        <div class="card-header border-0 bg-transparent px-4 py-3">
+        <div class="card-header border-0 bg-transparent px-4 py-3 d-flex align-items-center">
             <h3 class="card-title text-bold mb-0">
                 <i class="fas fa-users mr-2 text-warning"></i>Clientes com Veículos Vinculados
             </h3>
+            <div class="card-tools ml-auto">
+                <form action="{{ route('support.customers') }}" method="GET" class="d-flex align-items-center">
+                    <div class="input-group input-group-sm" style="width: 280px;">
+                        @if($search)
+                            <div class="input-group-prepend">
+                                <a href="{{ route('support.customers') }}" class="btn btn-default shadow-none border text-danger" title="Limpar Filtro">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        @endif
+                        <input type="text" name="search" class="form-control" placeholder="Buscar por nome, RTECH, CPF..." value="{{ $search }}">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-default shadow-none border">
+                                <i class="fas fa-search text-warning"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive" style="overflow-x: hidden;">
@@ -37,9 +46,8 @@
                     <thead>
                         <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02);">
                             <th style="width: 150px;">RTECH CODE</th>
-                            <th class="text-left px-4">NOME DO CLIENTE</th>
-                            <th style="width: 150px;">VEÍCULOS</th>
-                            <th style="width: 80px;">AÇÃO</th>
+                            <th class="text-left px-4">CLIENTE</th>
+                            <th style="width: 200px;">VEÍCULOS</th>
                         </tr>
                     </thead>
                     <tbody id="accordionSupport">
@@ -50,31 +58,29 @@
                                 <span class="text-indigo" style="background: rgba(102, 16, 242, 0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(102, 16, 242, 0.1);">{{ $customer->customer_rtech ?? str_pad($customer->id, 12, '0', STR_PAD_LEFT) }}</span>
                             </td>
                             <td class="align-middle px-4">
-                                <span class="text-dark d-block">{{ $customer->name }}</span>
-                                <span class="text-muted">Doc: {{ $customer->document ?? '---' }}</span>
+                                <span class="text-dark d-block font-weight-bold" style="font-size: 1.05rem;">{{ $customer->name }}</span>
+                                <span class="text-muted small">Doc: {{ $customer->document ?? '---' }}</span>
                             </td>
                             <td class="text-center align-middle">
-                                <span class="badge badge-warning px-3 py-1 shadow-sm">{{ $customer->vehicle_count }} ATIVOS</span>
-                            </td>
-                            <td class="text-center align-middle">
-                                <i class="fas fa-chevron-down text-muted transition-icon"></i>
+                                <i class="fas fa-plus-circle mr-1 transition-icon text-muted" style="font-size: 0.9rem; vertical-align: middle;"></i>
+                                <small class="text-open font-weight-bold text-uppercase mr-1 text-muted" style="vertical-align: middle; font-size: 0.7rem; letter-spacing: 1px;">ABRIR</small>
+                                <small class="text-close font-weight-bold text-uppercase mr-1 text-warning d-none" style="vertical-align: middle; font-size: 0.7rem; letter-spacing: 1px;">FECHAR</small>
+                                <span class="badge badge-warning px-2 py-1 shadow-sm" style="vertical-align: middle; font-size: 0.85rem;">{{ $customer->vehicle_count }} ATIVOS</span>
                             </td>
                         </tr>
 
-                        <!-- 📟 LINHA EXPANSÍVEL (DADOS DO VEÍCULO) -->
                         <tr class="collapse-row">
-                            <td colspan="4" class="p-0 border-0">
+                            <td colspan="3" class="p-0 border-0">
                                 <div id="details-{{ $customer->id }}" class="collapse px-4 py-3 bg-light border-top shadow-inner" data-parent="#accordionSupport">
                                     <div class="table-responsive bg-white rounded shadow-sm border">
-                                        <table class="table table-sm mb-0">
+                                        <table class="table table-sm table-zebra mb-0">
                                             <thead>
                                                 <tr class="text-uppercase text-muted font-weight-bold" style="background: #f8f9fa;">
                                                         <th class="text-center py-2" style="width: 140px;">PLACA</th>
                                                         <th class="text-center py-2">MARCA / MODELO</th>
-                                                        <th class="text-center py-2">STATUS</th>
-                                                        <th class="text-center py-2">RASTR. / IMEI</th>
-                                                        <th class="text-center py-2" style="width: 150px;">CHIP NO. / OP.</th>
-                                                        <th class="text-center py-2 pr-4">AÇÕES TÁTICAS</th>
+                                                        <th class="text-center py-2">DEVICE</th>
+                                                        <th class="text-center py-2" style="width: 150px;">SIMCARD</th>
+                                                        <th class="text-center py-2 pr-4">SMS</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -90,43 +96,18 @@
                                                         <div class="text-dark">{{ $vehicle->brand }}</div>
                                                         <div class="text-muted text-uppercase">{{ $vehicle->model }}</div>
                                                     </td>
-                                                    <td class="align-middle text-center border-top-0">
-                                                        @php
-                                                            $statusClass = [
-                                                                'active' => 'badge-success',
-                                                                'inactive' => 'badge-danger',
-                                                                'maintenance' => 'badge-warning'
-                                                            ][$vehicle->device_status] ?? 'badge-secondary';
-                                                            $statusLabel = [
-                                                                'active' => 'ATIVO',
-                                                                'inactive' => 'INATIVO',
-                                                                'maintenance' => 'MANUTENÇÃO'
-                                                            ][$vehicle->device_status] ?? '---';
-                                                        @endphp
-                                                        <span class="badge {{ $statusClass }} px-2">
-                                                            {{ $statusLabel }}
-                                                        </span>
+                                                    <td class="align-middle text-center border-top-0" style="font-size: 0.95rem;">
+                                                        <div class="text-indigo font-weight-bold">{{ $vehicle->rtech_code }}</div>
+                                                        <div class="text-muted">{{ $vehicle->imei }}</div>
                                                     </td>
-                                                    <td class="align-middle text-center border-top-0">
-                                                        <div class="text-indigo">{{ $vehicle->rtech_code }}</div>
-                                                        <div class="text-muted">IMEI: {{ $vehicle->imei }}</div>
-                                                    </td>
-                                                    <td class="align-middle text-center border-top-0">
-                                                        <div class="text-primary">{{ $vehicle->phone_number }}</div>
-                                                        <div class="text-muted">{{ $vehicle->operator }}</div>
+                                                    <td class="align-middle text-center border-top-0" style="font-size: 0.95rem;">
+                                                        <div class="text-primary font-weight-bold">{{ $vehicle->phone_number }}</div>
+                                                        <div class="text-muted text-uppercase">{{ $vehicle->operator }}</div>
                                                     </td>
                                                     <td class="text-center align-middle pr-4 border-top-0">
-                                                        <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                                            <button class="btn btn-light btn-square border-right" title="Enviar SMS" onclick="event.stopPropagation(); openSMSModal('{{ $vehicle->id }}', '{{ $vehicle->rtech_code }}')">
-                                                                <i class="fas fa-comment-dots fa-lg text-primary"></i>
-                                                            </button>
-                                                            <button class="btn btn-light btn-square border-right" title="Manutenção" onclick="event.stopPropagation(); openMaintenanceModal('{{ $vehicle->id }}', '{{ $vehicle->plate }}')">
-                                                                <i class="fas fa-tools fa-lg text-warning"></i>
-                                                            </button>
-                                                            <button class="btn btn-light btn-square" title="Alterar Status" onclick="event.stopPropagation(); toggleVehicleStatus('{{ $vehicle->id }}', '{{ $vehicle->device_status }}')">
-                                                                <i class="fas fa-power-off fa-lg {{ $vehicle->device_status === 'active' ? 'text-danger' : 'text-success' }}"></i>
-                                                            </button>
-                                                        </div>
+                                                        <button class="btn btn-light btn-square shadow-sm" style="border-radius: 8px;" title="Enviar SMS" onclick="event.stopPropagation(); openSMSModal('{{ $vehicle->id }}', '{{ $vehicle->rtech_code }}')">
+                                                            <i class="fas fa-comment-dots fa-lg text-primary"></i>
+                                                        </button>
                                                     </td>
                                                 </tr>
                                                 @endforeach
@@ -221,6 +202,17 @@
     .collapse-row td { border-top: none !important; }
     .shadow-inner { box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
     .text-indigo { color: #6610f2; }
+
+    /* 🔄 INTERATIVIDADE ABRIR/FECHAR */
+    .base-row[aria-expanded="false"] .text-close { display: none !important; }
+    .base-row[aria-expanded="true"] .text-open { display: none !important; }
+    .base-row[aria-expanded="true"] .text-close { display: inline-block !important; }
+
+    /* 🦓 ZEBRADO DA LISTAGEM INTERNA */
+    .table-zebra tbody tr:nth-child(odd)  { background-color: #e9ecef; }
+    .table-zebra tbody tr:nth-child(even) { background-color: #ffffff; }
+    .table-zebra tbody tr { transition: background-color 0.2s ease; }
+    .table-zebra tbody tr:hover { background-color: #d0d7f5; }
     
     /* 🌓 DARK MODE RASTERTECH */
     .dark-mode .bg-light { background-color: #1a1a2e !important; }
@@ -236,18 +228,54 @@
     }
 
     function openMaintenanceModal(id, plate) {
-        alert('🛠️ MÓDULO DE MANUTENÇÃO\nVeículo: ' + plate + '\n\nEste popup permitirá:\n- Manutenção cadastral\n- Troca de rastreador\n- Troca de chip');
+        Swal.fire({
+            title: '<i class="fas fa-tools mr-2 text-warning"></i> MANUTENÇÃO',
+            width: '480px',
+            confirmButtonText: 'FECHAR',
+            confirmButtonColor: '#6c757d',
+            html: `
+                <div class="text-left px-2">
+                    <div class="p-3 bg-light rounded mb-3" style="border-left: 4px solid #ffc107;">
+                        <label class="text-muted font-weight-bold text-uppercase d-block mb-1" style="font-size: 0.8rem;">Veículo</label>
+                        <div class="font-weight-bold text-dark" style="font-size: 1.1rem;">${plate}</div>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size: 0.95rem;">Este painel permitirá:</p>
+                    <ul class="text-left text-muted mt-2" style="font-size: 0.95rem;">
+                        <li>Manutenção cadastral</li>
+                        <li>Troca de rastreador</li>
+                        <li>Troca de chip</li>
+                    </ul>
+                    <div class="alert alert-warning mt-3 mb-0 py-2" style="font-size: 0.85rem;">
+                        <i class="fas fa-info-circle mr-1"></i> Módulo em desenvolvimento.
+                    </div>
+                </div>`
+        });
     }
 
     function toggleVehicleStatus(id, current) {
-        const action = current === 'active' ? 'INATIVAR' : 'ATIVAR';
-        const msg = current === 'active' 
-            ? '⚠️ ATENÇÃO: Ao INATIVAR, o rastreador e o chip vinculados retornarão ao estoque com o status "EM MANUTENÇÃO".\n\nDeseja prosseguir?' 
-            : 'Deseja ATIVAR este veículo para operação de telemetria?';
-        
-        if(confirm(msg)) {
-            alert('📡 Comando enviado: ' + action + ' para veículo ID: ' + id);
-        }
+        const isActive = current === 'active';
+        Swal.fire({
+            title: `<span style="font-weight: 400; font-size: 1rem;">${isActive ? 'Tem certeza que deseja inativar este veículo?' : 'Tem certeza que deseja ativar este veículo?'}</span>`,
+            html: isActive
+                ? '<small class="text-muted">O rastreador e o chip vinculados retornarão ao estoque com status <strong>EM MANUTENÇÃO</strong>.</small>'
+                : '<small class="text-muted">O veículo será habilitado para operação de telemetria.</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: isActive ? '#d33' : '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: isActive ? 'SIM, INATIVAR' : 'SIM, ATIVAR',
+            cancelButtonText: 'CANCELAR'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'COMANDO ENVIADO',
+                    text: `Solicitação de ${isActive ? 'inativação' : 'ativação'} registrada.`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        });
     }
 </script>
 @endsection
