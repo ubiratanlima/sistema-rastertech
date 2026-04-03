@@ -185,10 +185,10 @@
                 <div class="modal-body p-4">
                     <!-- 🖼️ PREVIEW TÁTICO (Novidade) -->
                     <div class="text-center mb-4">
-                        <div id="edit_avatar_container" class="d-inline-block position-relative">
-                            <img id="edit_avatar_preview" src="" class="img-circle shadow-sm border border-white" style="width: 80px; height: 80px; border-width: 3px !important; object-fit: cover; display: none;">
-                            <div id="edit_avatar_placeholder" class="img-circle shadow-sm border border-white d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; border-width: 3px !important; background-color: #007bff;">
-                                <i id="edit_avatar_icon" class="fas fa-user-tie text-white" style="font-size: 2.2rem;"></i>
+                        <div id="edit_avatar_slot" class="d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                            <img id="edit_avatar_preview" src="" class="img-circle shadow-sm border border-white d-none" style="width: 100px; height: 100px; border-width: 3px !important; object-fit: cover;">
+                            <div id="edit_avatar_placeholder" class="img-circle shadow-sm border border-white d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; border-width: 3px !important; background-color: #007bff;">
+                                <i id="edit_avatar_icon" class="fas fa-user-tie text-white" style="font-size: 2.8rem;"></i>
                             </div>
                         </div>
                     </div>
@@ -218,10 +218,11 @@
                         <label class="text-muted font-weight-bold text-uppercase d-block mb-1" style="font-size: 0.8rem;">Patente / Cargo</label>
                         <select name="role" id="edit_role" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px; font-size: 1rem;" required>
                             <option value="">Selecione a função...</option>
-                            <option value="Administrador Master">Administrador Master</option>
-                            <option value="Técnico de Campo">Técnico de Campo</option>
-                            <option value="Suporte ao Cliente">Suporte ao Cliente</option>
-                            <option value="Gestor Comercial">Gestor Comercial</option>
+                            <option value="Técnico Instalador">Técnico Instalador</option>
+                            <option value="Suporte Técnico">Suporte Técnico</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Gerente">Gerente</option>
+                            <option value="Cliente">Cliente</option>
                         </select>
                     </div>
                     <div class="row mt-3">
@@ -275,9 +276,9 @@
             </div>
             <div class="modal-body p-4 bg-light">
                 <div class="text-center mb-4">
-                    <div id="view_avatar_container" class="d-inline-block">
-                        <img id="view_avatar" src="" class="img-circle shadow-sm border border-white" style="width: 100px; height: 100px; border-width: 4px !important; object-fit: cover; display: none;">
-                        <div id="view_avatar_placeholder" class="img-circle shadow-sm border border-white d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; border-width: 4px !important;">
+                    <div id="view_avatar_slot" class="d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <img id="view_avatar" src="" class="img-circle shadow-sm border border-white d-none" style="width: 100px; height: 100px; border-width: 4px !important; object-fit: cover;">
+                        <div id="view_avatar_placeholder" class="img-circle shadow-sm border border-white d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; border-width: 4px !important;">
                             <i id="view_avatar_icon" class="fas text-white" style="font-size: 3rem;"></i>
                         </div>
                     </div>
@@ -328,10 +329,10 @@
                 <div class="modal-body p-4">
                     <!-- 🖼️ PREVIEW TÁTICO -->
                     <div class="text-center mb-4">
-                        <div id="new_avatar_container" class="d-inline-block position-relative">
-                            <img id="new_avatar_preview" src="" class="img-circle shadow-sm border border-white" style="width: 80px; height: 80px; border-width: 3px !important; object-fit: cover; display: none;">
-                            <div id="new_avatar_placeholder" class="img-circle shadow-sm border border-white d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; border-width: 3px !important; background-color: #007bff;">
-                                <i id="new_avatar_icon" class="fas fa-user-tie text-white" style="font-size: 2.2rem;"></i>
+                        <div id="new_avatar_slot" class="d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                            <img id="new_avatar_preview" src="" class="img-circle shadow-sm border border-white d-none" style="width: 100px; height: 100px; border-width: 3px !important; object-fit: cover;">
+                            <div id="new_avatar_placeholder" class="img-circle shadow-sm border border-white d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; border-width: 3px !important; background-color: #007bff;">
+                                <i id="new_avatar_icon" class="fas fa-user-tie text-white" style="font-size: 2.8rem;"></i>
                             </div>
                         </div>
                     </div>
@@ -361,10 +362,11 @@
                         <label class="text-muted font-weight-bold text-uppercase d-block mb-1" style="font-size: 0.8rem;">Patente / Cargo</label>
                         <select name="role" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px; font-size: 1rem;" required>
                             <option value="">Selecione a função...</option>
-                            <option value="Administrador Master">Administrador Master</option>
-                            <option value="Técnico de Campo">Técnico de Campo</option>
-                            <option value="Suporte ao Cliente">Suporte ao Cliente</option>
-                            <option value="Gestor Comercial">Gestor Comercial</option>
+                            <option value="Técnico Instalador">Técnico Instalador</option>
+                            <option value="Suporte Técnico">Suporte Técnico</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Gerente">Gerente</option>
+                            <option value="Cliente">Cliente</option>
                         </select>
                     </div>
                     <div class="row">
@@ -485,11 +487,11 @@
                     
                     // 🔄 Atualizar Preview do Modal de Edição
                     if(user.has_photo) {
-                        $('#edit_avatar_preview').attr('src', user.avatar).show();
-                        $('#edit_avatar_placeholder').hide();
+                        $('#edit_avatar_preview').attr('src', user.avatar).removeClass('d-none');
+                        $('#edit_avatar_placeholder').removeClass('d-flex').addClass('d-none');
                     } else {
-                        $('#edit_avatar_preview').hide();
-                        $('#edit_avatar_placeholder').show();
+                        $('#edit_avatar_preview').addClass('d-none');
+                        $('#edit_avatar_placeholder').removeClass('d-none').addClass('d-flex');
                         $('#edit_avatar_placeholder').css('background-color', user.gender === 'Feminino' ? '#e83e8c' : '#007bff');
                         $('#edit_avatar_icon').attr('class', 'fas ' + (user.gender === 'Feminino' ? 'fa-user' : 'fa-user-tie') + ' text-white');
                     }
@@ -559,7 +561,8 @@
         const icon = modal.find('.fas[id$="_icon"]');
         const preview = modal.find('img[id$="_preview"]');
         
-        if(preview.is(':hidden')) {
+        // Só atualiza se NÃO tiver foto ativa no momento
+        if(preview.hasClass('d-none')) {
             placeholder.css('background-color', gender === 'Feminino' ? '#e83e8c' : '#007bff');
             icon.attr('class', 'fas ' + (gender === 'Feminino' ? 'fa-user' : 'fa-user-tie') + ' text-white');
         }
@@ -575,8 +578,8 @@
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                preview.attr('src', e.target.result).show();
-                placeholder.hide();
+                preview.attr('src', e.target.result).removeClass('d-none');
+                placeholder.removeClass('d-flex').addClass('d-none');
             };
             reader.readAsDataURL(input.files[0]);
         }
@@ -591,11 +594,11 @@
                     const user = response.user;
                     
                     if(user.has_photo) {
-                        $('#view_avatar').attr('src', user.avatar).show();
-                        $('#view_avatar_placeholder').hide();
+                        $('#view_avatar').attr('src', user.avatar).removeClass('d-none');
+                        $('#view_avatar_placeholder').removeClass('d-flex').addClass('d-none');
                     } else {
-                        $('#view_avatar').hide();
-                        $('#view_avatar_placeholder').show();
+                        $('#view_avatar').addClass('d-none');
+                        $('#view_avatar_placeholder').removeClass('d-none').addClass('d-flex');
                         $('#view_avatar_placeholder').css('background-color', user.gender === 'Feminino' ? '#e83e8c' : '#007bff');
                         $('#view_avatar_icon').attr('class', 'fas ' + (user.gender === 'Feminino' ? 'fa-user' : 'fa-user-tie') + ' text-white');
                     }

@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(['email' => 'admin@rastertech.com'], [
             'name' => 'Ubiratan Admin',
             'password' => bcrypt('m45t3rMASTER'),
+            'role' => 'Administrador',
+            'gender' => 'Masculino',
         ]);
 
         // 3. INFRAESTRUTURA
@@ -36,7 +38,8 @@ class DatabaseSeeder extends Seeder
             User::create([
                 'name' => "Gestor {$c->name}",
                 'email' => "cliente{$index}@portal.com",
-                'role' => 'customer',
+                'role' => 'Cliente',
+                'gender' => fake()->randomElement(['Masculino', 'Feminino']),
                 'customer_id' => $c->id,
                 'external_username' => 'rtech_' . strtolower(str_replace([' ', '.'], '_', $c->name)) . '_' . $c->id,
                 'external_password' => 'secret_' . ($c->code ?? '1234'),

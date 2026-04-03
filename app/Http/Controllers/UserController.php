@@ -46,7 +46,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|max:50',
+            'role' => 'required|in:Técnico Instalador,Suporte Técnico,Administrador,Gerente,Cliente',
             'gender' => 'required|in:Masculino,Feminino',
             'password' => 'required|min:8|confirmed',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -118,7 +118,7 @@ class UserController extends Controller
         $rules = [
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|max:50',
+            'role' => 'required|in:Técnico Instalador,Suporte Técnico,Administrador,Gerente,Cliente',
             'gender' => 'required|in:Masculino,Feminino',
             'password' => 'nullable|min:8|confirmed',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
