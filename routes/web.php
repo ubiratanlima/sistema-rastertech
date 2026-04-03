@@ -90,6 +90,9 @@ Route::get('/customer-sub-users/verify/{token}', [CustomerSubUserController::cla
 // 🛡️ ADMINISTRAÇÃO: COMANDO CENTRAL
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 Route::post('/users', [UserController::class, 'store'])->name('users.store');
+Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
+Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+Route::put('/users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
 Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 Route::post('/update-theme', [UserController::class, 'updateTheme'])->name('user.update-theme');
 

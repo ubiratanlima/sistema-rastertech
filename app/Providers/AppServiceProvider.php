@@ -21,9 +21,15 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Pagination\Paginator::useBootstrapFour();
 
-        // 🚀 FORÇAR URL RAIZ (ESTABILIZAÇÃO DE PROXY/KONG)
+        // 🚀 ESTABILIZAÇÃO GLOBAL DE URL (REMOÇÃO DE :8000)
         if (config('app.url')) {
             \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+            \Illuminate\Support\Facades\URL::forceScheme('http');
+
+            // Reforço específico para links de Paginação
+            \Illuminate\Pagination\Paginator::currentPathResolver(function () {
+                return config('app.url') . request()->getPathInfo();
+            });
         }
     }
 }
