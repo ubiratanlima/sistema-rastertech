@@ -75,6 +75,8 @@ Route::delete('/device-models/{id}', [DeviceModelController::class, 'destroy'])-
 
 Route::get('/device-commands', [DeviceCommandController::class, 'index'])->name('device-commands.index');
 Route::post('/device-commands', [DeviceCommandController::class, 'store'])->name('device-commands.store');
+Route::put('/device-commands/{id}', [DeviceCommandController::class, 'update'])->name('device-commands.update');
+Route::put('/device-commands/{id}/restore', [DeviceCommandController::class, 'restore'])->name('device-commands.restore');
 Route::delete('/device-commands/{id}', [DeviceCommandController::class, 'destroy'])->name('device-commands.destroy');
 
 // 👥 GESTÃO: ACESSOS DE CLIENTES (SUB-USUÁRIOS)
