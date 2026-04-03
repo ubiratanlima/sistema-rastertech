@@ -103,7 +103,7 @@
                         <a href="/platforms" class="nav-link {{ request()->is('platforms*') ? 'active' : '' }}"><i class="nav-icon fas fa-server"></i><p>Plataformas</p></a>
                     </li>
                     <li class="nav-item">
-                        <a href="/device-models" class="nav-link {{ request()->is('device-models*') ? 'active' : '' }}"><i class="nav-icon fas fa-microchip"></i><p>Modelos</p></a>
+                        <a href="/device-models" class="nav-link {{ request()->is('device-models*') ? 'active' : '' }}"><i class="nav-icon fas fa-microchip"></i><p>Modelos RTECH</p></a>
                     </li>
                     <li class="nav-item">
                         <a href="/device-commands" class="nav-link {{ request()->is('device-commands*') ? 'active' : '' }}"><i class="nav-icon fas fa-comment-dots"></i><p>Comandos SMS</p></a>

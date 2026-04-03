@@ -9,14 +9,38 @@ use App\Models\Provider;
 class ProviderController extends Controller
 {
     /**
-     * Lista todos os Fornecedores com inteligência de inventário.
+     * Lista todos os Fornecedores com inteligência de inventário e filtros Padrão Ouro.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // 🧬 Buscando fornecedores com contagem de equipamentos e chips vinculados
-        $providers = Provider::withCount(['devices', 'gsmCards'])->paginate(15);
+        $search = $request->input('search');
+        $view = $request->input('view', 'active');
+        $sort = $request->input('sort', 'id');
+        $direction = $request->input('direction', 'desc');
+
+        // 🧬 Query Base
+        $query = Provider::withCount(['devices', 'gsmCards']);
+
+        // 🔍 Filtro de Busca (Nome, Documento ou E-mail)
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%")
+                  ->orWhere('email', 'ILIKE', "%{$search}%")
+                  ->orWhere('document', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        // ⚙️ Seletor de Visão (Ativos vs Lixeira/Inativos)
+        if ($view == 'trash') {
+            $query->onlyTrashed();
+        }
+
+        // ↕️ Ordenação Dinâmica
+        $query->orderBy($sort, $direction);
+
+        $providers = $query->paginate(15)->appends($request->all());
         
-        return view('providers.index', compact('providers'));
+        return view('providers.index', compact('providers', 'search', 'view', 'sort', 'direction'));
     }
 
     /**
@@ -26,8 +50,12 @@ class ProviderController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|max:100',
-                'type' => 'required|in:hardware,connectivity,software'
+                'name'         => 'required|max:100',
+                'type'         => 'required|in:hardware,connectivity,software',
+                'email'        => 'nullable|email|max:150',
+                'phone'        => 'nullable|max:20',
+                'document'     => 'nullable|max:20',
+                'contact_name' => 'nullable|max:100',
             ]);
 
             $provider = Provider::create($validated);
@@ -50,6 +78,31 @@ class ProviderController extends Controller
     }
 
     /**
+     * Atualiza os dados de um Fornecedor.
+     */
+    public function update(Request $request, $id)
+    {
+        $provider = Provider::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'         => 'required|max:100',
+            'type'         => 'required|in:hardware,connectivity,software',
+            'email'        => 'nullable|email|max:150',
+            'phone'        => 'nullable|max:20',
+            'document'     => 'nullable|max:20',
+            'contact_name' => 'nullable|max:100',
+        ]);
+
+        $provider->update($validated);
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Fornecedor atualizado com sucesso!']);
+        }
+
+        return redirect()->route('providers.index')->with('success', 'Fornecedor atualizado com sucesso!');
+    }
+
+    /**
      * Inativa um Fornecedor com trava de segurança de estoque.
      */
     public function destroy($id)
@@ -68,5 +121,17 @@ class ProviderController extends Controller
         return redirect()
             ->route('providers.index')
             ->with('success', 'Fornecedor removido da base de dados com sucesso!');
+    }
+    /**
+     * Restaura um fornecedor inativado.
+     */
+    public function restore($id)
+    {
+        $provider = Provider::onlyTrashed()->findOrFail($id);
+        $provider->restore();
+
+        return redirect()
+            ->route('providers.index')
+            ->with('success', 'Fornecedor reativado com sucesso na base estratégica!');
     }
 }

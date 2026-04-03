@@ -57,14 +57,20 @@ Route::delete('/fleets/{id}', [VehicleController::class, 'destroy'])->name('flee
 // 🏢 ENGENHARIA: FORNECEDORES E PLATAFORMAS
 Route::get('/providers', [ProviderController::class, 'index'])->name('providers.index');
 Route::post('/providers', [ProviderController::class, 'store'])->name('providers.store');
+Route::put('/providers/{id}', [ProviderController::class, 'update'])->name('providers.update');
+Route::put('/providers/{id}/restore', [ProviderController::class, 'restore'])->name('providers.restore');
 Route::delete('/providers/{id}', [ProviderController::class, 'destroy'])->name('providers.destroy');
 
 Route::get('/platforms', [PlatformController::class, 'index'])->name('platforms.index');
 Route::post('/platforms', [PlatformController::class, 'store'])->name('platforms.store');
+Route::put('/platforms/{id}', [PlatformController::class, 'update'])->name('platforms.update');
+Route::put('/platforms/{id}/restore', [PlatformController::class, 'restore'])->name('platforms.restore');
 Route::delete('/platforms/{id}', [PlatformController::class, 'destroy'])->name('platforms.destroy');
 
 Route::get('/device-models', [DeviceModelController::class, 'index'])->name('device-models.index');
 Route::post('/device-models', [DeviceModelController::class, 'store'])->name('device-models.store');
+Route::put('/device-models/{id}', [DeviceModelController::class, 'update'])->name('device-models.update');
+Route::put('/device-models/{id}/restore', [DeviceModelController::class, 'restore'])->name('device-models.restore');
 Route::delete('/device-models/{id}', [DeviceModelController::class, 'destroy'])->name('device-models.destroy');
 
 Route::get('/device-commands', [DeviceCommandController::class, 'index'])->name('device-commands.index');

@@ -9,18 +9,51 @@ use App\Models\DeviceModel;
 class DeviceModelController extends Controller
 {
     /**
-     * Lista todos os modelos de hardware e seus fabricantes.
+     * Lista todos os modelos de hardware com filtros RTECH.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // 🧬 Buscando modelos com contagem de aparelhos físicos vinculados
-        $models = DeviceModel::withCount('devices')->paginate(15);
-        
-        return view('device-models.index', compact('models'));
+        $view      = $request->get('view', 'active');
+        $sort      = $request->get('sort', 'name');
+        $direction = $request->get('direction', 'asc');
+        $search    = $request->get('search');
+
+        $query = DeviceModel::withCount('devices');
+
+        // 🌓 FILTRO: VISÃO TÁTICA (ATIVOS OU LIXEIRA)
+        if ($view === 'trash') {
+            $query->onlyTrashed();
+        }
+
+        // 🔍 FILTRO: BUSCA INTELIGENTE (CASE-INSENSITIVE)
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%")
+                  ->orWhere('manufacturer', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        // 📶 ORDENAÇÃO DINÂMICA PADRONIZADA
+        $models = $query->orderBy($sort, $direction)
+                        ->paginate(15)
+                        ->withQueryString();
+
+        // Preparação de dados JSON para os Dossiês/Edição
+        $modelData = $models->mapWithKeys(function ($m) {
+            return [$m->id => [
+                'id'           => $m->id,
+                'name'         => $m->name,
+                'manufacturer' => $m->manufacturer,
+                'devices'      => $m->devices_count,
+                'deleted_at'   => $m->deleted_at
+            ]];
+        });
+
+        return view('device-models.index', compact('models', 'modelData', 'view', 'sort', 'direction', 'search'));
     }
 
     /**
-     * Cadastra um novo modelo técnico de rastreador.
+     * Cadastra um novo modelo técnico.
      */
     public function store(Request $request)
     {
@@ -35,23 +68,49 @@ class DeviceModelController extends Controller
     }
 
     /**
-     * Inativa um modelo de hardware com trava de segurança de estoque.
+     * Edição Tática de Modelos via AJAX.
+     */
+    public function update(Request $request, $id)
+    {
+        $model     = DeviceModel::findOrFail($id);
+        $validated = $request->validate([
+            'name'         => 'required|max:100',
+            'manufacturer' => 'nullable|max:100'
+        ]);
+
+        $model->update($validated);
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Ficha técnica sincronizada.']);
+        }
+
+        return redirect()->back()->with('success', 'Ficha atualizada com sucesso!');
+    }
+
+    /**
+     * Inativar modelo com trava de segurança.
      */
     public function destroy($id)
     {
         $model = DeviceModel::withCount('devices')->findOrFail($id);
 
-        // 🔒 VERIFICAÇÃO DE SEGURANÇA: Existem aparelhos deste modelo no inventário?
         if ($model->devices_count > 0) {
-            return redirect()
-                ->route('device-models.index')
-                ->with('error', 'Bloqueio de Engenharia! Existem aparelhos vinculados a este modelo no inventário. Remova os rastreadores antes de inativar o modelo.');
+            return redirect()->back()->with('error', 'Bloqueio de Engenharia! Existem aparelhos vinculados a este modelo. Remova-os do estoque para inativar.');
         }
 
         $model->delete();
 
-        return redirect()
-            ->route('device-models.index')
-            ->with('success', 'Modelo técnico removido da base de dados com sucesso!');
+        return redirect()->back()->with('success', 'Modelo técnico movido para a lixeira.');
+    }
+
+    /**
+     * Reativar modelo no radar operacional.
+     */
+    public function restore($id)
+    {
+        $model = DeviceModel::withTrashed()->findOrFail($id);
+        $model->restore();
+
+        return redirect()->back()->with('success', 'Modelo técnico reativado no radar!');
     }
 }
