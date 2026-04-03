@@ -14,6 +14,7 @@ use App\Http\Controllers\CustomerSubUserController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 
 /*
@@ -129,6 +130,9 @@ Route::group(['prefix' => 'portal', 'as' => 'portal.'], function() {
 use App\Http\Controllers\SystemSettingsController;
 Route::get('/settings', [SystemSettingsController::class, 'index'])->name('settings.index');
 Route::put('/settings', [SystemSettingsController::class, 'update'])->name('settings.update');
+
+// ⚙️ HUB DE INTELIGÊNCIA: MANUAL & AJUDA
+Route::get('/help', [HelpController::class, 'index'])->name('help');
 
 // 🛡️ AUTENTICAÇÃO TÁTICA RASTERTECH
 use App\Http\Controllers\Auth\LoginController;

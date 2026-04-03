@@ -129,6 +129,12 @@
                     <li class="nav-item">
                         <a href="{{ route('settings.index') }}" class="nav-link {{ request()->is('settings*') ? 'active' : '' }}"><i class="nav-icon fas fa-cog"></i><p>Configurações</p></a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('help') }}" class="nav-link {{ request()->is('help*') ? 'active' : '' }} text-info">
+                            <i class="nav-icon fas fa-question-circle shadow-sm"></i>
+                            <p>Manual de Operações</p>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
