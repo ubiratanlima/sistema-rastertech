@@ -115,11 +115,11 @@
                                         <button type="button" class="btn btn-light btn-square btn-delete-model" title="Inativar" data-id="{{ $model->id }}" data-name="{{ $model->name }}"><i class="fas fa-power-off fa-lg text-danger"></i></button>
                                         <form id="formDelete_{{ $model->id }}" action="{{ route('device-models.destroy', $model->id) }}" method="POST" class="d-none">@csrf @method('DELETE')</form>
                                     @else
-                                        <form action="{{ route('device-models.restore', $model->id) }}" method="POST" class="m-0 w-100">
+                                        <form action="{{ route('device-models.restore', $model->id) }}" method="POST" class="m-0 d-inline">
                                             @csrf
                                             @method('PUT')
-                                            <button type="submit" class="btn btn-light btn-block font-weight-bold text-success py-2 px-4 shadow-sm" title="Reativar Modelo">
-                                                <i class="fas fa-recycle mr-2"></i> REATIVAR FICHA
+                                            <button type="submit" class="btn btn-light btn-square text-success" title="Reativar Ficha Técnica">
+                                                <i class="fas fa-undo fa-lg"></i>
                                             </button>
                                         </form>
                                     @endif
