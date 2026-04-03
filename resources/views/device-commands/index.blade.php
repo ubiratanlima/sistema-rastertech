@@ -91,17 +91,15 @@
                     <tbody>
                         @forelse($commands as $command)
                         <tr class="command-row animate__animated animate__fadeIn">
-                            <td class="align-middle px-4">
-                                <span class="badge badge-light border px-2 py-1 text-uppercase font-weight-bold" style="color: #6610f2; border-color: #6610f2 !important;">
-                                    {{ $command->deviceModel->name }}
-                                </span>
+                            <td class="align-middle px-4 text-uppercase" style="color: #6610f2; font-size: 1rem;">
+                                {{ $command->deviceModel->name }}
                             </td>
                             <td class="align-middle">
                                 <div class="font-weight-bold text-dark">{{ $command->description }}</div>
                                 <small class="text-muted font-family-monospace d-none d-md-block">{{ \Illuminate\Support\Str::limit($command->command_template, 40) }}</small>
                             </td>
-                            <td class="text-center align-middle d-none d-md-table-cell">
-                                <span class="badge badge-light border px-3 py-1 font-weight-bold" style="border-radius: 6px; font-size: 1rem;">#{{ $command->execution_order }}</span>
+                            <td class="text-center align-middle d-none d-md-table-cell" style="font-size: 1rem;">
+                                #{{ $command->execution_order }}
                             </td>
                             <td class="text-center align-middle">
                                 <div class="btn-group shadow-sm border" style="border-radius: 8px; overflow: hidden;">
