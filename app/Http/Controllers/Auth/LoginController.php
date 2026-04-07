@@ -43,7 +43,17 @@ class LoginController extends Controller
             $user->update(['access_validated' => true]);
         }
 
-        return redirect()->intended('/');
+        // 🏎️ REDIRECIONAMENTO INTELIGENTE RTECH (Motorista vs Administrativo)
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        if ($subUser) {
+            $isDriver = \App\Models\PortalDriver::where('sub_user_id', $subUser->id)->exists();
+            if ($isDriver) {
+                return redirect()->route('portal.verificacoes.index');
+            }
+        }
+
+        // 🛰️ ESTABILIZAÇÃO OURO: Força o redirecionamento administrativo para a URL base
+        return redirect(config('app.url'));
     }
 
     public function logout(Request $request)

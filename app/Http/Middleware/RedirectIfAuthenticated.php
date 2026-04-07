@@ -21,7 +21,14 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                $user = Auth::user();
+                $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+                if ($subUser && \App\Models\PortalDriver::where('sub_user_id', $subUser->id)->exists()) {
+                    return redirect()->route('portal.verificacoes.index');
+                }
+
+                // 🛰️ ESTABILIZAÇÃO OURO: Força o redirecionamento administrativo (sem porta :8000)
+                return redirect(config('app.url'));
             }
         }
 

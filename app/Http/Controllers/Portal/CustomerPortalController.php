@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PortalDriver;
 use App\Models\VehicleChecklist;
+use App\Models\VehicleExpense;
 use App\Models\CustomerWhatsappNumber;
 use App\Models\Vehicle;
 use Illuminate\Support\Facades\Auth;
@@ -209,11 +210,248 @@ class CustomerPortalController extends Controller
     }
 
     /**
-     * REGISTRO DE CHECKLIST (ENTRADA/SAÍDA)
+     * REGISTRO DE CHECKLIST (ANTIGO - COMPATIBILIDADE)
      */
     public function storeChecklist(Request $request)
     {
-        // ... (Em desenvolvimento)
         return response()->json(['success' => 'Checklist registrado com sucesso!']);
+    }
+
+    /**
+     * 🚜 DASHBOARD DO MOTORISTA (VERIFICAÇÕES)
+     */
+    public function verificacoes(Request $request)
+    {
+        // 🛡️ IDENTIFICAÇÃO TÁTICA DO MOTORISTA
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Por favor, realize o login para acessar o portal.');
+        }
+
+        // Se for admin/gestor, tentamos carregar um subUser se ele estiver logado como um
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        
+        if (!$subUser) {
+            return redirect()->route('dashboard')->with('error', 'Seu acesso não está vinculado a um perfil de Portal/Motorista.');
+        }
+
+        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
+
+        if (!$driver) {
+            return redirect()->route('dashboard')->with('error', 'Seu acesso não possui um perfil de motorista configurado.');
+        }
+
+        // 📊 ESTADO DA JORNADA ATUAL (Último Registro)
+        $lastChecklist = VehicleChecklist::where('driver_id', $driver->id)
+            ->with('vehicle')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+
+        // 📊 HISTÓRICO IMUTÁVEL (Últimos 30 dias)
+        $checklists = VehicleChecklist::where('driver_id', $driver->id)
+            ->with('vehicle')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('portal.verificacoes.index', compact('driver', 'checklists', 'lastChecklist', 'isOnline'));
+    }
+
+    /**
+     * 📝 FORMULÁRIO DE NOVA VERIFICAÇÃO (CHECK-IN / OUT)
+     */
+    public function createChecklist(Request $request, $type)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+
+        if (!$subUser) {
+            return redirect()->route('dashboard')->with('error', 'Ação permitida apenas para motoristas autorizados.');
+        }
+
+        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
+        
+        // 🛡️ VALIDAÇÃO TÁTICA DE ESTADO (MÁQUINA DE ESTADOS)
+        $lastChecklist = VehicleChecklist::where('driver_id', $driver->id)->orderBy('created_at', 'desc')->first();
+        $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+
+        if ($type == 'entry' && $isOnline) {
+            return redirect()->route('portal.verificacoes.index')->with('warning', 'Você já possui um Check-in ativo. Realize o Check-out antes de iniciar um novo.');
+        }
+
+        if ($type == 'exit' && !$isOnline) {
+            return redirect()->route('portal.verificacoes.index')->with('warning', 'Nenhuma jornada ativa encontrada. Realize o Check-in primeiro.');
+        }
+
+        // 🚛 VEÍCULOS DISPONÍVEIS NA FROTA DO CLIENTE
+        $vehicles = Vehicle::where('customer_id', $driver->customer_id)->get();
+
+        // 🎯 PRÉ-SELEÇÃO DO VEÍCULO (NO CASO DE CHECK-OUT)
+        $currentVehicleId = ($type == 'exit' && $lastChecklist) ? $lastChecklist->vehicle_id : null;
+
+        return view('portal.verificacoes.form', compact('driver', 'vehicles', 'type', 'currentVehicleId'));
+    }
+
+    /**
+     * 💾 PERSISTÊNCIA TÁTICA DE JORNADA (10 FOTOS)
+     */
+    public function storeChecklistAction(Request $request)
+    {
+        $request->validate([
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'driver_id' => 'required|exists:portal_drivers,id',
+            'type' => 'required|in:entry,exit',
+            'odometer' => 'required|numeric|min:0',
+            'notes' => 'required|string|min:15|max:500',
+            // 📸 5 FOTOS OBRIGATÓRIAS (ODÔMETRO + 4)
+            'photo_1' => 'required|image|max:10240', // Odômetro
+            'photo_2' => 'required|image|max:10240', // Frente
+            'photo_3' => 'required|image|max:10240', // Traseira
+            'photo_4' => 'required|image|max:10240', // Lateral Dir.
+            'photo_5' => 'required|image|max:10240', // Lateral Esq.
+            // 📸 5 FOTOS OPCIONAIS (BODY / EXTRAS)
+            'photo_6' => 'nullable|image|max:10240',
+            'photo_7' => 'nullable|image|max:10240',
+            'photo_8' => 'nullable|image|max:10240',
+            'photo_9' => 'nullable|image|max:10240',
+            'photo_10' => 'nullable|image|max:10240',
+        ], [
+            'notes.min' => 'O Relato do Motorista deve conter pelo menos 15 caracteres.',
+            'photo_1.required' => 'A foto do Odômetro é obrigatória.',
+            'photo_2.required' => 'A foto da Frente é obrigatória.',
+            'photo_3.required' => 'A foto da Traseira é obrigatória.',
+            'photo_4.required' => 'A foto da Lateral Direita é obrigatória.',
+            'photo_5.required' => 'A foto da Lateral Esquerda é obrigatória.',
+        ]);
+
+        // 🛡️ REVALIDAÇÃO TÁTICA DE ESTADO (BLINDAGEM SERVER-SIDE)
+        $lastChecklist = VehicleChecklist::where('driver_id', $request->driver_id)->orderBy('created_at', 'desc')->first();
+        $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+
+        if ($request->type == 'entry' && $isOnline) {
+            return redirect()->route('portal.verificacoes.index')->with('error', 'Erro Crítico: Você já está em jornada ativada.');
+        }
+
+        if ($request->type == 'exit' && !$isOnline) {
+            return redirect()->route('portal.verificacoes.index')->with('error', 'Erro Crítico: Nenhuma jornada ativa encontrada para encerrar.');
+        }
+
+        $photos = [];
+        $driver = PortalDriver::find($request->driver_id);
+        $date = now()->format('Y-m-d');
+
+        // 📂 PROCESSAMENTO DE SLOTS
+        for ($i = 1; $i <= 10; $i++) {
+            if ($request->hasFile("photo_$i")) {
+                $file = $request->file("photo_$i");
+                $fileName = "checklist_{$request->type}_{$i}_" . time() . ".{$file->getClientOriginalExtension()}";
+                $path = $file->storeAs("checklists/{$driver->id}/{$date}", $fileName, 'public');
+                $photos["photo_$i"] = $path;
+            }
+        }
+
+        $checklist = VehicleChecklist::create([
+            'vehicle_id' => $request->vehicle_id,
+            'driver_id' => $request->driver_id,
+            'type' => $request->type,
+            'odometer' => $request->odometer,
+            'fuel_level' => $request->fuel_level ?? 'N/A',
+            'photos' => $photos,
+            'notes' => $request->notes
+        ]);
+
+        // 🆙 ATUALIZAÇÃO DE STATUS NO MOTORISTA
+        $driver->update(['last_checklist_at' => now()]);
+
+        return redirect()->route('portal.verificacoes.index')
+            ->with('success', 'Verificação (' . strtoupper($request->type) . ') registrada com sucesso!');
+    }
+
+    /**
+     * 👁️ VISUALIZAÇÃO DE HISTÓRICO (SOMENTE LEITURA)
+     */
+    public function showChecklist($id)
+    {
+        $checklist = VehicleChecklist::with(['vehicle', 'driver'])->findOrFail($id);
+        return view('portal.verificacoes.show', compact('checklist'));
+    }
+
+    /**
+     * 💰 DASHBOARD DE DESPESAS (LISTAGEM)
+     */
+    public function despesas(Request $request)
+    {
+        $user = Auth::user();
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
+
+        if (!$driver) {
+            return redirect()->route('dashboard')->with('error', 'Acesso negado: Perfil de motorista não encontrado.');
+        }
+
+        // 💰 HISTÓRICO DE DESPESAS (ÚLTIMOS 100 REGISTROS)
+        $expenses = VehicleExpense::where('driver_id', $driver->id)
+            ->with('vehicle')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return view('portal.despesas.index', compact('driver', 'expenses'));
+    }
+
+    /**
+     * 📝 FORMULÁRIO DE NOVA DESPESA
+     */
+    public function createDespesa(Request $request)
+    {
+        $user = Auth::user();
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
+
+        if (!$driver) {
+            return redirect()->route('dashboard')->with('error', 'Acesso negado.');
+        }
+
+        $vehicles = Vehicle::where('customer_id', $driver->customer_id)->get();
+
+        // Categorias Padrão Ouro RTECH
+        $categories = ['Abastecimento', 'Troca de Óleo', 'Manutenção', 'Lavagem', 'Pneus', 'Outros Gastos'];
+
+        return view('portal.despesas.form', compact('driver', 'vehicles', 'categories'));
+    }
+
+    /**
+     * 💾 PERSISTÊNCIA TÁTICA DA DESPESA
+     */
+    public function storeDespesaAction(Request $request)
+    {
+        $request->validate([
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'driver_id' => 'required|exists:portal_drivers,id',
+            'type' => 'required|string',
+            'odometer' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01',
+            'description' => 'required|string|min:3|max:100',
+            'receipt_photo' => 'nullable|image|max:10240'
+        ]);
+
+        $entry = new VehicleExpense($request->except(['receipt_photo']));
+        $entry->customer_id = PortalDriver::find($request->driver_id)->customer_id;
+
+        // 📸 PROCESSAMENTO DE COMPROVANTE (OPCIONAL)
+        if ($request->hasFile('receipt_photo')) {
+            $path = $request->file('receipt_photo')->store('expenses/' . $request->driver_id, 'public');
+            $entry->receipt_photo = $path;
+        }
+
+        $entry->save();
+
+        return redirect()->route('portal.despesas.index')->with('success', '🛰️ DESPESA REGISTRADA COM SUCESSO! Registro ativo no dossiê do veículo.');
     }
 }

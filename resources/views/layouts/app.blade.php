@@ -94,7 +94,7 @@
 
                     <li class="nav-header">DEPARTAMENTO TÉCNICO</li>
                     <li class="nav-item">
-                        <a href="/portal" class="nav-link {{ request()->is('portal*') ? 'bg-indigo text-white shadow' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>PORTAL DO CLIENTE</p></a>
+                        <a href="/portal" class="nav-link {{ (request()->is('portal') || (request()->is('portal/*') && !request()->is('portal/verificacoes*') && !request()->is('portal/despesas*') && !request()->is('portal/instalador*'))) ? 'bg-indigo text-white shadow' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>PORTAL DO CLIENTE</p></a>
                     </li>
                     <li class="nav-item">
                         <a href="/providers" class="nav-link {{ request()->is('providers*') ? 'active' : '' }}"><i class="nav-icon fas fa-industry"></i><p>Fornecedores</p></a>
@@ -109,15 +109,43 @@
                         <a href="/device-commands" class="nav-link {{ request()->is('device-commands*') ? 'active' : '' }}"><i class="nav-icon fas fa-comment-dots"></i><p>Comandos SMS</p></a>
                     </li>
 
-                    @if(in_array(auth()->user()->role ?? 'atendente', ['admin', 'gestor', 'operador', 'atendente']))
+                    @if(in_array(auth()->user()->role ?? 'atendente', ['admin', 'gestor', 'operador', 'atendente', 'Suporte Técnico', 'Gerente', 'Administrador']))
                     <li class="nav-header">ATENDIMENTOS</li>
                     <li class="nav-item">
                         <a href="/support/customers" class="nav-link {{ request()->is('support/customers*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-headset text-warning"></i>
                             <p>Clientes Ativos</p>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.installations.index') }}" class="nav-link {{ request()->is('admin/installations*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-check-double text-success"></i>
+                            <p>Validação de Sinais</p>
                         </a>
                     </li>
                     @endif
+
+                    <!-- 🚜 MÓDULO DO MOTORISTA (VERIFICAÇÕES & DESPESAS) -->
+                    <li class="nav-header">MOTORISTA</li>
+                    <li class="nav-item">
+                        <a href="{{ route('portal.verificacoes.index') }}" class="nav-link {{ request()->is('portal/verificacoes*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-clipboard-check text-teal"></i>
+                            <p>Minhas Verificações</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('portal.despesas.index') }}" class="nav-link {{ request()->is('portal/despesas*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-file-invoice-dollar text-orange"></i>
+                            <p>Minhas Despesas</p>
+                        </a>
+                    </li>
+
+                    <!-- 🔧 MÓDULO DO INSTALADOR (VISTORIAS TÉCNICAS) -->
+                    <li class="nav-header">INSTALADOR</li>
+                    <li class="nav-item">
+                        <a href="{{ route('portal.instalador.index') }}" class="nav-link {{ request()->is('portal/instalador*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-tools text-primary"></i>
+                            <p>Instalações</p>
+                        </a>
+                    </li>
 
                     <li class="nav-header">ADMINISTRAÇÃO</li>
                     <li class="nav-item">

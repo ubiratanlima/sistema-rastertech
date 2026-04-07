@@ -100,11 +100,15 @@ Route::post('/update-theme', [UserController::class, 'updateTheme'])->name('user
 // 📊 INTELIGÊNCIA: AUDITORIA E REPORTS
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
-// 🎧 ATENDIMENTO E SUPORTE TÁTICO
-Route::get('/support/customers', [SupportController::class, 'index'])->name('support.customers');
+// 🏢 ÁREA ADMINISTRATIVA: GESTÃO E HOMOLOGAÇÃO
+Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth']], function() {
+    Route::get('/installations', [\App\Http\Controllers\Admin\AdminInstallationController::class, 'index'])->name('installations.index');
+    Route::get('/installations/{id}', [\App\Http\Controllers\Admin\AdminInstallationController::class, 'show'])->name('installations.show');
+    Route::post('/installations/{id}/validate', [\App\Http\Controllers\Admin\AdminInstallationController::class, 'storeValidation'])->name('installations.validate');
+});
 
 // 🌐 PORTAL DO CLIENTE (EXPERIÊNCIA PWA)
-Route::group(['prefix' => 'portal', 'as' => 'portal.'], function() {
+Route::group(['prefix' => 'portal', 'as' => 'portal.', 'middleware' => ['auth']], function() {
     Route::get('/check-customers', function() {
         return response()->json(Schema::getColumnListing('customers'));
     });
@@ -124,6 +128,35 @@ Route::group(['prefix' => 'portal', 'as' => 'portal.'], function() {
 
     // Checklist Operacional
     Route::post('/checklist', [CustomerPortalController::class, 'storeChecklist'])->name('checklist.store');
+
+    // 🚜 VERIFICAÇÕES DO MOTORISTA (JORNADA)
+    Route::get('/verificacoes', [CustomerPortalController::class, 'verificacoes'])->name('verificacoes.index');
+    Route::get('/verificacoes/nova/{type}', [CustomerPortalController::class, 'createChecklist'])->name('verificacoes.create');
+    Route::post('/verificacoes/salvar', [CustomerPortalController::class, 'storeChecklistAction'])->name('verificacoes.store');
+    Route::get('/verificacoes/{id}', [CustomerPortalController::class, 'showChecklist'])->name('verificacoes.show');
+
+    // 💰 DESPESAS DO VEÍCULO (PRESTAÇÃO DE CONTAS)
+    Route::get('/despesas', [CustomerPortalController::class, 'despesas'])->name('despesas.index');
+    Route::get('/despesas/nova', [CustomerPortalController::class, 'createDespesa'])->name('despesas.create');
+    Route::post('/despesas/salvar', [CustomerPortalController::class, 'storeDespesaAction'])->name('despesas.store');
+
+    // 🔧 CENTRAL DO INSTALADOR (DOSSIÊ TRIFÁSICO)
+    Route::get('/instalador', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'index'])->name('instalador.index');
+    
+    // 🚥 FASE 1: CHECK-IN
+    Route::get('/instalador/checkin', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'createCheckin'])->name('instalador.checkin');
+    Route::post('/instalador/checkin/salvar', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'storeCheckin'])->name('instalador.checkin.store');
+    
+    // ⚡ FASE 2: INSTALAÇÃO (ELÉTRICA)
+    Route::get('/instalador/processo/{id}', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'createProcess'])->name('instalador.process');
+    Route::post('/instalador/processo/salvar/{id}', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'storeProcess'])->name('instalador.process.store');
+    
+    // 🏁 FASE 3: CHECKOUT
+    Route::get('/instalador/checkout/{id}', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'createCheckout'])->name('instalador.checkout');
+    Route::post('/instalador/checkout/salvar/{id}', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'storeCheckout'])->name('instalador.checkout.store');
+    
+    // 👁️ VISOR DE DOSSIÊ
+    Route::get('/instalador/{id}', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'show'])->name('instalador.show');
 });
 
 // ⚙️ CONFIGURAÇÕES DO SISTEMA
