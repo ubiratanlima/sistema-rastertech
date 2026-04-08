@@ -100,8 +100,13 @@ Route::post('/update-theme', [UserController::class, 'updateTheme'])->name('user
 // 📊 INTELIGÊNCIA: AUDITORIA E REPORTS
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
-// 🎧 CENTRAL DE ATENDIMENTO (CLIENTES ATIVOS)
-Route::get('/support/customers', [\App\Http\Controllers\SupportController::class, 'index'])->name('support.customers');
+// 🎧 CENTRAL DE ATENDIMENTO (PROTEGIDA)
+Route::group(['middleware' => ['auth']], function() {
+    Route::get('/support/customers', [\App\Http\Controllers\SupportController::class, 'index'])->name('support.customers');
+    Route::get('/support/start/{vehicle}/{customer}', [\App\Http\Controllers\SupportController::class, 'start'])->name('support.start');
+    Route::post('/support/finish', [\App\Http\Controllers\SupportController::class, 'finish'])->name('support.finish');
+    Route::get('/support/log/{attendance}', [\App\Http\Controllers\SupportController::class, 'viewLog'])->name('support.log.view');
+});
 
 // 🏢 ÁREA ADMINISTRATIVA: GESTÃO E HOMOLOGAÇÃO
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth']], function() {

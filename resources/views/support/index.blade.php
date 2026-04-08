@@ -80,6 +80,7 @@
                                                         <th class="text-center py-2">MARCA / MODELO</th>
                                                         <th class="text-center py-2">DEVICE</th>
                                                         <th class="text-center py-2" style="width: 150px;">SIMCARD</th>
+                                                        <th class="text-center py-2" style="width: 140px;">ATENDIMENTO</th>
                                                         <th class="text-center py-2 pr-4">SMS</th>
                                                     </tr>
                                                 </thead>
@@ -103,6 +104,11 @@
                                                     <td class="align-middle text-center border-top-0" style="font-size: 0.95rem;">
                                                         <div class="text-primary font-weight-bold">{{ $vehicle->phone_number }}</div>
                                                         <div class="text-muted text-uppercase">{{ $vehicle->operator }}</div>
+                                                    </td>
+                                                    <td class="align-middle text-center border-top-0">
+                                                        <button class="btn btn-indigo btn-sm btn-block shadow-sm text-bold" style="border-radius: 8px; letter-spacing: 0.5px;" onclick="event.stopPropagation(); startAttendance('{{ $vehicle->id }}', '{{ $customer->id }}')">
+                                                            <i class="fas fa-play-circle mr-1"></i> INICIAR
+                                                        </button>
                                                     </td>
                                                     <td class="text-center align-middle pr-4 border-top-0">
                                                         <button class="btn btn-light btn-square shadow-sm" style="border-radius: 8px;" title="Enviar SMS" onclick="event.stopPropagation(); openSMSModal('{{ $vehicle->id }}', '{{ $vehicle->rtech_code }}')">
@@ -222,6 +228,10 @@
 </style>
 
 <script>
+    function startAttendance(vehicleId, customerId) {
+        window.location.href = `/support/start/${vehicleId}/${customerId}`;
+    }
+
     function openSMSModal(id, rtech) {
         $('#smsVehicleInfo').text(rtech);
         $('#modalSMS').modal('show');

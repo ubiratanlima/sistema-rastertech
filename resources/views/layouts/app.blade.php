@@ -63,10 +63,10 @@
         </a>
         <div class="sidebar">
             <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-                <div class="image"><img src="https://ui-avatars.com/api/?name=Ubiratan&background=00ff88&color=1a1a2e" class="img-circle elevation-2 profile-img" alt="User Image"></div>
+                <div class="image"><img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=00ff88&color=1a1a2e" class="img-circle elevation-2 profile-img" alt="User Image"></div>
                 <div class="info">
-                    <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">Ubiratan</a>
-                    <span class="small text-muted">Gestor de Operações</span>
+                    <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">{{ auth()->user()->name }}</a>
+                    <span class="small text-muted">{{ auth()->user()->role }}</span>
                 </div>
             </div>
             <nav class="mt-2 text-sm text-uppercase font-weight-bold">
@@ -109,7 +109,8 @@
                         <a href="/device-commands" class="nav-link {{ request()->is('device-commands*') ? 'active' : '' }}"><i class="nav-icon fas fa-comment-dots"></i><p>Comandos SMS</p></a>
                     </li>
 
-                    @if(in_array(auth()->user()->role ?? 'atendente', ['admin', 'gestor', 'operador', 'atendente', 'Suporte Técnico', 'Gerente', 'Administrador']))
+                    @php $userRole = auth()->check() ? auth()->user()->role : 'guest'; @endphp
+                    @if(in_array($userRole, ['admin', 'gestor', 'operador', 'atendente', 'Suporte Técnico', 'Gerente', 'Administrador', 'Gestor de Operações', 'guest']))
                     <li class="nav-header">ATENDIMENTOS</li>
                     <li class="nav-item">
                         <a href="/support/customers" class="nav-link {{ request()->is('support/customers*') ? 'active' : '' }}">
@@ -187,10 +188,14 @@
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
                 <div class="modal-body text-center p-4">
-                    <img src="https://ui-avatars.com/api/?name=Ubiratan&background=00ff88&color=1a1a2e" class="img-circle mb-3" style="width: 80px;">
-                    <h5 class="text-bold">Ubiratan</h5>
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=00ff88&color=1a1a2e" class="img-circle mb-3" style="width: 80px;">
+                    <h5 class="text-bold">{{ auth()->user()->name }}</h5>
+                    <p class="text-muted small mb-0">{{ auth()->user()->role }}</p>
                     <button class="btn btn-outline-primary btn-block btn-sm mt-3">Editar Perfil</button>
-                    <button class="btn btn-outline-danger btn-block btn-sm mt-2">Sair</button>
+                    <button class="btn btn-outline-danger btn-block btn-sm mt-2" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sair</button>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                        @csrf
+                    </form>
                 </div>
             </div>
         </div>

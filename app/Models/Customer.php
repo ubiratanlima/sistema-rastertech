@@ -44,4 +44,5 @@ class Customer extends Model
     public function gsmCards() { return $this->hasMany(GsmCard::class); }
     public function subUsers() { return $this->hasMany(CustomerSubUser::class); }
     public function drivers() { return $this->hasMany(PortalDriver::class); }
+    public function attendances() { return $this->hasMany(Attendance::class); }
 }
