@@ -100,6 +100,9 @@ Route::post('/update-theme', [UserController::class, 'updateTheme'])->name('user
 // 📊 INTELIGÊNCIA: AUDITORIA E REPORTS
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
+// 🎧 CENTRAL DE ATENDIMENTO (CLIENTES ATIVOS)
+Route::get('/support/customers', [\App\Http\Controllers\SupportController::class, 'index'])->name('support.customers');
+
 // 🏢 ÁREA ADMINISTRATIVA: GESTÃO E HOMOLOGAÇÃO
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth']], function() {
     Route::get('/installations', [\App\Http\Controllers\Admin\AdminInstallationController::class, 'index'])->name('installations.index');

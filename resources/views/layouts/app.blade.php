@@ -115,6 +115,8 @@
                         <a href="/support/customers" class="nav-link {{ request()->is('support/customers*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-headset text-warning"></i>
                             <p>Clientes Ativos</p>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a href="{{ route('admin.installations.index') }}" class="nav-link {{ request()->is('admin/installations*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-check-double text-success"></i>
