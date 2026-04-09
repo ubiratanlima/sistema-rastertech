@@ -14,10 +14,16 @@ class InstallerPortalController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        $installations = Installation::where('installer_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $user = auth()->user();
+        $query = Installation::query();
+
+        // 🛡️ GOD MODE: Se não for administrador/gestor, vê apenas as próprias obras
+        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        if (!in_array($user->role, $adminRoles)) {
+            $query->where('installer_id', $user->id);
+        }
+
+        $installations = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return view('portal.instalador.index', compact('installations'));
     }
@@ -167,11 +173,18 @@ class InstallerPortalController extends Controller
      */
     public function show($id)
     {
-        $inst = Installation::where('installer_id', Auth::id())->findOrFail($id);
-        return view('portal.instalador.show', compact('inst'));
-    }
-}
-            ->whereHas('vehicle', function($q) use ($inst) {
+        $user = auth()->user();
+        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        
+        $query = Installation::query();
+        if (!in_array($user->role, $adminRoles)) {
+            $query->where('installer_id', $user->id);
+        }
+
+        $inst = $query->findOrFail($id);
+        
+        // Busca o histórico de atendimentos vinculado à placa do veículo
+        $attendances = \App\Models\Attendance::whereHas('vehicle', function($q) use ($inst) {
                 $q->where('plate', $inst->vehicle_plate);
             })
             ->orderBy('created_at', 'desc')

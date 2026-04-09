@@ -93,7 +93,7 @@
                                             </a>
                                         @else
                                             <a href="{{ route('portal.instalador.show', $inst->id) }}" class="btn btn-outline-dark btn-sm px-3" style="border-radius: 8px;">
-                                                <i class="fas fa-eye mr-1"></i> VER DOSSIÊ
+                                                <i class="fas fa-eye mr-1"></i> VER INSTALAÇÃO
                                             </a>
                                         @endif
                                     </td>

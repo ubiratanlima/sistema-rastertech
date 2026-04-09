@@ -34,6 +34,7 @@
         <div class="col-md-4">
             <form action="{{ route('admin.installations.validate', $inst->id) }}" method="POST" id="validationForm">
                 @csrf
+                <input type="hidden" name="validation_status" id="validation_status" value="">
                 <div class="card shadow-lg border-0 mb-4" style="border-radius: 15px; position: sticky; top: 100px;">
                     <div class="card-header bg-dark text-white pt-4 pb-3 px-4 border-0" style="border-radius: 15px 15px 0 0;">
                         <h4 class="text-bold m-0 small uppercase"><i class="fas fa-project-diagram mr-2 text-warning"></i>Terminal de Sinal</h4>

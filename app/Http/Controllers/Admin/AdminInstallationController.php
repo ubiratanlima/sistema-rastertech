@@ -14,19 +14,23 @@ class AdminInstallationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Installation::with(['installer', 'validator'])->orderBy('created_at', 'desc');
+        $query = Installation::with(['installer', 'validator']);
 
-        // Filtros Táticos
-        if ($request->has('status') && $request->status != '') {
+        // Filtro por Decisão (Pendente, Aprovado, Rejeitado)
+        if ($request->filled('status')) {
             $query->where('validation_status', $request->status);
         }
 
-        if ($request->has('search')) {
-            $query->where('vehicle_plate', 'like', "%{$request->search}%")
-                  ->orWhere('customer_name', 'like', "%{$request->search}%");
+        // Busca Tática (Agrupada para não quebrar outros filtros)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('vehicle_plate', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%");
+            });
         }
 
-        $installations = $query->paginate(20);
+        $installations = $query->orderBy('created_at', 'desc')->paginate(20);
         return view('admin.installations.index', compact('installations'));
     }
 

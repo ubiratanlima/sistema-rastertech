@@ -204,27 +204,46 @@
     
     .uppercase { text-transform: uppercase; }
     .opacity-25 { opacity: 0.25; }
+
+    /* 📸 AJUSTE BOTÃO FECHAR SWAL (DENTRO DA IMAGEM) - PADRÃO RTECH */
+    .swal2-close {
+        position: absolute !important;
+        top: 20px !important;
+        right: 20px !important;
+        color: white !important;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        z-index: 1000 !important;
+        transition: transform 0.2s ease !important;
+    }
+    .swal2-close:hover {
+        transform: scale(1.2);
+        color: #ff3333 !important;
+    }
+    .swal2-image {
+        margin-top: 0 !important;
+        border: 4px solid white !important;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+    }
 </style>
 
 @push('scripts')
 <script>
     function viewPhoto(url, title) {
         Swal.fire({
-            title: `<span class="text-bold text-uppercase" style="font-size: 1.2rem; color: #fff;">${title}</span>`,
+            title: `<span class="text-bold text-uppercase d-block mb-2" style="font-size: 1.1rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${title}</span>`,
             imageUrl: url,
-            width: '80vw',
+            width: 'auto',
+            imageWidth: 'auto',
+            imageHeight: '75vh',
             background: 'transparent',
             showConfirmButton: false,
             showCloseButton: true,
-            closeButtonHtml: '<i class="fas fa-times fa-2x text-white"></i>',
             backdrop: `rgba(0,0,15,0.95)`, 
             showClass: { popup: 'animate__animated animate__zoomIn animate__faster' },
             hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
-            customClass: {
-                image: 'rounded border border-white',
-                popup: 'border-0 bg-transparent',
-                closeButton: 'shadow-none',
-                title: 'text-white d-block'
+            customClass: { 
+                image: 'rounded m-0 shadow-lg',
+                closeButton: 'custom-close-btn'
             }
         });
     }
