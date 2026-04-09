@@ -137,7 +137,7 @@
                                         </span>
                                     </td>
                                     <td class="align-middle text-muted small">
-                                        {{ $item->user->name }}
+                                        {{ str_replace(' Admin', '', $item->user->name) }}
                                     </td>
                                     <td class="text-center align-middle">
                                         <button onclick="viewAttendance('{{ route('support.log.view', $item->id) }}')" class="btn btn-xs btn-outline-indigo shadow-sm">

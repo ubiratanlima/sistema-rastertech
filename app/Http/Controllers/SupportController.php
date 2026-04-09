@@ -19,20 +19,22 @@ class SupportController extends Controller
     {
         $search = $request->input('search');
 
-        // Query principal para buscar clientes com veículos
+        // Query Blindada: Busca apenas clientes únicos que possuem ao menos um veículo
         $query = DB::table('customers')
-            ->join('vehicles', 'customers.id', '=', 'vehicles.customer_id')
-            ->leftJoin('devices', 'vehicles.id', '=', 'devices.vehicle_id')
+            ->whereExists(function ($q) {
+                $q->select(DB::raw(1))
+                  ->from('vehicles')
+                  ->whereColumn('vehicles.customer_id', 'customers.id');
+            })
             ->select(
                 'customers.id',
                 'customers.name',
                 'customers.document',
                 'customers.code as customer_rtech',
-                DB::raw("COUNT(CASE WHEN devices.status = 'active' THEN 1 END) as vehicle_count")
-            )
-            ->groupBy('customers.id', 'customers.name', 'customers.document', 'customers.code');
+                DB::raw("(SELECT COUNT(*) FROM vehicles WHERE customer_id = customers.id) as vehicle_count")
+            );
 
-        // Filtro tático rápido (Nome, CNPJ/CPF ou RTECH CODE do equipamento vinculado)
+        // Filtro tático rápido (Nome, CNPJ/CPF ou RTECH CODE)
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('customers.name', 'ILIKE', "%{$search}%")
@@ -46,11 +48,17 @@ class SupportController extends Controller
         // Injeção de dados de veículos para o sistema de Acordeon
         foreach ($customers as $customer) {
             $customer->vehicles = DB::table('vehicles')
-                ->leftJoin('devices', 'vehicles.id', '=', 'devices.vehicle_id')
+                ->leftJoin('devices', function($join) {
+                    $join->on('vehicles.id', '=', 'devices.vehicle_id')
+                         ->where('devices.status', '=', 'active');
+                })
                 ->leftJoin('gsm_cards', 'devices.gsm_card_id', '=', 'gsm_cards.id')
                 ->where('vehicles.customer_id', $customer->id)
                 ->select(
-                    'vehicles.*',
+                    'vehicles.id',
+                    'vehicles.plate',
+                    'vehicles.brand',
+                    'vehicles.model',
                     'devices.model_description as rtech_code',
                     'devices.imei',
                     'devices.status as device_status',
@@ -61,6 +69,15 @@ class SupportController extends Controller
             
             // Pega o código RTECH de um dos veículos para a linha de base (se houver)
             $customer->primary_rtech = $customer->vehicles->first()->rtech_code ?? '---';
+
+            // 🎯 INJEÇÃO NÍVEL 3: Carrega históricos para cada veículo do cliente
+            foreach ($customer->vehicles as $vehicle) {
+                $vehicle->attendances = Attendance::with('user')
+                    ->where('vehicle_id', $vehicle->id)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+            }
         }
 
         return view('support.index', compact('customers', 'search'));

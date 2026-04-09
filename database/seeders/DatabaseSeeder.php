@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
     {
         // 1. USUÁRIO MESTRE
         User::updateOrCreate(['email' => 'admin@rastertech.com'], [
-            'name' => 'Ubiratan Admin',
+            'name' => 'Ubiratan',
             'password' => bcrypt('m45t3rMASTER'),
             'role' => 'Administrador',
             'gender' => 'Masculino',

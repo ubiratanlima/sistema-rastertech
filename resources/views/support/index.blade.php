@@ -86,34 +86,68 @@
                                                 </thead>
                                                 <tbody>
                                                 @foreach($customer->vehicles as $vehicle)
-                                                <tr>
-                                                    <td class="align-middle text-center py-3 border-top-0">
+                                                <!-- 🛸 LINHA DO VEÍCULO (ZEBRADO MANUAL) -->
+                                                <tr class="vehicle-row {{ $loop->index % 2 == 0 ? 'bg-white' : 'bg-zebra' }}" data-toggle="collapse" data-target="#history-{{ $vehicle->id }}" style="cursor: pointer; border-top: 1px solid #dee2e6;">
+                                                    <td class="align-middle text-center py-3">
                                                         <div class="mercosul-plate shadow-sm mx-auto">
                                                             <div class="plate-header">BRASIL</div>
                                                             <div class="plate-number">{{ $vehicle->plate }}</div>
                                                         </div>
                                                     </td>
-                                                    <td class="align-middle text-center border-top-0">
+                                                    <td class="align-middle text-center">
                                                         <div class="text-dark">{{ $vehicle->brand }}</div>
-                                                        <div class="text-muted text-uppercase">{{ $vehicle->model }}</div>
+                                                        <div class="text-muted text-uppercase small">{{ $vehicle->model }}</div>
                                                     </td>
-                                                    <td class="align-middle text-center border-top-0" style="font-size: 0.95rem;">
+                                                    <td class="align-middle text-center" style="font-size: 0.95rem;">
                                                         <div class="text-indigo font-weight-bold">{{ $vehicle->rtech_code }}</div>
-                                                        <div class="text-muted">{{ $vehicle->imei }}</div>
+                                                        <div class="text-muted small">{{ $vehicle->imei }}</div>
                                                     </td>
-                                                    <td class="align-middle text-center border-top-0" style="font-size: 0.95rem;">
+                                                    <td class="align-middle text-center" style="font-size: 0.95rem;">
                                                         <div class="text-primary font-weight-bold">{{ $vehicle->phone_number }}</div>
-                                                        <div class="text-muted text-uppercase">{{ $vehicle->operator }}</div>
+                                                        <div class="text-muted text-uppercase small">{{ $vehicle->operator }}</div>
                                                     </td>
-                                                    <td class="align-middle text-center border-top-0">
-                                                        <button class="btn btn-indigo btn-sm btn-block shadow-sm text-bold" style="border-radius: 8px; letter-spacing: 0.5px;" onclick="event.stopPropagation(); startAttendance('{{ $vehicle->id }}', '{{ $customer->id }}')">
+                                                    <td class="align-middle text-center">
+                                                        <button class="btn btn-indigo btn-sm btn-block shadow-sm text-bold" style="border-radius: 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); startAttendance('{{ $vehicle->id }}', '{{ $customer->id }}')">
                                                             <i class="fas fa-play-circle mr-1"></i> INICIAR
                                                         </button>
                                                     </td>
-                                                    <td class="text-center align-middle pr-4 border-top-0">
+                                                    <td class="text-center align-middle pr-4">
                                                         <button class="btn btn-light btn-square shadow-sm" style="border-radius: 8px;" title="Enviar SMS" onclick="event.stopPropagation(); openSMSModal('{{ $vehicle->id }}', '{{ $vehicle->rtech_code }}')">
                                                             <i class="fas fa-comment-dots fa-lg text-primary"></i>
                                                         </button>
+                                                    </td>
+                                                </tr>
+
+                                                <!-- 📜 NÍVEL 3: HISTÓRICOS (SLIDE SUAVE) -->
+                                                <tr class="history-row">
+                                                    <td colspan="6" class="p-0 border-0">
+                                                        <div id="history-{{ $vehicle->id }}" class="collapse bg-light px-4 py-3 border-bottom shadow-inner">
+                                                            <div class="px-3 py-2 border-left-indigo bg-white rounded shadow-sm" style="border-left: 5px solid #6610f2;">
+                                                                <h6 class="text-indigo font-weight-bold mb-3 small text-uppercase letter-spacing-1">
+                                                                    <i class="fas fa-history mr-2"></i>Histórico Recente
+                                                                </h6>
+                                                                
+                                                                @forelse($vehicle->attendances as $att)
+                                                                    <div class="d-flex align-items-center justify-content-between p-2 mb-1 border-bottom">
+                                                                        <div class="d-flex align-items-center">
+                                                                            <span class="badge badge-pill {{ $att->type == 'installation' ? 'badge-success' : 'badge-primary' }} mr-3" style="font-size: 0.65rem; min-width: 90px;">
+                                                                                @php
+                                                                                    $types = ['support' => 'SUPORTE', 'installation' => 'INSTALAÇÃO', 'administrative' => 'ADMIN', 'commercial' => 'COMER'];
+                                                                                    echo $types[$att->type] ?? strtoupper($att->type);
+                                                                                @endphp
+                                                                            </span>
+                                                                            <span class="text-dark font-weight-bold mr-3" style="font-size: 0.85rem;">{{ $att->created_at->format('d/m/Y H:i') }}</span>
+                                                                            <span class="text-muted small">por {{ str_replace(' Admin', '', $att->user->name) }}</span>
+                                                                        </div>
+                                                                        <button onclick="event.stopPropagation(); viewAttendance('{{ route('support.log.view', $att->id) }}')" class="btn btn-xs btn-outline-indigo px-3">
+                                                                            <i class="fas fa-eye mr-1"></i> VER ATENDIMENTO
+                                                                        </button>
+                                                                    </div>
+                                                                @empty
+                                                                    <div class="text-muted small py-2 text-center">Nenhum atendimento registrado.</div>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                                 @endforeach
@@ -125,7 +159,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="text-center py-5">
+                            <td colspan="3" class="text-center py-5">
                                 <i class="fas fa-headset fa-3x text-muted mb-3 d-block d-none d-sm-block"></i>
                                 <h4 class="text-muted">Nenhum cliente ativo para atendimento</h4>
                             </td>
@@ -214,20 +248,99 @@
     .base-row[aria-expanded="true"] .text-open { display: none !important; }
     .base-row[aria-expanded="true"] .text-close { display: inline-block !important; }
 
-    /* 🦓 ZEBRADO DA LISTAGEM INTERNA */
-    .table-zebra tbody tr:nth-child(odd)  { background-color: #e9ecef; }
-    .table-zebra tbody tr:nth-child(even) { background-color: #ffffff; }
-    .table-zebra tbody tr { transition: background-color 0.2s ease; }
-    .table-zebra tbody tr:hover { background-color: #d0d7f5; }
+    /* 🦓 ZEBRADO MANUAL (FIX) */
+    .bg-zebra { background-color: #f2f4f7 !important; }
+    .vehicle-row:hover { background-color: #e9ecef !important; }
     
     /* 🌓 DARK MODE RASTERTECH */
     .dark-mode .bg-light { background-color: #1a1a2e !important; }
     .dark-mode .bg-white { background-color: #16213e !important; }
-    .dark-mode .base-row:hover { background-color: rgba(255, 193, 7, 0.1) !important; }
-    .dark-mode .text-dark { color: #fff !important; }
+    .dark-mode .bg-zebra { background-color: #1c2a4d !important; }
+    .letter-spacing-1 { letter-spacing: 1px; }
+
+    /* 🛡️ MODAL CUSTOMIZADO (80% DA TELA) */
+    .modal-attendance-dialog {
+        max-width: 80vw !important;
+        width: 80vw !important;
+        margin: 10vh auto !important;
+    }
+    .modal-attendance-content {
+        height: 80vh !important;
+        border-radius: 12px !important;
+        border: 2px solid #6610f2 !important;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.3) !important;
+    }
+    .modal-attendance-body {
+        background: #f8f9fa;
+        overflow-y: auto;
+        padding: 30px !important;
+    }
+    .log-content-area {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        min-height: 100%;
+        font-family: 'Courier New', Courier, monospace;
+        white-space: pre-wrap;
+        font-size: 1rem;
+        color: #333;
+        border: 1px solid #dee2e6;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .border-left-indigo { border-left: 4px solid #6610f2 !important; }
 </style>
 
+<!-- 👁️ VISOR DE ATENDIMENTO (MODAL) -->
+<div class="modal fade" id="modalViewAttendance" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-attendance-dialog animate__animated animate__zoomIn" role="document">
+        <div class="modal-content modal-attendance-content">
+            <div class="modal-header border-0 bg-white py-3 px-4 shadow-sm align-items-center">
+                <h4 class="modal-title text-bold text-indigo m-0">
+                    <i class="fas fa-file-invoice mr-2"></i>Dossiê Técnico de Atendimento
+                </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size: 2rem;">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body modal-attendance-body">
+                <div id="logLoader" class="text-center py-5">
+                    <div class="spinner-border text-indigo" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <p class="mt-3 text-muted text-bold animate__animated animate__pulse animate__infinite">Acessando Dossiê no Servidor...</p>
+                </div>
+                <div id="logContent" class="log-content-area d-none"></div>
+            </div>
+            <div class="modal-footer border-0 bg-white px-4">
+                <button type="button" class="btn btn-secondary px-4 shadow-sm" data-dismiss="modal">FECHAR VISOR</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    function viewAttendance(url) {
+        const modal = $('#modalViewAttendance');
+        const content = $('#logContent');
+        const loader = $('#logLoader');
+
+        content.addClass('d-none').html('');
+        loader.removeClass('d-none');
+        modal.modal('show');
+
+        // Busca o conteúdo TXT via AJAX
+        $.get(url, function(data) {
+            content.html(data).removeClass('d-none');
+            loader.addClass('d-none');
+        }).fail(function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro de Acesso',
+                text: 'Não foi possível ler o arquivo técnico no servidor.',
+                confirmButtonColor: '#6610f2'
+            });
+            modal.modal('hide');
+        });
+    }
+
     function startAttendance(vehicleId, customerId) {
         window.location.href = `/support/start/${vehicleId}/${customerId}`;
     }
