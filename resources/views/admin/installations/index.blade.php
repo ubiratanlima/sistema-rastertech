@@ -9,7 +9,7 @@
         <div class="col-12 p-0 d-flex justify-content-between align-items-end flex-wrap">
             <div>
                 <h1 class="m-0 text-bold" style="font-size: 2.2rem;">
-                    <i class="fas fa-microchip mr-2 text-primary"></i>Validação de Sinais
+                    <i class="fas fa-check-double mr-2 text-success"></i>Validação
                 </h1>
                 <p class="text-muted mb-0 font-weight-bold uppercase small"><i class="fas fa-stream mr-1"></i> Auditoria de Hardware e Homologação Técnica de Campo</p>
             </div>
@@ -39,12 +39,12 @@
                         <table class="table table-hover align-middle m-0">
                             <thead class="bg-light border-bottom">
                                 <tr>
-                                    <th class="py-3 px-4 text-muted small text-uppercase" style="width: 140px;">Data de Obra</th>
-                                    <th class="py-3 text-muted small text-uppercase">Ativo / Cliente</th>
-                                    <th class="py-3 text-muted small text-uppercase">Instalador</th>
-                                    <th class="py-3 text-muted small text-uppercase">Estado do Sinal</th>
-                                    <th class="py-3 text-muted small text-uppercase">Validador</th>
-                                    <th class="py-3 px-4 text-muted small text-uppercase text-right">Ação</th>
+                                    <th class="py-3 px-4 text-muted small text-uppercase text-center" style="width: 140px;">DATA</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center">Veículo</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center">Instalador</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center">Estado do Sinal</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center">Validador</th>
+                                    <th class="py-3 px-4 text-muted small text-uppercase text-center">Ação</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -56,20 +56,26 @@
                                             <small class="text-muted">{{ $inst->created_at->format('H:i') }}h</small>
                                         </div>
                                     </td>
-                                    <td class="align-middle text-left">
-                                        <div class="d-flex align-items-center">
+                                    <td class="align-middle text-center">
+                                        <div class="d-flex align-items-center justify-content-center">
                                             <div class="p-2 mr-3 rounded" style="background: rgba(0,0,0,0.05);">
                                                 <i class="fas fa-car-side text-muted"></i>
                                             </div>
-                                            <div>
+                                            <div class="text-center">
                                                 <span class="d-block font-weight-bold text-uppercase">{{ $inst->vehicle_plate }}</span>
-                                                <small class="text-muted d-block text-truncate" style="max-width: 250px;">{{ $inst->customer_name }}</small>
+                                                <small class="text-muted d-block text-truncate mx-auto" style="max-width: 250px;">{{ $inst->customer_name }}</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ $inst->installer->image ?? asset('img/user-default.png') }}" class="rounded-circle mr-2" width="30" height="30" style="object-fit: cover; border: 1px solid #ddd;">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            @if($inst->installer->image)
+                                                <img src="{{ asset('storage/' . $inst->installer->image) }}" class="rounded-circle mr-2" width="30" height="30" style="object-fit: cover; border: 1px solid #ddd;">
+                                            @else
+                                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mr-2 shadow-sm" style="width: 30px; height: 30px; border: 1px solid #ddd;">
+                                                    <i class="fas fa-user-cog text-muted" style="font-size: 0.8rem;"></i>
+                                                </div>
+                                            @endif
                                             <span class="font-weight-bold small text-dark">{{ $inst->installer->name }}</span>
                                         </div>
                                     </td>
@@ -98,10 +104,16 @@
                                             <span class="text-muted small">--</span>
                                         @endif
                                     </td>
-                                    <td class="py-3 px-4 align-middle text-right">
-                                        <a href="{{ route('admin.installations.show', $inst->id) }}" class="btn btn-outline-primary btn-sm px-3 font-weight-bold" style="border-radius: 8px;">
-                                            <i class="fas fa-search-plus mr-1"></i> HOMOLOGAR
-                                        </a>
+                                    <td class="py-3 px-4 align-middle text-center">
+                                        @if($inst->validation_status == 'approved')
+                                            <a href="{{ route('admin.installations.show', $inst->id) }}" class="btn btn-outline-success btn-sm px-3 font-weight-bold" style="border-radius: 8px;">
+                                                <i class="fas fa-check-double mr-1"></i> VALIDADO
+                                            </a>
+                                        @else
+                                            <a href="{{ route('admin.installations.show', $inst->id) }}" class="btn btn-outline-primary btn-sm px-3 font-weight-bold" style="border-radius: 8px;">
+                                                <i class="fas fa-search-plus mr-1"></i> VALIDAR
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty

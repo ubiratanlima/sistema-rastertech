@@ -121,7 +121,7 @@
                     <li class="nav-item">
                         <a href="{{ route('admin.installations.index') }}" class="nav-link {{ request()->is('admin/installations*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-check-double text-success"></i>
-                            <p>Validação de Sinais</p>
+                            <p>Validação</p>
                         </a>
                     </li>
                     @endif

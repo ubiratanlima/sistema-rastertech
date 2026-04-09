@@ -18,7 +18,13 @@
             </div>
             <div class="mt-2 mt-md-0 d-flex align-items-center">
                 <span class="mr-3 font-weight-bold opacity-50">Técnico: <span class="text-dark">{{ $inst->installer->name }}</span></span>
-                <img src="{{ $inst->installer->image ?? asset('img/user-default.png') }}" class="rounded-circle shadow-sm" width="45" height="45" style="object-fit: cover;">
+                @if($inst->installer->image)
+                    <img src="{{ asset('storage/' . $inst->installer->image) }}" class="rounded-circle shadow-sm" width="45" height="45" style="object-fit: cover; border: 1px solid #ddd;">
+                @else
+                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 45px; border: 1px solid #ddd;">
+                        <i class="fas fa-user-cog text-primary" style="font-size: 1.2rem;"></i>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -34,71 +40,80 @@
                         <small class="opacity-75 uppercase" style="font-size: 0.65rem;">Validação em tempo real com hardware</small>
                     </div>
                     <div class="card-body p-4 bg-white">
-                        <!-- ✅ CHECKLIST DE TESTES -->
-                        <div class="test-item mb-3 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-wifi mr-3 text-muted"></i>
-                                <span class="font-weight-bold text-dark">Dispositivo Online?</span>
+                        <div class="test-form-wrapper" @if($inst->validation_status == 'approved') onclick="showLockedAlert()" @endif>
+                            <!-- ✅ CHECKLIST DE TESTES -->
+                            <div class="test-item mb-3 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-wifi mr-3 text-muted"></i>
+                                    <span class="font-weight-bold text-dark">Dispositivo Online?</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg p-0">
+                                    <input type="checkbox" class="custom-control-input" id="test_online" name="test_online" value="1" {{ $inst->test_online ? 'checked' : '' }} {{ $inst->validation_status == 'approved' ? 'disabled' : '' }}>
+                                    <label class="custom-control-label" for="test_online" style="cursor: pointer;"></label>
+                                </div>
                             </div>
-                            <div class="custom-control custom-switch custom-switch-lg p-0">
-                                <input type="checkbox" class="custom-control-input" id="test_online" name="test_online" value="1" {{ $inst->test_online ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="test_online" style="cursor: pointer;"></label>
-                            </div>
-                        </div>
 
-                        @if($inst->has_block)
-                        <div class="test-item mb-3 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-lock mr-3 text-muted"></i>
-                                <span class="font-weight-bold text-dark">Bloqueio Ativo?</span>
+                            @if($inst->has_block)
+                            <div class="test-item mb-3 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-lock mr-3 text-muted"></i>
+                                    <span class="font-weight-bold text-dark">Bloqueio Ativo?</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg p-0">
+                                    <input type="checkbox" class="custom-control-input" id="test_block" name="test_block" value="1" {{ $inst->test_block ? 'checked' : '' }} {{ $inst->validation_status == 'approved' ? 'disabled' : '' }}>
+                                    <label class="custom-control-label" for="test_block" style="cursor: pointer;"></label>
+                                </div>
                             </div>
-                            <div class="custom-control custom-switch custom-switch-lg p-0">
-                                <input type="checkbox" class="custom-control-input" id="test_block" name="test_block" value="1" {{ $inst->test_block ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="test_block" style="cursor: pointer;"></label>
-                            </div>
-                        </div>
-                        @endif
+                            @endif
 
-                        <div class="test-item mb-3 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-key mr-3 text-muted"></i>
-                                <span class="font-weight-bold text-dark">Pós Chave (ON)?</span>
+                            <div class="test-item mb-3 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-key mr-3 text-muted"></i>
+                                    <span class="font-weight-bold text-dark">Pós Chave (ON)?</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg p-0">
+                                    <input type="checkbox" class="custom-control-input" id="test_ignition_on" name="test_ignition_on" value="1" {{ $inst->test_ignition_on ? 'checked' : '' }} {{ $inst->validation_status == 'approved' ? 'disabled' : '' }}>
+                                    <label class="custom-control-label" for="test_ignition_on" style="cursor: pointer;"></label>
+                                </div>
                             </div>
-                            <div class="custom-control custom-switch custom-switch-lg p-0">
-                                <input type="checkbox" class="custom-control-input" id="test_ignition_on" name="test_ignition_on" value="1" {{ $inst->test_ignition_on ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="test_ignition_on" style="cursor: pointer;"></label>
-                            </div>
-                        </div>
 
-                        <div class="test-item mb-4 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-power-off mr-3 text-muted"></i>
-                                <span class="font-weight-bold text-dark">Ignição (OFF)?</span>
+                            <div class="test-item mb-4 p-3 rounded d-flex align-items-center justify-content-between border-bottom bg-light">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-power-off mr-3 text-muted"></i>
+                                    <span class="font-weight-bold text-dark">Ignição (OFF)?</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg p-0">
+                                    <input type="checkbox" class="custom-control-input" id="test_ignition_off" name="test_ignition_off" value="1" {{ $inst->test_ignition_off ? 'checked' : '' }} {{ $inst->validation_status == 'approved' ? 'disabled' : '' }}>
+                                    <label class="custom-control-label" for="test_ignition_off" style="cursor: pointer;"></label>
+                                </div>
                             </div>
-                            <div class="custom-control custom-switch custom-switch-lg p-0">
-                                <input type="checkbox" class="custom-control-input" id="test_ignition_off" name="test_ignition_off" value="1" {{ $inst->test_ignition_off ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="test_ignition_off" style="cursor: pointer;"></label>
-                            </div>
-                        </div>
 
-                        <div class="form-group mb-4">
-                            <label class="text-uppercase text-muted font-weight-bold small">Observações de Validação</label>
-                            <textarea name="validation_notes" class="form-control border bg-light small" rows="4" placeholder="Alguna observação sobre os testes sinais..." style="border-radius: 10px;">{{ $inst->validation_notes }}</textarea>
-                        </div>
-
-                        <input type="hidden" name="validation_status" id="validation_status" value="{{ $inst->validation_status }}">
-
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <button type="button" onclick="confirmValidation('approved')" class="btn btn-success btn-lg btn-block shadow-sm py-3 text-bold uppercase small" style="border-radius: 12px;">
-                                    <i class="fas fa-check-circle d-block mb-1"></i> APROVAR
-                                </button>
+                            <div class="form-group mb-4">
+                                <label class="text-uppercase text-muted font-weight-bold small">Observações de Validação</label>
+                                <textarea name="validation_notes" class="form-control border bg-light small" rows="4" placeholder="Alguna observação sobre os testes sinais..." style="border-radius: 10px;" {{ $inst->validation_status == 'approved' ? 'disabled' : '' }}>{{ $inst->validation_notes }}</textarea>
                             </div>
-                            <div class="col-6">
-                                <button type="button" onclick="confirmValidation('rejected')" class="btn btn-danger btn-lg btn-block shadow-sm py-3 text-bold uppercase small" style="border-radius: 12px;">
-                                    <i class="fas fa-times-circle d-block mb-1"></i> REJEITAR
-                                </button>
-                            </div>
+
+                            @if($inst->validation_status == 'approved')
+                                <div class="bg-success shadow-sm d-flex flex-column justify-content-center align-items-center" style="border-radius: 15px; height: 120px; width: 100%;">
+                                    <div class="text-white text-center">
+                                        <div class="font-weight-bold uppercase letter-spacing-1" style="font-size: 1.6rem; line-height: 1.2;">Certificação Concluída</div>
+                                        <div class="opacity-80" style="font-size: 1.1rem; margin-top: 5px;">Registro Auditado e Homologado</div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <button type="button" onclick="confirmValidation('approved')" class="btn btn-success btn-lg btn-block shadow-sm py-3 text-bold uppercase" style="border-radius: 15px; font-size: 1.5rem;">
+                                            <i class="fas fa-check-circle d-block mb-1 fa-lg"></i> APROVAR
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" onclick="confirmValidation('rejected')" class="btn btn-danger btn-lg btn-block shadow-sm py-3 text-bold uppercase" style="border-radius: 15px; font-size: 1.5rem;">
+                                            <i class="fas fa-times-circle d-block mb-1 fa-lg"></i> REJEITAR
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -119,10 +134,12 @@
                                 </h3>
                                 <small class="text-muted font-weight-bold uppercase d-block mt-2">{{ $inst->customer_name }}</small>
                             </div>
-                            <div class="text-right">
-                                <p class="text-muted small mb-0 uppercase font-weight-bold">Status Técnico</p>
-                                <span class="badge badge-success px-3 py-1" style="border-radius: 10px;">{{ strtoupper($inst->status) }}</span>
-                            </div>
+                             <div class="text-center">
+                                 <p class="text-muted small mb-1 uppercase font-weight-bold">Status Técnico</p>
+                                 <span class="badge badge-success px-4 py-2 shadow-sm d-inline-flex align-items-center justify-content-center" style="border-radius: 12px; font-size: 1.2rem; min-width: 180px;">
+                                     <i class="fas fa-check-circle mr-2"></i>{{ strtoupper($inst->status) }}
+                                 </span>
+                             </div>
                         </div>
                     </div>
 
@@ -207,6 +224,26 @@
     .photo-review-item:hover { filter: brightness(1.2); transform: scale(1.02); }
     .badge-label-rtech { position: absolute; bottom: 0; left: 0; width: 100%; padding: 3px 6px; font-size: 0.6rem; font-weight: bold; color: white; background: rgba(0,0,0,0.6); }
 
+    /* 📸 AJUSTE BOTÃO FECHAR SWAL (DENTRO DA IMAGEM) */
+    .swal2-close {
+        position: absolute !important;
+        top: 15px !important;
+        right: 15px !important;
+        color: white !important;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        z-index: 1000 !important;
+        transition: transform 0.2s ease !important;
+    }
+    .swal2-close:hover {
+        transform: scale(1.2);
+        color: #ff3333 !important;
+    }
+    .swal2-image {
+        margin-top: 0 !important;
+        border: 4px solid white !important;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+    }
+
     /* 🚥 SWITCH LG */
     .custom-switch-lg .custom-control-label::before { height: 1.8rem; width: 3.2rem; border-radius: 2rem; }
     .custom-switch-lg .custom-control-label::after { width: calc(1.8rem - 4px); height: calc(1.8rem - 4px); border-radius: 2rem; }
@@ -237,16 +274,31 @@
         });
     }
 
+    function showLockedAlert() {
+        Swal.fire({
+            title: '<span class="text-bold">Registro Homologado</span>',
+            text: 'Este dispositivo já foi homologado e não poderá mais ser alterado.',
+            icon: 'warning',
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'ENTENDIDO'
+        });
+    }
+
     function viewPhoto(url, title) {
         Swal.fire({
-            title: `<span class="text-bold text-uppercase" style="font-size: 1.1rem; color: #fff;">${title}</span>`,
+            title: `<span class="text-bold text-uppercase d-block mb-2" style="font-size: 1.1rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${title}</span>`,
             imageUrl: url,
-            width: '80vw',
+            width: 'auto',
+            imageWidth: 'auto',
+            imageHeight: '75vh',
             background: 'transparent',
             showConfirmButton: false,
             showCloseButton: true,
             backdrop: `rgba(0,0,15,0.95)`, 
-            customClass: { image: 'rounded border border-white' }
+            customClass: { 
+                image: 'rounded m-0 pulse-border',
+                closeButton: 'custom-close-btn'
+            }
         });
     }
 </script>

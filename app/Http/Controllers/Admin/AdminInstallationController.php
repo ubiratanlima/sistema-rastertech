@@ -46,6 +46,11 @@ class AdminInstallationController extends Controller
     {
         $inst = Installation::findOrFail($id);
 
+        // 🛡️ TRAVA DE SEGURANÇA: Impede re-validação de obra já aprovada
+        if ($inst->validation_status == 'approved') {
+            return redirect()->back()->with('error', 'Este dispositivo já foi homologado e não pode mais ser alterado.');
+        }
+
         $request->validate([
             'validation_status' => 'required|in:approved,rejected',
             'validation_notes' => 'nullable|string|max:1000'
