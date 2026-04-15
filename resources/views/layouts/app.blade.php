@@ -89,6 +89,12 @@
                         <a href="/fleets" class="nav-link {{ request()->is('fleets*') ? 'active' : '' }}"><i class="nav-icon fas fa-truck-moving"></i><p>Veículos</p></a>
                     </li>
                     <li class="nav-item">
+                        <a href="/missoes" class="nav-link {{ request()->is('missoes*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-route text-teal"></i>
+                            <p>Missões em Campo</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Credenciais APPs</p></a>
                     </li>
 

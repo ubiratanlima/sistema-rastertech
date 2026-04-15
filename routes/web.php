@@ -53,6 +53,7 @@ Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->
 
 // 🚗 GESTÃO DE FROTAS (VEÍCULOS)
 Route::get('/fleets', [VehicleController::class, 'index'])->name('fleets.index');
+Route::get('/missoes', [\App\Http\Controllers\VehicleMissionController::class, 'index'])->name('missions.index');
 Route::delete('/fleets/{id}', [VehicleController::class, 'destroy'])->name('fleets.destroy');
 
 // 🏢 ENGENHARIA: FORNECEDORES E PLATAFORMAS
