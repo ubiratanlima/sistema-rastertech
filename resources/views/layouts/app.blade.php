@@ -21,11 +21,11 @@
         .brand-image-raster { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
         
         /* MODO EXPANDIDO: LOGO COMPLETO */
-        .sidebar-mini:not(.sidebar-collapse) .brand-image-raster { width: 180px !important; height: auto !important; object-fit: contain; object-position: left; margin-left: 15px; }
+        .sidebar-mini:not(.sidebar-collapse) .brand-image-raster { width: 230px !important; height: auto !important; object-fit: contain; object-position: left; }
         .sidebar-mini:not(.sidebar-collapse) .brand-text { display: none !important; } /* A escrita já está na imagem */
 
         /* MODO COLAPSADO: APENAS EMBLEMA */
-        .sidebar-collapse .brand-image-raster { width: 38px !important; height: 38px !important; object-fit: cover; object-position: left; margin-left: 0 !important; border-radius: 8px; }
+        .sidebar-collapse .brand-image-raster { width: 50px !important; height: 50px !important; object-fit: cover; object-position: left; margin-left: 0 !important; border-radius: 8px; }
         .sidebar-collapse .brand-link { justify-content: center; }
     </style>
     @stack('styles')
