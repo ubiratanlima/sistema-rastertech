@@ -10,8 +10,10 @@ class VehicleChecklist extends Model
     use HasFactory;
 
     protected $fillable = [
+        'customer_id',
         'vehicle_id',
         'driver_id',
+        'performed_by_id',
         'type',
         'odometer',
         'fuel_level',
@@ -23,6 +25,11 @@ class VehicleChecklist extends Model
         'photos' => 'json'
     ];
 
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
@@ -31,5 +38,10 @@ class VehicleChecklist extends Model
     public function driver()
     {
         return $this->belongsTo(PortalDriver::class, 'driver_id');
+    }
+
+    public function performedBy()
+    {
+        return $this->belongsTo(User::class, 'performed_by_id');
     }
 }

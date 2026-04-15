@@ -99,3 +99,29 @@ Para execuções `artisan`, o comando padrão e único é:
 **Status**: Fase 1 (Arquitetura & Infraestrutura) - CONCLUÍDA.
 **Status de Estabilidade**: BLINDAGEM DE PORTA E REGISTROS ATIVA.
 **Autor**: Antigravity AI (Pair Programming com Ubiratan).
+
+---
+
+## 7. Log de Sessão — 15/04/2026 (Módulo de Missões)
+
+> Documentação detalhada em: `MISSOES_JORNADAS_DOSSIER.md`
+
+### Bugs Resolvidos:
+
+| Data | Bug | Arquivo | Solução |
+| :--- | :--- | :--- | :--- |
+| 15/04/26 | Checkout não fechava a missão (EM CAMPO persistia) | `CustomerPortalController` | Removido filtro `customer_id` da query de missão aberta — `vehicle_id + status='open'` é suficiente |
+| 15/04/26 | Supervisor no checkout trocava o veículo selecionado | `CustomerPortalController` | Adicionado `vehicle_id` da request como filtro prioritário em `createChecklist()` |
+| 15/04/26 | Coluna DESLOCAMENTO mostrava "EM CAMPO" em baixas administrativas | `verificacoes/index.blade.php` | Adicionado `@elseif($mission->status === 'closed')` para missões sem entry_id |
+
+### Features Adicionadas:
+
+| Data | Feature | Arquivo |
+| :--- | :--- | :--- |
+| 15/04/26 | Navegação bidirecional check-in ↔ checkout na tela de detalhes | `verificacoes/show.blade.php` |
+| 15/04/26 | Badge "JORNADA FINALIZADA" clicável (volta para listagem) | `verificacoes/show.blade.php` |
+
+### Incidente de Dados Resolvido:
+- Missão #7 (fantasma, RTH-2028) e Checklist #9 (checkout errado) foram deletados via tinker
+- Estado do banco restaurado: RTH-2026 (Missão #5) e RTH-2028 (Missão #6) — ambas closed ✅
+

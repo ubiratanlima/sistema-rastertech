@@ -136,14 +136,18 @@
         box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
     .rtech-close-btn {
-        position: fixed !important;
+        position: absolute !important;
         top: 20px !important;
         right: 20px !important;
-        border: 0 !important;
-        z-index: 9999 !important;
-        transition: transform 0.2s;
+        color: white !important;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        z-index: 1000 !important;
+        transition: transform 0.2s ease !important;
     }
-    .rtech-close-btn:hover { transform: scale(1.2); }
+    .rtech-close-btn:hover {
+        transform: scale(1.2);
+        color: #ff3333 !important;
+    }
 </style>
 
 @push('scripts')
@@ -153,27 +157,20 @@
      */
     function viewPhoto(url, title) {
         Swal.fire({
-            title: `<span class="text-bold text-uppercase" style="font-size: 1.2rem; letter-spacing: 1px; color: #fff;">${title}</span>`,
+            title: `<span class="text-bold text-uppercase d-block mb-2" style="font-size: 1.1rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${title}</span>`,
             imageUrl: url,
-            imageAlt: title,
-            width: '80vw',
-            padding: '1rem',
+            width: 'auto',
+            imageWidth: 'auto',
+            imageHeight: '75vh',
             background: 'transparent',
             showConfirmButton: false,
             showCloseButton: true,
-            closeButtonHtml: '<i class="fas fa-times fa-2x text-white"></i>',
             backdrop: `rgba(0,0,15,0.95)`, 
-            showClass: {
-                popup: 'animate__animated animate__zoomIn animate__faster'
-            },
-            hideClass: {
-                popup: 'animate__animated animate__zoomOut animate__faster'
-            },
-            customClass: {
-                image: 'rtech-swal-image rounded',
-                popup: 'border-0 bg-transparent',
-                closeButton: 'rtech-close-btn shadow-none',
-                title: 'text-white mb-3 d-block'
+            showClass: { popup: 'animate__animated animate__zoomIn animate__faster' },
+            hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
+            customClass: { 
+                image: 'rounded m-0 shadow-lg',
+                closeButton: 'rtech-close-btn shadow-none'
             }
         });
     }

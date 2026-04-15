@@ -20,7 +20,12 @@
     <!-- 💰 FORMULÁRIO DE LANÇAMENTO -->
     <form action="{{ route('portal.despesas.store') }}" method="POST" enctype="multipart/form-data" id="expenseForm">
         @csrf
-        <input type="hidden" name="driver_id" value="{{ $driver->id }}">
+        <input type="hidden" name="driver_id" value="{{ $driver ? $driver->id : '0' }}">
+        @if(!$driver)
+            <div class="alert alert-info border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                <i class="fas fa-user-shield mr-2"></i> <strong>MODO ADMINISTRADOR:</strong> Você está registrando uma despesa administrativa para a frota.
+            </div>
+        @endif
 
         <div class="row">
             <!-- 🚛 DADOS DO VEÍCULO E CATEGORIA -->

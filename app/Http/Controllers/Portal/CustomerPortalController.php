@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PortalDriver;
 use App\Models\VehicleChecklist;
+use App\Models\VehicleMission;
 use App\Models\VehicleExpense;
 use App\Models\CustomerWhatsappNumber;
 use App\Models\Vehicle;
@@ -222,41 +223,53 @@ class CustomerPortalController extends Controller
      */
     public function verificacoes(Request $request)
     {
-        // 🛡️ IDENTIFICAÇÃO TÁTICA DO MOTORISTA
+        // 🛡️ IDENTIFICAÇÃO TÁTICA DO MOTORISTA (OU ADMIN)
         $user = Auth::user();
+        
+        // Papéis que possuem visão de supervisão (vêem todos os motoristas do cliente)
+        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isSupervisor = in_array($user->role, $supervisorRoles);
 
-        if (!$user) {
-            return redirect()->route('login')->with('error', 'Por favor, realize o login para acessar o portal.');
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        $driver = null;
+
+        if ($subUser) {
+            $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
         }
 
-        // Se for admin/gestor, tentamos carregar um subUser se ele estiver logado como um
-        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
-        
-        if (!$subUser) {
+        // Se não for supervisor e não tiver perfil de motorista, redireciona
+        if (!$isSupervisor && (!$subUser || !$driver)) {
             return redirect()->route('dashboard')->with('error', 'Seu acesso não está vinculado a um perfil de Portal/Motorista.');
         }
 
-        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
-
-        if (!$driver) {
-            return redirect()->route('dashboard')->with('error', 'Seu acesso não possui um perfil de motorista configurado.');
+        // 📊 QUERY DE BUSCA - FOCO EM MISSÕES (Dossiê Unificado)
+        $query = VehicleMission::with(['vehicle', 'driver', 'entryChecklist', 'exitChecklist']);
+        
+        if ($user->role == 'admin') {
+            // Admin global vê TUDO de TODOS os clientes
+        } elseif ($isSupervisor) {
+            // Supervisor/Operador/Gestor vê tudo do seu customer_id
+            $query->where('customer_id', $user->customer_id);
+        } else {
+            // Motorista vê apenas as missões iniciadas por ele
+            $query->where('driver_id', $driver->id);
         }
 
-        // 📊 ESTADO DA JORNADA ATUAL (Último Registro)
-        $lastChecklist = VehicleChecklist::where('driver_id', $driver->id)
-            ->with('vehicle')
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $checklists = $query->orderBy('created_at', 'desc')->paginate(15);
 
+        // 📊 ESTADO DA JORNADA ATUAL (Último Registro para o Dashboard)
+        $stateDriver = $driver ?: PortalDriver::where('customer_id', $user->customer_id)->first();
+        $lastChecklist = $stateDriver ? VehicleChecklist::where('driver_id', $stateDriver->id)->orderBy('created_at', 'desc')->first() : null;
         $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
 
         // 📊 HISTÓRICO IMUTÁVEL (Últimos 30 dias)
-        $checklists = VehicleChecklist::where('driver_id', $driver->id)
-            ->with('vehicle')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $checklists = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('portal.verificacoes.index', compact('driver', 'checklists', 'lastChecklist', 'isOnline'));
+        // Papéis que possuem visão de supervisão (vêem todos os motoristas do cliente)
+        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isSupervisor = in_array($user->role, $supervisorRoles);
+
+        return view('portal.verificacoes.index', compact('driver', 'checklists', 'lastChecklist', 'isOnline', 'isSupervisor'));
     }
 
     /**
@@ -265,38 +278,92 @@ class CustomerPortalController extends Controller
     public function createChecklist(Request $request, $type)
     {
         $user = Auth::user();
-
-        if (!$user) {
-            return redirect()->route('login');
-        }
+        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isSupervisor = in_array($user->role, $supervisorRoles);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
 
-        if (!$subUser) {
+        if (!$isSupervisor && (!$subUser || !$driver)) {
             return redirect()->route('dashboard')->with('error', 'Ação permitida apenas para motoristas autorizados.');
         }
 
-        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
-        
-        // 🛡️ VALIDAÇÃO TÁTICA DE ESTADO (MÁQUINA DE ESTADOS)
-        $lastChecklist = VehicleChecklist::where('driver_id', $driver->id)->orderBy('created_at', 'desc')->first();
-        $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+        // 🛡️ VALIDAÇÃO TÁTICA DE POSSE DE JORNADA (ESTILO CUSTÓDIA)
+        $isOnline = false;
+        $activeJourney = null;
 
-        if ($type == 'entry' && $isOnline) {
-            return redirect()->route('portal.verificacoes.index')->with('warning', 'Você já possui um Check-in ativo. Realize o Check-out antes de iniciar um novo.');
+        // Se for um motorista comum, sua jornada pessoal ainda importa (ele só pode estar em um veículo por vez)
+        if (!$isSupervisor && $driver) {
+            $personalLast = VehicleChecklist::where('driver_id', $driver->id)->orderBy('created_at', 'desc')->first();
+            if ($type == 'entry' && $personalLast && $personalLast->type == 'entry') {
+                return redirect()->route('portal.verificacoes.index')->with('warning', 'Você já possui um Check-in ativo em outro veículo. Realize o Check-out antes.');
+            }
         }
 
-        if ($type == 'exit' && !$isOnline) {
-            return redirect()->route('portal.verificacoes.index')->with('warning', 'Nenhuma jornada ativa encontrada. Realize o Check-in primeiro.');
+        // 🚛 TRAVA DE ATIVO (BLOQUEIO DE VEÍCULO EM USO)
+        // No Check-out, precisamos encontrar se EXISTE uma jornada aberta para decidir se o formulário abre
+        if ($type == 'exit') {
+            $exitQuery = VehicleChecklist::where('type', 'entry');
+
+            // 🎯 BUG FIX: Se vier vehicle_id na request (ex: botão CHECKOUT da tela de show),
+            // usamos ele para garantir que o supervisor trate o veículo correto.
+            if ($request->filled('vehicle_id')) {
+                $exitQuery->where('vehicle_id', $request->vehicle_id);
+            } elseif (!$isSupervisor) {
+                // Motorista comum só pode dar saída no que ele mesmo abriu
+                $exitQuery->where('driver_id', $driver?->id);
+            }
+
+            $activeJourney = $exitQuery->orderBy('created_at', 'desc')->first();
+            
+            // Verificamos se esse 'entry' já foi fechado
+            if ($activeJourney) {
+                $hasExit = VehicleChecklist::where('vehicle_id', $activeJourney->vehicle_id)
+                    ->where('type', 'exit')
+                    ->where('created_at', '>', $activeJourney->created_at)
+                    ->exists();
+                
+                if (!$hasExit) {
+                    $isOnline = true;
+                }
+            }
+
+            if (!$isOnline && !$isSupervisor) {
+                return redirect()->route('portal.verificacoes.index')->with('warning', 'Nenhuma jornada ativa encontrada para liberação.');
+            }
         }
 
         // 🚛 VEÍCULOS DISPONÍVEIS NA FROTA DO CLIENTE
-        $vehicles = Vehicle::where('customer_id', $driver->customer_id)->get();
+        $customerId = $user->customer_id ?? 1;
+        $vehicles = Vehicle::where('customer_id', $customerId)->get();
 
-        // 🎯 PRÉ-SELEÇÃO DO VEÍCULO (NO CASO DE CHECK-OUT)
-        $currentVehicleId = ($type == 'exit' && $lastChecklist) ? $lastChecklist->vehicle_id : null;
+        // 🛡️ IDENTIFICAÇÃO DE OCUPAÇÃO (TRANSPARÊNCIA) - Para os veículos que não estão com o motorista atual
+        foreach ($vehicles as $v) {
+            $v->is_locked = false;
+            // Busca o último registro de 'entry' para este veículo para ver se ele está "em trânsito"
+            $lockCheck = VehicleChecklist::where('vehicle_id', $v->id)->orderBy('created_at', 'desc')->first();
+            
+            if ($lockCheck && $lockCheck->type == 'entry') {
+                $v->is_locked = true;
+                $v->locked_by_id = $lockCheck->driver_id;
+                $v->locked_by_name = $lockCheck->driver->name ?? 'Sistema';
+                $v->locked_at = $lockCheck->created_at->format('d/m H:i');
+            }
+        }
 
-        return view('portal.verificacoes.form', compact('driver', 'vehicles', 'type', 'currentVehicleId'));
+        // 🎯 PRÉ-SELEÇÃO DO VEÍCULO E MOTORISTA (NO CASO DE CHECK-OUT)
+        $currentVehicleId = ($type == 'exit' && $activeJourney) ? $activeJourney->vehicle_id : null;
+        
+        // Se for Supervisor em Check-out, o "motorista" do formulário deve ser o dono da jornada ativa (se houver)
+        if ($isSupervisor && $type == 'exit' && $activeJourney) {
+            $driver = $activeJourney->driver;
+        }
+
+        // 🛡️ BUSCA DE ÚLTIMO KM (PARA REFERÊNCIA NO FORMULÁRIO)
+        $lastRecord = VehicleChecklist::where('vehicle_id', $currentVehicleId)->orderBy('created_at', 'desc')->first();
+        $last_odometer = $lastRecord ? $lastRecord->odometer : 0;
+
+        return view('portal.verificacoes.form', compact('driver', 'vehicles', 'type', 'currentVehicleId', 'isSupervisor', 'activeJourney', 'last_odometer'));
     }
 
     /**
@@ -304,26 +371,40 @@ class CustomerPortalController extends Controller
      */
     public function storeChecklistAction(Request $request)
     {
-        $request->validate([
+        $user = Auth::user();
+        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isAdmin = in_array($user->role, $supervisorRoles);
+
+        // 🛡️ REGRAS DE VALIDAÇÃO DINÂMICAS
+        $rules = [
             'vehicle_id' => 'required|exists:vehicles,id',
             'driver_id' => 'required|exists:portal_drivers,id',
             'type' => 'required|in:entry,exit',
             'odometer' => 'required|numeric|min:0',
             'notes' => 'required|string|min:15|max:500',
-            // 📸 5 FOTOS OBRIGATÓRIAS (ODÔMETRO + 4)
-            'photo_1' => 'required|image|max:10240', // Odômetro
-            'photo_2' => 'required|image|max:10240', // Frente
-            'photo_3' => 'required|image|max:10240', // Traseira
-            'photo_4' => 'required|image|max:10240', // Lateral Dir.
-            'photo_5' => 'required|image|max:10240', // Lateral Esq.
-            // 📸 5 FOTOS OPCIONAIS (BODY / EXTRAS)
-            'photo_6' => 'nullable|image|max:10240',
-            'photo_7' => 'nullable|image|max:10240',
-            'photo_8' => 'nullable|image|max:10240',
-            'photo_9' => 'nullable|image|max:10240',
-            'photo_10' => 'nullable|image|max:10240',
-        ], [
-            'notes.min' => 'O Relato do Motorista deve conter pelo menos 15 caracteres.',
+        ];
+
+        // Se for motorista ou Check-in, as fotos são 100% obrigatórias
+        // Se for Admin em Check-out, as fotos são opcionais
+        $isCheckoutAdmin = ($isAdmin && $request->type == 'exit');
+        $photoRule = $isCheckoutAdmin ? 'nullable' : 'required';
+
+        for ($i = 1; $i <= 5; $i++) {
+            $rules["photo_$i"] = "$photoRule|image|max:10240";
+        }
+
+        // Fotos extras são sempre opcionais
+        for ($i = 6; $i <= 10; $i++) {
+            $rules["photo_$i"] = "nullable|image|max:10240";
+        }
+
+        // Se for Admin dando baixa sem fotos, exigimos justificativa maior
+        if ($isCheckoutAdmin && !$request->hasFile('photo_1')) {
+            $rules['notes'] = 'required|string|min:30|max:500';
+        }
+
+        $request->validate($rules, [
+            'notes.min' => $isCheckoutAdmin ? 'Para check-out administrativo sem fotos, justifique o motivo com pelo menos 30 caracteres.' : 'O Relato deve conter pelo menos 15 caracteres.',
             'photo_1.required' => 'A foto do Odômetro é obrigatória.',
             'photo_2.required' => 'A foto da Frente é obrigatória.',
             'photo_3.required' => 'A foto da Traseira é obrigatória.',
@@ -331,44 +412,115 @@ class CustomerPortalController extends Controller
             'photo_5.required' => 'A foto da Lateral Esquerda é obrigatória.',
         ]);
 
-        // 🛡️ REVALIDAÇÃO TÁTICA DE ESTADO (BLINDAGEM SERVER-SIDE)
-        $lastChecklist = VehicleChecklist::where('driver_id', $request->driver_id)->orderBy('created_at', 'desc')->first();
-        $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+        // 🛡️ VALIDAÇÃO DE CONTINUIDADE DE ODÔMETRO (HODÔMETRO TÁTICO)
+        $lastCheck = VehicleChecklist::where('vehicle_id', $request->vehicle_id)->orderBy('created_at', 'desc')->first();
+        $isSupervisor = in_array($user->role, ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações']);
+        
+        if ($lastCheck) {
+            $lastKm = $lastCheck->odometer;
+            $currentKm = (int) $request->odometer;
 
-        if ($request->type == 'entry' && $isOnline) {
-            return redirect()->route('portal.verificacoes.index')->with('error', 'Erro Crítico: Você já está em jornada ativada.');
+            if ($request->type == 'entry') {
+                // Check-in deve ser IGUAL ao último Checkout
+                if ($currentKm != $lastKm && !$isSupervisor) {
+                    return back()->withInput()->with('error', "O KM de entrada ({$currentKm}) deve ser exatamente igual ao KM do último checkout ({$lastKm}).");
+                }
+            } else {
+                // Check-out deve ser MAIOR ou IGUAL ao Check-in
+                if ($currentKm < $lastKm && !$isSupervisor) {
+                    return back()->withInput()->with('error', "O KM de saída ({$currentKm}) não pode ser menor que o KM de entrada ({$lastKm}).");
+                }
+            }
+
+            // ⚠️ BYPASS SUPERVISOR: Se houver divergência, exige justificativa robusta
+            if ($isSupervisor && $currentKm != $lastKm && strlen($request->notes) < 30) {
+                 return back()->withInput()->with('error', "Divergência de KM detectada ({$currentKm} vs {$lastKm}). Como Supervisor, você deve justificar o motivo no campo de mensagens (mínimo 30 caracteres).");
+            }
         }
 
-        if ($request->type == 'exit' && !$isOnline) {
-            return redirect()->route('portal.verificacoes.index')->with('error', 'Erro Crítico: Nenhuma jornada ativa encontrada para encerrar.');
-        }
-
-        $photos = [];
-        $driver = PortalDriver::find($request->driver_id);
+        // 🚛 DADOS DO ATIVO E CONTEXTO
+        $vehicle = Vehicle::findOrFail($request->vehicle_id);
         $date = now()->format('Y-m-d');
+        $photos = [];
 
-        // 📂 PROCESSAMENTO DE SLOTS
+        // 📂 PROCESSAMENTO DE SLOTS DE IMAGEM
         for ($i = 1; $i <= 10; $i++) {
             if ($request->hasFile("photo_$i")) {
                 $file = $request->file("photo_$i");
                 $fileName = "checklist_{$request->type}_{$i}_" . time() . ".{$file->getClientOriginalExtension()}";
-                $path = $file->storeAs("checklists/{$driver->id}/{$date}", $fileName, 'public');
+                $path = $file->storeAs("checklists/{$request->driver_id}/{$date}", $fileName, 'public');
                 $photos["photo_$i"] = $path;
             }
         }
 
+        // 💾 SALVAMENTO COM TRILHA DE AUDITORIA
         $checklist = VehicleChecklist::create([
-            'vehicle_id' => $request->vehicle_id,
-            'driver_id' => $request->driver_id,
-            'type' => $request->type,
-            'odometer' => $request->odometer,
-            'fuel_level' => $request->fuel_level ?? 'N/A',
-            'photos' => $photos,
-            'notes' => $request->notes
+            'customer_id'     => $vehicle->customer_id,
+            'vehicle_id'      => $request->vehicle_id,
+            'driver_id'       => $request->driver_id,
+            'performed_by_id' => $user->id, // Quem deu o clique
+            'type'            => $request->type,
+            'odometer'        => $request->odometer,
+            'fuel_level'      => $request->fuel_level ?? 'N/A',
+            'photos'          => $photos,
+            'notes'           => $request->notes
         ]);
 
+        // 🔄 SINCRONIZAÇÃO DE ESTADO DO VEÍCULO (HODÔMETRO TÁTICO)
+        if ($request->type == 'entry') {
+            $vehicle->update([
+                'is_locked' => true,
+                'last_checklist_id' => $checklist->id
+            ]);
+        } else {
+            $vehicle->update([
+                'is_locked' => false,
+                // Mantemos o last_checklist_id opcionalmente ou limpamos
+            ]);
+        }
+
         // 🆙 ATUALIZAÇÃO DE STATUS NO MOTORISTA
-        $driver->update(['last_checklist_at' => now()]);
+        $driver = PortalDriver::find($request->driver_id);
+        if ($driver) {
+            $driver->update(['last_checklist_at' => now()]);
+        }
+
+        // 🎖️ GESTÃO TÁTICA DE MISSÕES (PONTO DE UNIÃO)
+        if ($request->type == 'entry') {
+            // Check-in: Iniciamos uma nova Missão
+            VehicleMission::create([
+                'customer_id' => $vehicle->customer_id,
+                'vehicle_id'  => $request->vehicle_id,
+                'driver_id'   => $request->driver_id,
+                'entry_id'    => $checklist->id,
+                'status'      => 'open'
+            ]);
+        } else {
+            // Check-out: Buscamos a missão aberta deste veículo para fechá-la
+            // ⚠️ BUG FIX: Removido filtro por customer_id — o vehicle_id + status 'open'
+            // já é suficiente e evita falhas quando o operador tem customer_id diferente do motorista.
+            $openMission = VehicleMission::where('vehicle_id', $request->vehicle_id)
+                ->where('status', 'open')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($openMission) {
+                $openMission->update([
+                    'exit_id' => $checklist->id,
+                    'status'  => 'closed'
+                ]);
+            } else {
+                // Caso não haja missão aberta (ex: checkout administrativo), criamos uma missão já fechada
+                VehicleMission::create([
+                    'customer_id' => $vehicle->customer_id,
+                    'vehicle_id'  => $request->vehicle_id,
+                    'driver_id'   => $request->driver_id,
+                    'entry_id'    => null, // Sem entrada vinculada
+                    'exit_id'     => $checklist->id,
+                    'status'      => 'closed'
+                ]);
+            }
+        }
 
         return redirect()->route('portal.verificacoes.index')
             ->with('success', 'Verificação (' . strtoupper($request->type) . ') registrada com sucesso!');
@@ -389,19 +541,23 @@ class CustomerPortalController extends Controller
     public function despesas(Request $request)
     {
         $user = Auth::user();
-        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
-        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
+        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isAdmin = in_array($user->role, $adminRoles);
 
-        if (!$driver) {
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
+
+        if (!$isAdmin && !$driver) {
             return redirect()->route('dashboard')->with('error', 'Acesso negado: Perfil de motorista não encontrado.');
         }
 
-        // 💰 HISTÓRICO DE DESPESAS (ÚLTIMOS 100 REGISTROS)
-        $expenses = VehicleExpense::where('driver_id', $driver->id)
-            ->with('vehicle')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        // 💰 HISTÓRICO DE DESPESAS (GLOBAL PARA ADMIN / ESPECÍFICO PARA MOTORISTA)
+        $query = VehicleExpense::with(['vehicle', 'driver']);
+        if (!$isAdmin) {
+            $query->where('driver_id', $driver->id);
+        }
 
+        $expenses = $query->orderBy('created_at', 'desc')->paginate(15);
         return view('portal.despesas.index', compact('driver', 'expenses'));
     }
 
@@ -411,14 +567,19 @@ class CustomerPortalController extends Controller
     public function createDespesa(Request $request)
     {
         $user = Auth::user();
-        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
-        $driver = PortalDriver::where('sub_user_id', $subUser->id)->first();
+        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isAdmin = in_array($user->role, $adminRoles);
 
-        if (!$driver) {
+        $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+        $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
+
+        if (!$isAdmin && !$driver) {
             return redirect()->route('dashboard')->with('error', 'Acesso negado.');
         }
 
-        $vehicles = Vehicle::where('customer_id', $driver->customer_id)->get();
+        // Se for admin, pega o cliente da sessão ou o primeiro disponível
+        $customerId = $isAdmin ? (session('portal_customer_id') ?? 1) : $driver->customer_id;
+        $vehicles = Vehicle::where('customer_id', $customerId)->get();
 
         // Categorias Padrão Ouro RTECH
         $categories = ['Abastecimento', 'Troca de Óleo', 'Manutenção', 'Lavagem', 'Pneus', 'Outros Gastos'];
@@ -433,7 +594,7 @@ class CustomerPortalController extends Controller
     {
         $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
-            'driver_id' => 'required|exists:portal_drivers,id',
+            'driver_id' => 'nullable', // Permitir nulo para registros Admin
             'type' => 'required|string',
             'odometer' => 'required|numeric|min:0',
             'amount' => 'required|numeric|min:0.01',
@@ -441,8 +602,17 @@ class CustomerPortalController extends Controller
             'receipt_photo' => 'nullable|image|max:10240'
         ]);
 
-        $entry = new VehicleExpense($request->except(['receipt_photo']));
-        $entry->customer_id = PortalDriver::find($request->driver_id)->customer_id;
+        $vehicle = Vehicle::findOrFail($request->vehicle_id);
+        $data = $request->except(['receipt_photo']);
+        
+        // 🛡️ TRATAMENTO DE SEGURANÇA: Se for Admin e o banco exigir um driver_id (NOT NULL)
+        if ($data['driver_id'] == '0') {
+            $fallbackDriver = PortalDriver::first();
+            $data['driver_id'] = $fallbackDriver ? $fallbackDriver->id : null;
+        }
+
+        $entry = new VehicleExpense($data);
+        $entry->customer_id = $vehicle->customer_id;
 
         // 📸 PROCESSAMENTO DE COMPROVANTE (OPCIONAL)
         if ($request->hasFile('receipt_photo')) {

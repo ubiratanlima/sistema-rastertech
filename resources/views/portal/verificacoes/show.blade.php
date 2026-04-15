@@ -17,14 +17,61 @@
                     </h1>
                     <p class="text-muted mb-0">Documento imutável registrado em {{ $checklist->created_at->format('d/m/Y H:i:s') }}.</p>
                 </div>
-                <div>
-                    @if($checklist->type == 'entry')
-                        <span class="badge badge-success px-4 py-3 shadow-sm" style="font-size: 1.1rem; border-radius: 10px;">
-                            <i class="fas fa-sign-in-alt mr-2"></i> CHECK-IN
-                        </span>
+                <div class="d-flex align-items-center" style="gap: 10px;">
+                    @php
+                        // 🛡️ LÓGICA DE AÇÃO DINÂMICA
+                        $isEntry = ($checklist->type == 'entry');
+                        $hasExit = \App\Models\VehicleChecklist::where('vehicle_id', $checklist->vehicle_id)
+                            ->where('driver_id', $checklist->driver_id)
+                            ->where('type', 'exit')
+                            ->where('created_at', '>', $checklist->created_at)
+                            ->exists();
+                        $showCheckoutAction = ($isEntry && !$hasExit);
+
+                        // 🔗 NAVEGAÇÃO BIDIRECIONAL: encontra o checklist par via missão vinculada
+                        $mission = \App\Models\VehicleMission::where('entry_id', $checklist->id)
+                            ->orWhere('exit_id', $checklist->id)
+                            ->first();
+
+                        $pairedChecklistId = null;
+                        if ($mission) {
+                            $pairedChecklistId = $isEntry ? $mission->exit_id : $mission->entry_id;
+                        }
+                    @endphp
+
+                    {{-- Botão de ir para o CHECK-IN (visível na tela de checkout) --}}
+                    @if(!$isEntry && $pairedChecklistId)
+                        <a href="/portal/verificacoes/{{ $pairedChecklistId }}"
+                           class="btn btn-success shadow-sm text-bold px-4 py-2" style="border-radius: 10px;">
+                            <i class="fas fa-sign-in-alt mr-2"></i> Ver Check-in
+                        </a>
+                    @endif
+
+                    {{-- Botão de ir para o CHECKOUT (visível na tela de check-in finalizado) --}}
+                    @if($isEntry && $pairedChecklistId)
+                        <a href="/portal/verificacoes/{{ $pairedChecklistId }}"
+                           class="btn btn-primary shadow-sm text-bold px-4 py-2" style="border-radius: 10px;">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Ver Checkout
+                        </a>
+                    @endif
+
+                    {{-- Botão de FAZER checkout (quando ainda está em jornada ativa) --}}
+                    @if($showCheckoutAction)
+                        <a href="{{ route('portal.verificacoes.create', ['type' => 'exit', 'vehicle_id' => $checklist->vehicle_id]) }}"
+                           class="btn btn-primary shadow-sm text-bold px-4 py-2" style="border-radius: 10px;">
+                            <i class="fas fa-sign-out-alt mr-2"></i> CHECKOUT
+                        </a>
+                    @endif
+
+                    @if($hasExit || $checklist->type == 'exit')
+                        <a href="/portal/verificacoes" style="text-decoration: none;">
+                            <span class="badge badge-success px-4 py-3 shadow-sm border border-success" style="font-size: 1rem; border-radius: 10px; background-color: rgba(40,167,69,0.1) !important; color: #28a745 !important;">
+                                <i class="fas fa-check-double mr-2"></i> JORNADA FINALIZADA
+                            </span>
+                        </a>
                     @else
-                        <span class="badge badge-primary px-4 py-3 shadow-sm" style="font-size: 1.1rem; border-radius: 10px;">
-                            <i class="fas fa-sign-out-alt mr-2"></i> CHECK-OUT
+                        <span class="badge badge-warning px-4 py-3 shadow-sm" style="font-size: 1rem; border-radius: 10px; color: #856404 !important; background-color: #ffeeba !important;">
+                            <i class="fas fa-truck-moving mr-2"></i> EM JORNADA ATIVA
                         </span>
                     @endif
                 </div>
@@ -142,15 +189,17 @@
         box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
     .rtech-close-btn {
-        position: fixed !important;
+        position: absolute !important;
         top: 20px !important;
         right: 20px !important;
-        border: 0 !important;
-        z-index: 9999 !important;
-        transition: transform 0.2s;
+        color: white !important;
+        text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        z-index: 1000 !important;
+        transition: transform 0.2s ease !important;
     }
     .rtech-close-btn:hover {
         transform: scale(1.2);
+        color: #ff3333 !important;
     }
 </style>
 
@@ -161,27 +210,20 @@
      */
     function viewPhoto(url, title) {
         Swal.fire({
-            title: `<span class="text-bold text-uppercase" style="font-size: 1.2rem; letter-spacing: 1px;">${title}</span>`,
+            title: `<span class="text-bold text-uppercase d-block mb-2" style="font-size: 1.1rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${title}</span>`,
             imageUrl: url,
-            imageAlt: title,
-            width: '80vw', // 🛰️ 10% de margem de cada lado
-            padding: '1rem',
-            background: '#fff',
+            width: 'auto',
+            imageWidth: 'auto',
+            imageHeight: '75vh',
+            background: 'transparent',
             showConfirmButton: false,
             showCloseButton: true,
-            closeButtonHtml: '<i class="fas fa-times fa-2x text-white"></i>',
-            backdrop: `rgba(0,0,15,0.9)`, // 🌘 Background escurecido imersivo
-            showClass: {
-                popup: 'animate__animated animate__zoomIn animate__faster'
-            },
-            hideClass: {
-                popup: 'animate__animated animate__zoomOut animate__faster'
-            },
-            customClass: {
-                image: 'rtech-swal-image rounded',
-                popup: 'border-0 bg-transparent', // Deixa o fundo do popup transparente para focar na imagem
-                closeButton: 'rtech-close-btn shadow-none',
-                title: 'text-white mb-3 d-block'
+            backdrop: `rgba(0,0,15,0.95)`, 
+            showClass: { popup: 'animate__animated animate__zoomIn animate__faster' },
+            hideClass: { popup: 'animate__animated animate__zoomOut animate__faster' },
+            customClass: { 
+                image: 'rounded m-0 shadow-lg',
+                closeButton: 'rtech-close-btn shadow-none'
             }
         });
     }

@@ -63,10 +63,10 @@
         </a>
         <div class="sidebar">
             <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-                <div class="image"><img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=00ff88&color=1a1a2e" class="img-circle elevation-2 profile-img" alt="User Image"></div>
+                <div class="image"><img src="https://ui-avatars.com/api/?name={{ urlencode(optional(auth()->user())->name ?? 'Visitante') }}&background=00ff88&color=1a1a2e" class="img-circle elevation-2 profile-img" alt="User Image"></div>
                 <div class="info">
-                    <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">{{ auth()->user()->name }}</a>
-                    <span class="small text-muted">{{ auth()->user()->role }}</span>
+                    <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">{{ optional(auth()->user())->name ?? 'Usuário' }}</a>
+                    <span class="small text-muted">{{ optional(auth()->user())->role ?? 'N/A' }}</span>
                 </div>
             </div>
             <nav class="mt-2 text-sm text-uppercase font-weight-bold">
@@ -131,13 +131,13 @@
                     <li class="nav-item">
                         <a href="{{ route('portal.verificacoes.index') }}" class="nav-link {{ request()->is('portal/verificacoes*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-clipboard-check text-teal"></i>
-                            <p>Minhas Verificações</p>
+                            <p>CHECK-IN/OUT</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('portal.despesas.index') }}" class="nav-link {{ request()->is('portal/despesas*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-invoice-dollar text-orange"></i>
-                            <p>Minhas Despesas</p>
+                            <p>Despesas</p>
                         </a>
                     </li>
 
@@ -188,9 +188,9 @@
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
                 <div class="modal-body text-center p-4">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=00ff88&color=1a1a2e" class="img-circle mb-3" style="width: 80px;">
-                    <h5 class="text-bold">{{ auth()->user()->name }}</h5>
-                    <p class="text-muted small mb-0">{{ auth()->user()->role }}</p>
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(optional(auth()->user())->name ?? 'Visitante') }}&background=00ff88&color=1a1a2e" class="img-circle mb-3" style="width: 80px;">
+                    <h5 class="text-bold">{{ optional(auth()->user())->name ?? 'Usuário' }}</h5>
+                    <p class="text-muted small mb-0">{{ optional(auth()->user())->role ?? 'N/A' }}</p>
                     <button class="btn btn-outline-primary btn-block btn-sm mt-3">Editar Perfil</button>
                     <button class="btn btn-outline-danger btn-block btn-sm mt-2" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sair</button>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
