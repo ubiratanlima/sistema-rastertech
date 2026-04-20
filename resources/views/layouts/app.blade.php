@@ -13,6 +13,7 @@
 
     <style>
         :root { --primary-cyber: #00ff88; --dark-depth: #1a1a2e; }
+        .bg-pink { background-color: #e83e8c !important; }
         .nav-link.active { background-color: var(--primary-cyber) !important; color: #1a1a2e !important; }
         .profile-img { width: 39px; height: 39px; object-fit: cover; }
 
@@ -63,7 +64,15 @@
         </a>
         <div class="sidebar">
             <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-                <div class="image"><img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(auth()->user())->name ?? 'Visitante') . '&background=00ff88&color=1a1a2e' }}" class="img-circle elevation-2 profile-img" alt="User Image" style="width: 39px; height: 39px; object-fit: cover;"></div>
+                <div class="image">
+                    @if(optional(auth()->user())->image)
+                        <img src="{{ asset('storage/' . auth()->user()->image) }}" class="img-circle elevation-2 profile-img" alt="User Image" style="width: 39px; height: 39px; object-fit: cover;">
+                    @else
+                        <div class="img-circle elevation-2 profile-img d-flex align-items-center justify-content-center {{ optional(auth()->user())->gender === 'Feminino' ? 'bg-pink' : 'bg-primary' }}" style="width: 39px; height: 39px;">
+                            <i class="fas {{ optional(auth()->user())->gender === 'Feminino' ? 'fa-user' : 'fa-user-tie' }} text-white" style="font-size: 1.1rem;"></i>
+                        </div>
+                    @endif
+                </div>
                 <div class="info">
                     <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">{{ optional(auth()->user())->name ?? 'Usuário' }}</a>
                     <span class="small text-muted">{{ optional(auth()->user())->role ?? 'N/A' }}</span>
@@ -195,7 +204,13 @@
             <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
                 <!-- 👁️ VISUALIZAÇÃO PADRÃO -->
                 <div class="modal-body text-center p-4" id="perfil-view-mode">
-                    <img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(auth()->user())->name ?? 'Visitante') . '&background=00ff88&color=1a1a2e' }}" class="img-circle mb-3 border border-dark" style="width: 90px; height: 90px; object-fit: cover;">
+                    @if(optional(auth()->user())->image)
+                        <img src="{{ asset('storage/' . auth()->user()->image) }}" class="img-circle mb-3 border border-dark mx-auto" style="width: 90px; height: 90px; object-fit: cover;">
+                    @else
+                        <div class="img-circle mb-3 border border-dark mx-auto d-flex align-items-center justify-content-center {{ optional(auth()->user())->gender === 'Feminino' ? 'bg-pink' : 'bg-primary' }}" style="width: 90px; height: 90px;">
+                            <i class="fas {{ optional(auth()->user())->gender === 'Feminino' ? 'fa-user' : 'fa-user-tie' }} text-white" style="font-size: 3rem;"></i>
+                        </div>
+                    @endif
                     <h5 class="text-bold text-dark">{{ optional(auth()->user())->name ?? 'Usuário' }}</h5>
                     <p class="text-muted small mb-0 font-weight-bold"><i class="fas fa-id-badge mr-1 text-primary"></i> {{ optional(auth()->user())->role ?? 'N/A' }}</p>
                     <hr>
@@ -218,11 +233,14 @@
                     <form action="{{ route('portal.profile.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="text-center mb-4">
-                            <div class="position-relative d-inline-block">
-                                <img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(auth()->user())->name ?? 'Visitante') . '&background=00ff88&color=1a1a2e' }}" class="img-circle border border-primary shadow-sm" style="width: 90px; height: 90px; object-fit: cover; cursor: pointer; transition: 0.3s;" onclick="document.getElementById('profile_image_input').click();" id="profile_image_preview" title="Clique para trocar a foto">
-                                <span class="badge badge-primary position-absolute" style="bottom: 0; right: 0; border-radius: 50%; padding: 6px; cursor: pointer;" onclick="document.getElementById('profile_image_input').click();"><i class="fas fa-camera"></i></span>
+                            <div class="position-relative d-inline-block" onclick="document.getElementById('profile_image_input').click();" style="cursor: pointer;" title="Clique para trocar a foto">
+                                <img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : '' }}" class="img-circle border border-primary shadow-sm {{ optional(auth()->user())->image ? '' : 'd-none' }}" style="width: 90px; height: 90px; object-fit: cover; transition: 0.3s;" id="profile_image_preview">
+                                <div id="profile_image_placeholder" class="img-circle border border-primary shadow-sm align-items-center justify-content-center {{ optional(auth()->user())->image ? 'd-none' : 'd-flex' }} {{ optional(auth()->user())->gender === 'Feminino' ? 'bg-pink' : 'bg-primary' }}" style="width: 90px; height: 90px;">
+                                    <i class="fas {{ optional(auth()->user())->gender === 'Feminino' ? 'fa-user' : 'fa-user-tie' }} text-white" style="font-size: 3rem;"></i>
+                                </div>
+                                <span class="badge badge-primary position-absolute" style="bottom: 0; right: 0; border-radius: 50%; padding: 6px;"><i class="fas fa-camera"></i></span>
                             </div>
-                            <input type="file" name="image" id="profile_image_input" class="d-none" accept="image/*" onchange="document.getElementById('profile_image_preview').src = window.URL.createObjectURL(this.files[0])">
+                            <input type="file" name="image" id="profile_image_input" class="d-none" accept="image/*" onchange="document.getElementById('profile_image_preview').src = window.URL.createObjectURL(this.files[0]); document.getElementById('profile_image_preview').classList.remove('d-none'); document.getElementById('profile_image_placeholder').classList.remove('d-flex'); document.getElementById('profile_image_placeholder').classList.add('d-none');">
                             <p class="text-muted small mt-2 mb-0 font-italic">Formatos suportados: JPG, PNG (Max 5MB)</p>
                         </div>
 

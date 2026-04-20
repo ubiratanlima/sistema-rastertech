@@ -18,7 +18,7 @@ class UserController extends Controller
         $view = $request->input('view', 'active');
         $currentUser = auth()->user();
         
-        $query = User::query()->whereNull('customer_id');
+        $query = User::query();
 
         // 🛡️ REGRAS DE HIERARQUIA E VISIBILIDADE RBAC
         if ($currentUser->role === 'Gerente') {
