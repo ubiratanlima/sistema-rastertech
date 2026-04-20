@@ -62,10 +62,13 @@
                             <select name="vehicle_id" class="form-control form-control-lg border-0 bg-light select2" style="border-radius: 10px;" required {{ ($type == 'exit' && $currentVehicleId && !$isSupervisor) ? 'readonly' : '' }}>
                                 <option value="">--- ESCOLHA O VEÍCULO ---</option>
                                 @foreach($vehicles as $v)
-                                    <option value="{{ $v->id }}" {{ ($currentVehicleId == $v->id) ? 'selected' : '' }} {{ ($v->is_locked && ($currentVehicleId != $v->id) && !$isSupervisor) ? 'disabled' : '' }}>
+                                    @if($type == 'exit' && !$v->is_locked && $currentVehicleId != $v->id)
+                                        @continue
+                                    @endif
+                                    <option value="{{ $v->id }}" {{ ($currentVehicleId == $v->id) ? 'selected' : '' }} {{ ($v->is_locked && ($currentVehicleId != $v->id) && !$isSupervisor && $type == 'entry') ? 'disabled' : '' }}>
                                         {{ $v->plate }} ({{ $v->brand }} / {{ $v->model }}) 
                                         @if($v->is_locked)
-                                            [OCUPADO: {{ $v->locked_by_name }} às {{ $v->locked_at }}]
+                                            [EM CAMPO: {{ $v->locked_by_name }} às {{ $v->locked_at }}]
                                         @endif
                                     </option>
                                 @endforeach
@@ -117,7 +120,7 @@
                         <div class="form-group mb-0">
                             <textarea name="notes" class="form-control border-0 bg-light" rows="5" 
                                       placeholder="Descreva as condições observadas (mínimo 15 caracteres)..." 
-                                      style="border-radius: 10px; resize: none;" required></textarea>
+                                      style="border-radius: 10px; resize: none;" {{ $isSupervisor ? '' : 'required' }}></textarea>
                             <div class="d-flex justify-content-between mt-2">
                                 <small class="text-muted"><i class="fas fa-exclamation-circle mr-1"></i> Mínimo de 15 caracteres.</small>
                                 <small id="charCount" class="text-muted">0/500</small>
@@ -169,7 +172,7 @@
                                             <i class="fas fa-upload mr-1"></i> Foto
                                         </label>
                                         <input type="file" name="photo_{{ $key }}" id="input-{{ $key }}" class="d-none photo-input" 
-                                               accept="image/*" @if($slot['required'] && !($isSupervisor && $type == 'exit')) required @endif data-preview="preview-{{ $key }}">
+                                               accept="image/*" @if($slot['required'] && !$isSupervisor) required @endif data-preview="preview-{{ $key }}">
                                     </div>
                                 </div>
                             </div>

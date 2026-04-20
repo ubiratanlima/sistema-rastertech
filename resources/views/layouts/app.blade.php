@@ -14,7 +14,7 @@
     <style>
         :root { --primary-cyber: #00ff88; --dark-depth: #1a1a2e; }
         .nav-link.active { background-color: var(--primary-cyber) !important; color: #1a1a2e !important; }
-        .profile-img { width: 35px; height: 35px; object-fit: cover; border: 2px solid var(--primary-cyber); }
+        .profile-img { width: 39px; height: 39px; object-fit: cover; }
 
         /* 🛰️ DINAMISMO DO LOGO RASTERTECH */
         .brand-link { height: 60px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 !important; }
@@ -63,7 +63,7 @@
         </a>
         <div class="sidebar">
             <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-                <div class="image"><img src="https://ui-avatars.com/api/?name={{ urlencode(optional(auth()->user())->name ?? 'Visitante') }}&background=00ff88&color=1a1a2e" class="img-circle elevation-2 profile-img" alt="User Image"></div>
+                <div class="image"><img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(auth()->user())->name ?? 'Visitante') . '&background=00ff88&color=1a1a2e' }}" class="img-circle elevation-2 profile-img" alt="User Image" style="width: 39px; height: 39px; object-fit: cover;"></div>
                 <div class="info">
                     <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">{{ optional(auth()->user())->name ?? 'Usuário' }}</a>
                     <span class="small text-muted">{{ optional(auth()->user())->role ?? 'N/A' }}</span>
@@ -191,16 +191,74 @@
 
     <!-- 👤 MODAL PERFIL -->
     <div class="modal fade" id="modalPerfil" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
-                <div class="modal-body text-center p-4">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(optional(auth()->user())->name ?? 'Visitante') }}&background=00ff88&color=1a1a2e" class="img-circle mb-3" style="width: 80px;">
-                    <h5 class="text-bold">{{ optional(auth()->user())->name ?? 'Usuário' }}</h5>
-                    <p class="text-muted small mb-0">{{ optional(auth()->user())->role ?? 'N/A' }}</p>
-                    <button class="btn btn-outline-primary btn-block btn-sm mt-3">Editar Perfil</button>
-                    <button class="btn btn-outline-danger btn-block btn-sm mt-2" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sair</button>
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <!-- 👁️ VISUALIZAÇÃO PADRÃO -->
+                <div class="modal-body text-center p-4" id="perfil-view-mode">
+                    <img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(auth()->user())->name ?? 'Visitante') . '&background=00ff88&color=1a1a2e' }}" class="img-circle mb-3 border border-dark" style="width: 90px; height: 90px; object-fit: cover;">
+                    <h5 class="text-bold text-dark">{{ optional(auth()->user())->name ?? 'Usuário' }}</h5>
+                    <p class="text-muted small mb-0 font-weight-bold"><i class="fas fa-id-badge mr-1 text-primary"></i> {{ optional(auth()->user())->role ?? 'N/A' }}</p>
+                    <hr>
+                    <button class="btn btn-outline-primary btn-block mt-3" onclick="document.getElementById('perfil-view-mode').style.display='none'; document.getElementById('perfil-edit-mode').style.display='block';"><i class="fas fa-edit mr-1"></i> Editar Perfil</button>
+                    <button class="btn btn-outline-danger btn-block mt-2" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt mr-1"></i> Sair do Sistema</button>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                         @csrf
+                    </form>
+                </div>
+                
+                <!-- ✏️ MODO DE EDIÇÃO -->
+                <div class="modal-body p-4" id="perfil-edit-mode" style="display: none; background: #f8f9fa;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2 border-light">
+                        <h5 class="text-bold mb-0 text-dark" style="font-size: 1.1rem;"><i class="fas fa-user-edit text-primary mr-2"></i>Editar Meu Perfil</h5>
+                        <button type="button" class="close text-danger" onclick="document.getElementById('perfil-edit-mode').style.display='none'; document.getElementById('perfil-view-mode').style.display='block';" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    
+                    <form action="{{ route('portal.profile.update') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="text-center mb-4">
+                            <div class="position-relative d-inline-block">
+                                <img src="{{ optional(auth()->user())->image ? asset('storage/' . auth()->user()->image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(auth()->user())->name ?? 'Visitante') . '&background=00ff88&color=1a1a2e' }}" class="img-circle border border-primary shadow-sm" style="width: 90px; height: 90px; object-fit: cover; cursor: pointer; transition: 0.3s;" onclick="document.getElementById('profile_image_input').click();" id="profile_image_preview" title="Clique para trocar a foto">
+                                <span class="badge badge-primary position-absolute" style="bottom: 0; right: 0; border-radius: 50%; padding: 6px; cursor: pointer;" onclick="document.getElementById('profile_image_input').click();"><i class="fas fa-camera"></i></span>
+                            </div>
+                            <input type="file" name="image" id="profile_image_input" class="d-none" accept="image/*" onchange="document.getElementById('profile_image_preview').src = window.URL.createObjectURL(this.files[0])">
+                            <p class="text-muted small mt-2 mb-0 font-italic">Formatos suportados: JPG, PNG (Max 5MB)</p>
+                        </div>
+
+                        <div class="form-group mb-3 text-left">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">Nome Completo</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-user text-primary"></i></span></div>
+                                <input type="text" name="name" class="form-control border-left-0 pl-0" value="{{ optional(auth()->user())->name }}" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3 text-left">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">E-mail de Acesso</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-envelope text-primary"></i></span></div>
+                                <input type="email" name="email" class="form-control border-left-0 pl-0" value="{{ optional(auth()->user())->email }}" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4 text-left">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">Resetar Senha <span class="text-xs text-info font-weight-normal">(Deixe em branco para manter)</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-lock text-primary"></i></span></div>
+                                <input type="password" name="password" id="profile_password" class="form-control border-left-0 border-right-0 pl-0" placeholder="••••••••" minlength="8">
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-white border-left-0" style="cursor: pointer;" onclick="const pInput = document.getElementById('profile_password'); const pIcon = this.querySelector('i'); if (pInput.type === 'password') { pInput.type = 'text'; pIcon.className = 'fas fa-eye-slash text-primary'; } else { pInput.type = 'password'; pIcon.className = 'fas fa-eye text-muted'; }">
+                                        <i class="fas fa-eye text-muted"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-light border btn-sm flex-fill mr-2" onclick="document.getElementById('perfil-edit-mode').style.display='none'; document.getElementById('perfil-view-mode').style.display='block';">Cancelar</button>
+                            <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="fas fa-save mr-1"></i> Salvar Perfil</button>
+                        </div>
                     </form>
                 </div>
             </div>

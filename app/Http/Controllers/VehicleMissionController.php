@@ -16,7 +16,8 @@ class VehicleMissionController extends Controller
      */
     public function index(Request $request)
     {
-        $status = $request->input('status');
+        // Filtro padrão: Apenas jornadas em andamento (open) no primeiro carregamento
+        $status = $request->has('status') ? $request->input('status') : 'open';
         $customerId = $request->input('customer_id');
         $vehicleId = $request->input('vehicle_id');
         $driverId = $request->input('driver_id');

@@ -16,8 +16,21 @@ class UserController extends Controller
     {
         $search = $request->input('search');
         $view = $request->input('view', 'active');
+        $currentUser = auth()->user();
         
         $query = User::query()->whereNull('customer_id');
+
+        // 🛡️ REGRAS DE HIERARQUIA E VISIBILIDADE RBAC
+        if ($currentUser->role === 'Gerente') {
+            $query->where('role', '!=', 'Administrador');
+        } elseif ($currentUser->role === 'Suporte Técnico') {
+            $query->where(function($q) use ($currentUser) {
+                $q->where('id', $currentUser->id)
+                  ->orWhere('role', 'Cliente');
+            });
+        } elseif ($currentUser->role === 'Técnico Instalador') {
+            $query->where('id', $currentUser->id);
+        }
 
         // 🟢 SELETOR DE VISÃO (Padrão Ouro)
         if ($view === 'trash') {
@@ -39,10 +52,39 @@ class UserController extends Controller
     }
 
     /**
+     * Verifica permissão estrita baseada nas patentes da hierarquia.
+     */
+    private function canOperate(User $targetUser)
+    {
+        $user = auth()->user();
+        if ($user->role === 'Administrador' || $user->id === $targetUser->id) {
+            return true;
+        }
+        if ($user->role === 'Gerente') {
+            return $targetUser->role !== 'Administrador';
+        }
+        if ($user->role === 'Suporte Técnico') {
+            return $targetUser->role === 'Cliente';
+        }
+        return false;
+    }
+
+    /**
      * Cadastra um novo Administrador.
      */
     public function store(Request $request)
     {
+        $currentUser = auth()->user();
+        $requestedRole = $request->input('role');
+        
+        // Blindagem RBAC: Validar se permite criação desse cargo
+        if ($currentUser->role === 'Gerente' && $requestedRole === 'Administrador') {
+            return response()->json(['success' => false, 'message' => 'Hierarquia insuficiente para criar Administradores.'], 403);
+        }
+        if ($currentUser->role === 'Suporte Técnico' && $requestedRole !== 'Cliente') {
+            return response()->json(['success' => false, 'message' => 'Operadores só podem criar usuários do tipo Cliente.'], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
@@ -78,6 +120,10 @@ class UserController extends Controller
     {
         $user = User::withTrashed()->findOrFail($id);
         
+        if (!$this->canOperate($user)) {
+             return response()->json(['success' => false, 'message' => 'Acesso Negado: Perfil Hierárquico Insuficiente'], 403);
+        }
+        
         $avatarUrl = $user->image 
             ? asset('storage/' . $user->image) 
             : "https://ui-avatars.com/api/?name=" . urlencode($user->name) . "&background=" . ($user->trashed() ? '6c757d' : '007bff') . "&color=fff";
@@ -103,6 +149,11 @@ class UserController extends Controller
     public function restore($id)
     {
         $user = User::withTrashed()->findOrFail($id);
+        
+        if (!$this->canOperate($user)) {
+            abort(403, 'Acesso Negado: Perfil Hierárquico Insuficiente');
+        }
+
         $user->restore();
 
         return redirect()->back()->with('success', '✅ Acesso administrativo reativado com sucesso!');
@@ -113,7 +164,25 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::withTrashed()->findOrFail($id);
+        $userTarget = User::withTrashed()->findOrFail($id);
+        $currentUser = auth()->user();
+
+        if (!$this->canOperate($userTarget)) {
+            return response()->json(['success' => false, 'message' => 'Acesso Negado: Perfil Hierárquico Insuficiente'], 403);
+        }
+
+        $requestedRole = $request->input('role');
+        
+        // Bloqueio de auto-elevação ou manipulação ilegal
+        if ($currentUser->id === $userTarget->id && $requestedRole !== $currentUser->role && $currentUser->role !== 'Administrador') {
+             return response()->json(['success' => false, 'message' => 'Você não tem permissão para alterar sua própria patente.'], 403);
+        }
+        if ($currentUser->role === 'Gerente' && $requestedRole === 'Administrador' && $userTarget->role !== 'Administrador') {
+             return response()->json(['success' => false, 'message' => 'Gerentes não podem promover acessos a Administrador.'], 403);
+        }
+        if ($currentUser->role === 'Suporte Técnico' && $currentUser->id !== $userTarget->id && $requestedRole !== 'Cliente') {
+             return response()->json(['success' => false, 'message' => 'Operadores só podem manipular contas typu Cliente.'], 403);
+        }
 
         $rules = [
             'name' => 'required|max:255',
@@ -143,7 +212,7 @@ class UserController extends Controller
             $validated['image'] = $path;
         }
 
-        $user->update($validated);
+        $userTarget->update($validated);
 
         return response()->json([
             'success' => true,
@@ -157,13 +226,15 @@ class UserController extends Controller
     public function destroy($id)
     {
         if (auth()->id() == $id) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Auto-bloqueio negado! Você não pode remover o seu próprio acesso.'
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'Auto-bloqueio negado! Você não pode remover o seu próprio acesso.'], 403);
         }
 
         $user = User::findOrFail($id);
+        
+        if (!$this->canOperate($user)) {
+             return response()->json(['success' => false, 'message' => 'Acesso Negado: Perfil Hierárquico Insuficiente'], 403);
+        }
+
         $user->delete();
 
         if (request()->ajax()) {

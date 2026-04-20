@@ -13,7 +13,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <h1 class="m-0 text-bold" style="font-size: 2rem;">
-                        <i class="fas fa-file-invoice mr-2 text-muted"></i>Registro de Verificação #{{ $checklist->id }}
+                        <i class="fas fa-file-invoice mr-2 text-muted"></i>{{ $checklist->type == 'entry' ? 'CHECK-IN' : 'CHECKOUT' }} #{{ $checklist->id }}
                     </h1>
                     <p class="text-muted mb-0">Documento imutável registrado em {{ $checklist->created_at->format('d/m/Y H:i:s') }}.</p>
                 </div>

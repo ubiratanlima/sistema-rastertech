@@ -87,8 +87,34 @@ class CustomerPortalController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        // Lógica de atualização de senha e nickname
-        return response()->json(['success' => 'Perfil atualizado com sucesso!']);
+        $user = Auth::user();
+
+        $rules = [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8',
+            'image' => 'nullable|image|max:5120'
+        ];
+
+        $request->validate($rules);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        if ($request->hasFile('image')) {
+            if ($user->image) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->image);
+            }
+            $user->image = $request->file('image')->store('users/images', 'public');
+        }
+
+        $user->save();
+
+        return redirect()->back()->with('success', 'Perfil atualizado com sucesso!');
     }
 
     public function addWhatsapp(Request $request)
@@ -245,11 +271,9 @@ class CustomerPortalController extends Controller
         // 📊 QUERY DE BUSCA - FOCO EM MISSÕES (Dossiê Unificado)
         $query = VehicleMission::with(['vehicle', 'driver', 'entryChecklist', 'exitChecklist']);
         
-        if ($user->role == 'admin') {
-            // Admin global vê TUDO de TODOS os clientes
-        } elseif ($isSupervisor) {
-            // Supervisor/Operador/Gestor vê tudo do seu customer_id
-            $query->where('customer_id', $user->customer_id);
+        if ($isSupervisor) {
+            // Supervisor/Operador/Gestor/Admin - Vê TUDO na Torre de Controle de Jornadas
+            // Filtro por customer_id foi removido para unificar a visão com "Missões em Campo"
         } else {
             // Motorista vê apenas as missões iniciadas por ele
             $query->where('driver_id', $driver->id);
@@ -334,8 +358,20 @@ class CustomerPortalController extends Controller
         }
 
         // 🚛 VEÍCULOS DISPONÍVEIS NA FROTA DO CLIENTE
-        $customerId = $user->customer_id ?? 1;
-        $vehicles = Vehicle::where('customer_id', $customerId)->get();
+        if ($type == 'exit' && $activeJourney) {
+            $vehicles = Vehicle::where('customer_id', $activeJourney->vehicle->customer_id)->get();
+        } elseif ($isSupervisor) {
+            $vehicles = Vehicle::orderBy('plate')->get(); // Global vê todos no Check-in
+        } else {
+            $customerId = $user->customer_id ?? 1;
+            $vehicles = Vehicle::where('customer_id', $customerId)->get();
+        }
+        
+        // 🎯 PRÉ-SELEÇÃO DO VEÍCULO E GARANTIA NA LISTA
+        $currentVehicleId = ($type == 'exit' && $activeJourney) ? $activeJourney->vehicle_id : null;
+        if ($currentVehicleId && !$vehicles->contains('id', $currentVehicleId)) {
+            $vehicles->push($activeJourney->vehicle);
+        }
 
         // 🛡️ IDENTIFICAÇÃO DE OCUPAÇÃO (TRANSPARÊNCIA) - Para os veículos que não estão com o motorista atual
         foreach ($vehicles as $v) {
@@ -351,8 +387,6 @@ class CustomerPortalController extends Controller
             }
         }
 
-        // 🎯 PRÉ-SELEÇÃO DO VEÍCULO E MOTORISTA (NO CASO DE CHECK-OUT)
-        $currentVehicleId = ($type == 'exit' && $activeJourney) ? $activeJourney->vehicle_id : null;
         
         // Se for Supervisor em Check-out, o "motorista" do formulário deve ser o dono da jornada ativa (se houver)
         if ($isSupervisor && $type == 'exit' && $activeJourney) {
@@ -384,10 +418,8 @@ class CustomerPortalController extends Controller
             'notes' => 'required|string|min:15|max:500',
         ];
 
-        // Se for motorista ou Check-in, as fotos são 100% obrigatórias
-        // Se for Admin em Check-out, as fotos são opcionais
-        $isCheckoutAdmin = ($isAdmin && $request->type == 'exit');
-        $photoRule = $isCheckoutAdmin ? 'nullable' : 'required';
+        // Bypass para Admins/Gestores/Operadores: fotos opcionais em Check-in e Check-out para testes/uso ADM
+        $photoRule = $isAdmin ? 'nullable' : 'required';
 
         for ($i = 1; $i <= 5; $i++) {
             $rules["photo_$i"] = "$photoRule|image|max:10240";
@@ -398,13 +430,13 @@ class CustomerPortalController extends Controller
             $rules["photo_$i"] = "nullable|image|max:10240";
         }
 
-        // Se for Admin dando baixa sem fotos, exigimos justificativa maior
-        if ($isCheckoutAdmin && !$request->hasFile('photo_1')) {
-            $rules['notes'] = 'required|string|min:30|max:500';
+        // Se for Admin dando baixa ou checkin, reduzimos a exigência de notas longas para facilitar fluxos
+        if ($isAdmin) {
+            $rules['notes'] = 'nullable|string|max:1000';
         }
 
         $request->validate($rules, [
-            'notes.min' => $isCheckoutAdmin ? 'Para check-out administrativo sem fotos, justifique o motivo com pelo menos 30 caracteres.' : 'O Relato deve conter pelo menos 15 caracteres.',
+            'notes.min' => 'O Relato deve conter pelo menos 15 caracteres.',
             'photo_1.required' => 'A foto do Odômetro é obrigatória.',
             'photo_2.required' => 'A foto da Frente é obrigatória.',
             'photo_3.required' => 'A foto da Traseira é obrigatória.',
@@ -541,7 +573,7 @@ class CustomerPortalController extends Controller
     public function despesas(Request $request)
     {
         $user = Auth::user();
-        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $adminRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
         $isAdmin = in_array($user->role, $adminRoles);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
@@ -551,14 +583,54 @@ class CustomerPortalController extends Controller
             return redirect()->route('dashboard')->with('error', 'Acesso negado: Perfil de motorista não encontrado.');
         }
 
+        // 🔍 FILTROS
+        $customerId = $request->input('customer_id');
+        $vehicleId = $request->input('vehicle_id');
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
+
         // 💰 HISTÓRICO DE DESPESAS (GLOBAL PARA ADMIN / ESPECÍFICO PARA MOTORISTA)
-        $query = VehicleExpense::with(['vehicle', 'driver']);
+        $query = VehicleExpense::with(['vehicle.customer', 'driver']);
+        
         if (!$isAdmin) {
             $query->where('driver_id', $driver->id);
+        } else {
+            if ($customerId) {
+                $query->whereHas('vehicle', function($q) use ($customerId) {
+                    $q->where('customer_id', $customerId);
+                });
+            }
         }
 
-        $expenses = $query->orderBy('created_at', 'desc')->paginate(15);
-        return view('portal.despesas.index', compact('driver', 'expenses'));
+        if ($vehicleId) {
+            $query->where('vehicle_id', $vehicleId);
+        }
+
+        if ($dateStart) {
+            $query->whereDate('created_at', '>=', $dateStart);
+        }
+        if ($dateEnd) {
+            $query->whereDate('created_at', '<=', $dateEnd);
+        }
+
+        // CARGA TOTAL DO RELATÓRIO
+        $expenses = $query->orderBy('created_at', 'desc')->get();
+        $totalAmount = $expenses->sum('amount');
+
+        // DADOS PARA OS FILTROS
+        $customers = collect();
+        $vehicles = collect();
+        if ($isAdmin) {
+            $customers = \App\Models\Customer::orderBy('name')->get();
+            $vehicles = Vehicle::orderBy('plate')->get();
+        } elseif ($driver) {
+            $vehicles = Vehicle::where('customer_id', $driver->customer_id)->orderBy('plate')->get();
+        }
+
+        return view('portal.despesas.index', compact(
+            'driver', 'expenses', 'isAdmin', 'totalAmount', 'customers', 'vehicles', 
+            'customerId', 'vehicleId', 'dateStart', 'dateEnd'
+        ));
     }
 
     /**
@@ -567,7 +639,7 @@ class CustomerPortalController extends Controller
     public function createDespesa(Request $request)
     {
         $user = Auth::user();
-        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $adminRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
         $isAdmin = in_array($user->role, $adminRoles);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
@@ -577,9 +649,12 @@ class CustomerPortalController extends Controller
             return redirect()->route('dashboard')->with('error', 'Acesso negado.');
         }
 
-        // Se for admin, pega o cliente da sessão ou o primeiro disponível
-        $customerId = $isAdmin ? (session('portal_customer_id') ?? 1) : $driver->customer_id;
-        $vehicles = Vehicle::where('customer_id', $customerId)->get();
+        // Se for admin/gestor global, carrega toda a base de veículos
+        if ($isAdmin) {
+            $vehicles = Vehicle::orderBy('plate')->get();
+        } else {
+            $vehicles = Vehicle::where('customer_id', $driver->customer_id)->get();
+        }
 
         // Categorias Padrão Ouro RTECH
         $categories = ['Abastecimento', 'Troca de Óleo', 'Manutenção', 'Lavagem', 'Pneus', 'Outros Gastos'];

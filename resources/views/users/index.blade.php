@@ -75,10 +75,10 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr class="text-uppercase font-weight-bold" style="font-size: 1rem; letter-spacing: 0.5px; border-bottom: 2px solid #eee;">
-                            <th class="text-center py-3 text-dark" style="width: 80px;">ID <i class="fas fa-sort ml-1 opacity-50"></i></th>
-                            <th class="text-left px-4 py-3 text-dark">ADMINISTRADOR <i class="fas fa-sort ml-1 opacity-50"></i></th>
-                            <th class="text-left py-3 text-dark">CARGO <i class="fas fa-sort ml-1 opacity-50"></i></th>
-                            <th class="text-left py-3 text-dark">E-MAIL <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                            <th class="text-center py-3 text-dark sortable" style="width: 80px; cursor:pointer;" onclick="sortTable(this, 0)">ID <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                            <th class="text-left px-4 py-3 text-dark sortable" style="cursor:pointer;" onclick="sortTable(this, 1)">ADMINISTRADOR <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                            <th class="text-left py-3 text-dark sortable" style="cursor:pointer;" onclick="sortTable(this, 2)">CARGO <i class="fas fa-sort ml-1 opacity-50"></i></th>
+                            <th class="text-left py-3 text-dark sortable" style="cursor:pointer;" onclick="sortTable(this, 3)">E-MAIL <i class="fas fa-sort ml-1 opacity-50"></i></th>
                             <th class="text-center py-3 pr-4 text-dark" style="width: 140px;">AÇÕES</th>
                         </tr>
                     </thead>
@@ -218,10 +218,15 @@
                         <label class="text-muted font-weight-bold text-uppercase d-block mb-1" style="font-size: 0.8rem;">Patente / Cargo</label>
                         <select name="role" id="edit_role" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px; font-size: 1rem;" required>
                             <option value="">Selecione a função...</option>
-                            <option value="Técnico Instalador">Técnico Instalador</option>
-                            <option value="Suporte Técnico">Suporte Técnico</option>
-                            <option value="Administrador">Administrador</option>
-                            <option value="Gerente">Gerente</option>
+                            @php $uRole = auth()->user()->role; @endphp
+                            @if($uRole === 'Administrador')
+                                <option value="Administrador">Administrador</option>
+                            @endif
+                            @if(in_array($uRole, ['Administrador', 'Gerente']))
+                                <option value="Gerente">Gerente</option>
+                                <option value="Suporte Técnico">Suporte Técnico</option>
+                                <option value="Técnico Instalador">Técnico Instalador</option>
+                            @endif
                             <option value="Cliente">Cliente</option>
                         </select>
                     </div>
@@ -362,10 +367,15 @@
                         <label class="text-muted font-weight-bold text-uppercase d-block mb-1" style="font-size: 0.8rem;">Patente / Cargo</label>
                         <select name="role" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px; font-size: 1rem;" required>
                             <option value="">Selecione a função...</option>
-                            <option value="Técnico Instalador">Técnico Instalador</option>
-                            <option value="Suporte Técnico">Suporte Técnico</option>
-                            <option value="Administrador">Administrador</option>
-                            <option value="Gerente">Gerente</option>
+                            @php $uRole = auth()->user()->role; @endphp
+                            @if($uRole === 'Administrador')
+                                <option value="Administrador">Administrador</option>
+                            @endif
+                            @if(in_array($uRole, ['Administrador', 'Gerente']))
+                                <option value="Gerente">Gerente</option>
+                                <option value="Suporte Técnico">Suporte Técnico</option>
+                                <option value="Técnico Instalador">Técnico Instalador</option>
+                            @endif
                             <option value="Cliente">Cliente</option>
                         </select>
                     </div>
@@ -674,6 +684,47 @@
                 form.submit();
             }
         });
+    }
+
+    /**
+     * 🟢 LÓGICA DE ORDENAÇÃO DE TABELA FRONT-END
+     */
+    function sortTable(th, colIndex) {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.text-center.text-muted)'));
+        
+        // Verifica se a tabela não tá vazia
+        if (rows.length === 0 || rows[0].querySelector('td[colspan]')) return;
+
+        // Limpar ícones das outras colunas
+        table.querySelectorAll('th i.fas').forEach(icon => {
+            icon.className = 'fas fa-sort ml-1 opacity-50';
+        });
+
+        // Alterna direção
+        let asc = th.getAttribute('data-asc') === 'true';
+        asc = !asc;
+        th.setAttribute('data-asc', asc);
+        
+        const icon = th.querySelector('i');
+        if(icon) {
+            icon.className = asc ? 'fas fa-sort-up ml-1 text-primary' : 'fas fa-sort-down ml-1 text-primary';
+        }
+
+        const comparer = (a, b) => {
+            // Pega o texto da coluna, remove crases e extras do layout
+            let v1 = a.children[colIndex].innerText.replace(/\n|VOCÊ|ATIVO|ACESSO REVOGADO/g, '').trim();
+            let v2 = b.children[colIndex].innerText.replace(/\n|VOCÊ|ATIVO|ACESSO REVOGADO/g, '').trim();
+            
+            // Tratamento Numérico pro ID (colIndex 0)
+            if (v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2)) {
+                return asc ? v1 - v2 : v2 - v1;
+            }
+            return asc ? v1.localeCompare(v2) : v2.localeCompare(v1);
+        };
+
+        rows.sort(comparer).forEach(tr => tbody.appendChild(tr));
     }
 </script>
 @endpush

@@ -85,13 +85,13 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr class="text-center font-weight-bold text-uppercase" style="background-color: rgba(0,0,0,0.02); font-size: 0.85rem;">
-                            <th style="width: 120px;">Status</th>
-                            <th style="width: 130px;">Veículo</th>
-                            <th class="text-left">Motorista</th>
-                            <th class="text-left">Cliente</th>
-                            <th>Início (Check-in)</th>
-                            <th>Fim (Checkout)</th>
-                            <th>Deslocamento</th>
+                            <th class="sortable text-center" style="width: 120px; cursor: pointer;">Status <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="sortable text-center" style="width: 130px; cursor: pointer;">Veículo <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="sortable text-left" style="cursor: pointer;">Motorista <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="sortable text-left" style="cursor: pointer;">Cliente <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="sortable text-center" style="cursor: pointer;">Início (Check-in) <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="sortable text-center" style="cursor: pointer;">Fim (Checkout) <i class="fas fa-sort text-muted ml-1"></i></th>
+                            <th class="sortable text-center" style="cursor: pointer;">DeslocAMENTO <i class="fas fa-sort text-muted ml-1"></i></th>
                             <th style="width: 100px;">Ações</th>
                         </tr>
                     </thead>
@@ -158,12 +158,12 @@
                             <td class="align-middle px-3">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
                                     @if($m->entryChecklist)
-                                    <a href="/portal/verificacoes/{{ $m->entry_id }}" class="btn btn-light btn-square-sm border-right" title="Dossiê Check-in">
+                                    <a href="/portal/verificacoes/{{ $m->entry_id }}" class="btn btn-light btn-square-sm border-right" title="Ver Checkin">
                                         <i class="fas fa-sign-in-alt text-primary"></i>
                                     </a>
                                     @endif
                                     @if($m->exitChecklist)
-                                    <a href="/portal/verificacoes/{{ $m->exit_id }}" class="btn btn-light btn-square-sm" title="Dossiê Checkout">
+                                    <a href="/portal/verificacoes/{{ $m->exit_id }}" class="btn btn-light btn-square-sm" title="Ver Checkout">
                                         <i class="fas fa-sign-out-alt text-danger"></i>
                                     </a>
                                     @endif
@@ -238,4 +238,31 @@
         letter-spacing: -1px; 
     }
 </style>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+        const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
+            v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? 
+            v1 - v2 : v1.toString().localeCompare(v2)
+        )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+        document.querySelectorAll('th.sortable').forEach(th => th.addEventListener('click', function() {
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            
+            // Remove previous icons
+            table.querySelectorAll('th i.fa-sort-up, th i.fa-sort-down').forEach(i => i.className = 'fas fa-sort text-muted ml-1');
+            
+            this.asc = !this.asc;
+            th.querySelector('i').className = this.asc ? 'fas fa-sort-up text-teal ml-1' : 'fas fa-sort-down text-teal ml-1';
+            
+            Array.from(tbody.querySelectorAll('tr'))
+                .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc))
+                .forEach(tr => tbody.appendChild(tr));
+        }));
+    });
+</script>
+@endpush
 @endsection
