@@ -41,7 +41,8 @@
         </div>
     </div>
 
-    <!-- 🛡️ BARRA DE FILTRO TÁTICO (GESTÃO / ADMIN) -->
+    <!-- 🛡️ BARRA DE FILTRO TÁTICO (EXCLUSIVA PARA ADMIN / GESTÃO) -->
+    @if($isAdminLevel)
     <div class="row mb-5">
         <div class="col-12">
             <div class="card shadow-sm border-0" style="border-radius: 12px; background: #f8f9fa;">
@@ -73,6 +74,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- 📊 CENTRAL DINÂMICA (Feeling PWA) -->
     <div class="card shadow-sm border-0 animate__animated animate__fadeInUp" style="border-radius: 12px; min-height: 500px;">

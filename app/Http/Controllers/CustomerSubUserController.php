@@ -19,12 +19,25 @@ class CustomerSubUserController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $userRole = strtolower($user->role);
+        $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+
         $search = $request->input('search');
         $sort = $request->input('sort', 'id');
         $direction = $request->input('direction', 'desc');
         $view = $request->input('view', 'active');
+        $selectedCustomerId = $request->input('customer_id');
 
         $query = CustomerSubUser::with(['customer', 'platform']);
+
+        // 🛡️ ISOLAMENTO DE DADOS
+        if (!$isAdminLevel) {
+            $query->where('customer_id', $user->customer_id);
+            $selectedCustomerId = $user->customer_id;
+        } elseif ($selectedCustomerId) {
+            $query->where('customer_id', $selectedCustomerId);
+        }
 
         if ($view === 'trash') {
             $query->onlyTrashed();
@@ -35,10 +48,12 @@ class CustomerSubUserController extends Controller
             $query->where(function($q) use ($searchLower) {
                 $q->where(\DB::raw('LOWER(name)'), 'like', "%{$searchLower}%")
                   ->orWhere(\DB::raw('LOWER(email)'), 'like', "%{$searchLower}%")
-                  ->orWhere(\DB::raw('LOWER(external_username)'), 'like', "%{$searchLower}%")
-                  ->orWhereHas('customer', function($cq) use ($searchLower) {
+                  ->orWhere(\DB::raw('LOWER(external_username)'), 'like', "%{$searchLower}%");
+                
+                // Se for admin, a busca também olha o nome do cliente
+                $q->orWhereHas('customer', function($cq) use ($searchLower) {
                       $cq->where(\DB::raw('LOWER(name)'), 'like', "%{$searchLower}%");
-                  });
+                });
             });
         }
 
@@ -50,7 +65,10 @@ class CustomerSubUserController extends Controller
         $customers = Customer::orderBy('name')->get(['id', 'name', 'code']);
         $platforms = Platform::orderBy('name')->get(['id', 'name', 'url', 'app_android_url', 'app_ios_url']);
         
-        return view('customer-sub-users.index', compact('subUsers', 'customers', 'platforms', 'search', 'sort', 'direction', 'view'));
+        return view('customer-sub-users.index', compact(
+            'subUsers', 'customers', 'platforms', 'search', 'sort', 
+            'direction', 'view', 'selectedCustomerId', 'isAdminLevel'
+        ));
     }
 
     /**

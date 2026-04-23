@@ -12,7 +12,9 @@
                 <h1 class="m-0 text-bold" style="font-size: 2.2rem;">
                     <i class="fas fa-file-invoice-dollar mr-2 text-orange"></i>Despesas da Frota
                 </h1>
-                <p class="text-muted mb-0">Controle total de abastecimentos, manutenção e gastos operacionais.</p>
+                <p class="text-orange mb-0 font-weight-bold" style="font-size: 1.1rem; letter-spacing: 0.5px;">
+                    <i class="fas fa-building mr-1"></i> {{ $customer->name ?? 'Rastertech Operacional' }}
+                </p>
             </div>
             <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
                 <button onclick="window.print()" class="btn btn-secondary btn-lg shadow-sm px-4 py-3 text-bold mr-2 mb-2" style="border-radius: 12px; font-size: 1.1rem; border: 0;">

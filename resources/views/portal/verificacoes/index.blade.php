@@ -10,7 +10,9 @@
             <h1 class="m-0 text-bold" style="font-size: 2.2rem;">
                 <i class="fas fa-route mr-3 text-teal"></i>Controle de Jornadas
             </h1>
-            <p class="text-muted mb-0 pl-md-5">Gestão unificada de Check-in e Checkout por missão operacional.</p>
+            <p class="text-primary mb-0 pl-md-5 font-weight-bold" style="font-size: 1.1rem; letter-spacing: 0.5px;">
+                <i class="fas fa-building mr-1"></i> {{ $customer->name ?? 'Rastertech Operacional' }}
+            </p>
         </div>
         <div class="col-12 col-md-4 p-0 text-md-right mt-3 mt-md-0">
             @if($isOnline)
@@ -144,7 +146,6 @@
                                         </div>
                                     </div>
                                 @elseif($mission->status === 'closed')
-                                    {{-- Missão fechada administrativamente (sem check-in vinculado) --}}
                                     <div class="d-inline-block px-3 py-2 rounded shadow-xs border bg-success-light text-success" style="min-width: 120px; border-color: rgba(40,167,69,0.2) !important;">
                                         <div class="text-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">
                                             <i class="fas fa-check-double mr-1 font-weight-normal"></i>FINALIZADO

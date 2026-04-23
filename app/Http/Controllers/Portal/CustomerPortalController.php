@@ -20,16 +20,33 @@ class CustomerPortalController extends Controller
      */
     public function index(Request $request)
     {
-        // ⚓ CONTEXTO OPERACIONAL
-        $customers = \App\Models\Customer::orderBy('name')->get();
-        $selectedCustomerId = $request->get('customer_id', session('portal_customer_id'));
+        // ⚓ CONTEXTO OPERACIONAL E SEGURANÇA
+        $user = Auth::user();
+        $userRole = strtolower($user->role);
+        $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+
+        if (!$isAdminLevel) {
+            // SE FOR CLIENTE: Trava no ID dele e limita lista de customers
+            $selectedCustomerId = $user->customer_id;
+            $customers = \App\Models\Customer::where('id', $selectedCustomerId)->get();
+        } else {
+            // SE FOR ADMIN: Mantém seletor global
+            $customers = \App\Models\Customer::orderBy('name')->get();
+            $selectedCustomerId = $request->get('customer_id', session('portal_customer_id'));
+        }
         
         if ($selectedCustomerId) {
             session(['portal_customer_id' => $selectedCustomerId]);
             $customer = \App\Models\Customer::find($selectedCustomerId);
         } else {
-            $customer = $customers->first(); // Fallback para o primeiro
-            session(['portal_customer_id' => $customer->id]);
+            $customer = $customers->first(); 
+            if ($customer) {
+                session(['portal_customer_id' => $customer->id]);
+            }
+        }
+
+        if (!$customer) {
+            return redirect('/')->with('error', 'Não foi possível localizar um cliente vinculado ao seu perfil.');
         }
 
         $stats = [
@@ -40,7 +57,7 @@ class CustomerPortalController extends Controller
             })->count()
         ];
 
-        return view('portal.dashboard', compact('customer', 'customers', 'stats'));
+        return view('portal.dashboard', compact('customer', 'customers', 'stats', 'isAdminLevel'));
     }
 
     /**
@@ -48,8 +65,17 @@ class CustomerPortalController extends Controller
      */
     public function loadComponent(Request $request, $component)
     {
-        // Prioriza o ID vindo na request ou na sessão
-        $customerId = $request->get('customer_id', session('portal_customer_id'));
+        $user = Auth::user();
+        $userRole = strtolower($user->role);
+        $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+
+        // Se for cliente, ignora o ID da request e força o dele
+        if (!$isAdminLevel) {
+            $customerId = $user->customer_id;
+        } else {
+            $customerId = $request->get('customer_id', session('portal_customer_id'));
+        }
+        
         $customer = \App\Models\Customer::find($customerId);
 
         if (!$customer) {
@@ -253,8 +279,8 @@ class CustomerPortalController extends Controller
         $user = Auth::user();
         
         // Papéis que possuem visão de supervisão (vêem todos os motoristas do cliente)
-        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
-        $isSupervisor = in_array($user->role, $supervisorRoles);
+        $supervisorRoles = ['admin', 'gerente', 'operador', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $isSupervisor = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = null;
@@ -269,7 +295,7 @@ class CustomerPortalController extends Controller
         }
 
         // 📊 QUERY DE BUSCA - FOCO EM MISSÕES (Dossiê Unificado)
-        $query = VehicleMission::with(['vehicle', 'driver', 'entryChecklist', 'exitChecklist']);
+        $query = VehicleMission::with(['vehicle', 'driver', 'entryChecklist', 'exitChecklist', 'customer']);
         
         if ($isSupervisor) {
             // Supervisor/Operador/Gestor/Admin - Vê TUDO na Torre de Controle de Jornadas
@@ -302,8 +328,7 @@ class CustomerPortalController extends Controller
     public function createChecklist(Request $request, $type)
     {
         $user = Auth::user();
-        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
-        $isSupervisor = in_array($user->role, $supervisorRoles);
+        $isSupervisor = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
@@ -573,8 +598,7 @@ class CustomerPortalController extends Controller
     public function despesas(Request $request)
     {
         $user = Auth::user();
-        $adminRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
-        $isAdmin = in_array($user->role, $adminRoles);
+        $isAdmin = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
@@ -639,8 +663,7 @@ class CustomerPortalController extends Controller
     public function createDespesa(Request $request)
     {
         $user = Auth::user();
-        $adminRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
-        $isAdmin = in_array($user->role, $adminRoles);
+        $isAdmin = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;

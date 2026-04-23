@@ -57,14 +57,17 @@ class UserController extends Controller
     private function canOperate(User $targetUser)
     {
         $user = auth()->user();
-        if ($user->role === 'Administrador' || $user->id === $targetUser->id) {
+        $userRole = strtolower($user->role);
+        $targetRole = strtolower($targetUser->role);
+
+        if ($userRole === 'administrador' || $userRole === 'admin' || $user->id === $targetUser->id) {
             return true;
         }
-        if ($user->role === 'Gerente') {
-            return $targetUser->role !== 'Administrador';
+        if ($userRole === 'gerente') {
+            return $targetRole !== 'administrador' && $targetRole !== 'admin';
         }
-        if ($user->role === 'Suporte Técnico') {
-            return $targetUser->role === 'Cliente';
+        if ($userRole === 'suporte técnico') {
+            return $targetRole === 'cliente';
         }
         return false;
     }
@@ -205,8 +208,8 @@ class UserController extends Controller
         // 📸 ATUALIZAÇÃO OPCIONAL DE FOTO
         if ($request->hasFile('image')) {
             // Remove a antiga se existir
-            if ($user->image) {
-                Storage::disk('public')->delete($user->image);
+            if ($userTarget->image) {
+                Storage::disk('public')->delete($userTarget->image);
             }
             $path = $request->file('image')->store('users/images', 'public');
             $validated['image'] = $path;

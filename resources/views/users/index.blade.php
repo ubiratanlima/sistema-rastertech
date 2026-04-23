@@ -629,8 +629,9 @@
                     $('#modalVerUsuario').modal('show');
                 }
             },
-            error: function() {
-                Swal.fire('ERRO', 'Não foi possível carregar os detalhes do administrador.', 'error');
+            error: function(xhr) {
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Não foi possível carregar os detalhes do usuário.';
+                Swal.fire('ERRO', msg, 'error');
             }
         });
     }

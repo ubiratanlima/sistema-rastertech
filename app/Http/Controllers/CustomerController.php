@@ -58,7 +58,7 @@ class CustomerController extends Controller
     public function storeMember(Request $request, Customer $customer)
     {
         $data = $request->validate([
-            'role' => 'required|in:driver,operator',
+            'role' => 'required|in:driver,operator,autorizado',
             'name' => 'required|string|max:100',
             'username' => 'required|string|max:50',
             'password' => 'nullable|string|min:8',
@@ -81,30 +81,45 @@ class CustomerController extends Controller
             
             // Criar acesso de portal se houver senha
             if ($data['password']) {
-                $customer->subUsers()->updateOrCreate(
-                    ['nickname' => $data['username']],
+                \App\Models\User::updateOrCreate(
+                    ['external_username' => $data['username']],
                     [
                         'name' => $data['name'],
-                        'role' => 'driver',
-                        'external_username' => $data['username'],
-                        'external_password' => bcrypt($data['password']),
                         'email' => $data['email'],
+                        'password' => bcrypt($data['password']),
+                        'role' => 'Motorista',
+                        'customer_id' => $customer->id,
+                        'gender' => 'Masculino'
                     ]
                 );
             }
         } else {
-            // 🛡️ GRAVAÇÃO OPERADOR (SUB-USUÁRIO)
-            $member = $customer->subUsers()->updateOrCreate(
-                ['nickname' => $data['username']],
+            // 🛡️ GRAVAÇÃO OPERADOR OU AUTORIZADO (SUB-USUÁRIO)
+            $customer->subUsers()->updateOrCreate(
+                ['external_username' => $data['username']],
                 [
                     'name' => $data['name'],
-                    'role' => 'operator',
+                    'role' => $data['role'],
                     'external_username' => $data['username'],
                     'external_password' => $data['password'] ? bcrypt($data['password']) : null,
                     'email' => $data['email'],
-                    'whatsapp' => $data['whatsapp']
                 ]
             );
+
+            // Sincroniza com a tabela principal de Users para permitir Login
+            if ($data['password']) {
+                \App\Models\User::updateOrCreate(
+                    ['external_username' => $data['username']],
+                    [
+                        'name' => $data['name'],
+                        'email' => $data['email'],
+                        'password' => bcrypt($data['password']),
+                        'role' => ucfirst($data['role']), // 'Operator' ou 'Autorizado'
+                        'customer_id' => $customer->id,
+                        'gender' => 'Masculino'
+                    ]
+                );
+            }
         }
 
         return response()->json(['success' => true, 'message' => "Integrante {$data['name']} sincronizado!"]);
@@ -121,9 +136,13 @@ class CustomerController extends Controller
 
         if ($member->trashed()) {
             $member->restore();
+            // Restaura também o usuário principal se houver
+            \App\Models\User::withTrashed()->where('external_username', $member->external_username)->restore();
             $status = 'Ativado';
         } else {
             $member->delete();
+            // Inativa também o usuário principal se houver
+            \App\Models\User::where('external_username', $member->external_username)->delete();
             $status = 'Inativado';
         }
         
@@ -132,26 +151,34 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer)
     {
-        // REGRA DE OURO RASTERTECH: Proibido inativar se houver qualquer vínculo
+        // REGRA DE OURO RASTERTECH: Proibido inativar se houver ATIVOS FÍSICOS/HARDWARE
         $hasVehicles = $customer->vehicles()->count() > 0;
         $hasDevices = $customer->devices()->count() > 0;
         $hasChips = $customer->gsmCards()->count() > 0;
-        $teamCount = $customer->subUsers()->count() + $customer->drivers()->count();
-        $hasTeam = $teamCount > 0;
 
-        if ($hasVehicles || $hasDevices || $hasChips || $hasTeam) {
+        if ($hasVehicles || $hasDevices || $hasChips) {
             $parts = [];
             if ($hasVehicles) $parts[] = $customer->vehicles()->count() . " veículo(s)";
             if ($hasDevices) $parts[] = $customer->devices()->count() . " unidade(s) rastreada(s)";
             if ($hasChips) $parts[] = $customer->gsmCards()->count() . " chip(s)";
-            if ($hasTeam) $parts[] = $teamCount . " membro(s) de equipe";
             
-            $text = "Você não pode inativar este cliente, pois ele possui " . implode(", ", $parts) . " ativos.";
+            $text = "Você não pode inativar este cliente, pois ele possui " . implode(", ", $parts) . " ativos pendentes de desvínculo.";
             return redirect()->back()->with('warning_block', $text);
         }
 
-        $customer->delete();
-        return redirect()->route('customers.index')->with('success', "Cliente inativado com sucesso.");
+        // DESATIVAÇÃO EM CASCATA DE SUB-USUÁRIOS E MOTORISTAS (Pessoas/Acessos)
+        DB::transaction(function() use ($customer) {
+            // Desativa membros da equipe
+            $customer->subUsers()->delete();
+            $customer->drivers()->delete();
+            
+            // Desativa todos os usuários de login vinculados a este cliente
+            \App\Models\User::where('customer_id', $customer->id)->delete();
+            
+            $customer->delete();
+        });
+
+        return redirect()->route('customers.index')->with('success', "Cliente e todos os seus vínculos de acesso foram inativados com sucesso.");
     }
 
     public function store(Request $request)

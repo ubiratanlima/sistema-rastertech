@@ -79,7 +79,14 @@
                 </div>
             </div>
             <nav class="mt-2 text-sm text-uppercase font-weight-bold">
+                @php 
+                    $userRole = strtolower(auth()->check() ? auth()->user()->role ?? '' : 'guest'); 
+                    if ($userRole === 'gestor') $userRole = 'gerente';
+                    if ($userRole === 'administrador') $userRole = 'admin';
+                @endphp
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+                    
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
                     <li class="nav-item">
                         <a href="/" class="nav-link {{ request()->is('/') ? 'active' : '' }}"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p></a>
                     </li>
@@ -103,14 +110,25 @@
                             <p>Missões em Campo</p>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Credenciais APPs</p></a>
-                    </li>
+                    @endif
 
+                    @if(in_array($userRole, ['admin', 'gerente', 'cliente', 'autorizado', 'operador']))
                     <li class="nav-header">DEPARTAMENTO TÉCNICO</li>
+                    @endif
+                    
+                    @if(in_array($userRole, ['admin', 'gerente', 'cliente', 'autorizado']))
                     <li class="nav-item">
                         <a href="/portal" class="nav-link {{ (request()->is('portal') || (request()->is('portal/*') && !request()->is('portal/verificacoes*') && !request()->is('portal/despesas*') && !request()->is('portal/instalador*'))) ? 'bg-indigo text-white shadow' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>PORTAL DO CLIENTE</p></a>
                     </li>
+                    @endif
+
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador', 'cliente', 'autorizado']))
+                    <li class="nav-item">
+                        <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Credenciais APPs</p></a>
+                    </li>
+                    @endif
+
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
                     <li class="nav-item">
                         <a href="/providers" class="nav-link {{ request()->is('providers*') ? 'active' : '' }}"><i class="nav-icon fas fa-industry"></i><p>Fornecedores</p></a>
                     </li>
@@ -124,8 +142,6 @@
                         <a href="/device-commands" class="nav-link {{ request()->is('device-commands*') ? 'active' : '' }}"><i class="nav-icon fas fa-comment-dots"></i><p>Comandos SMS</p></a>
                     </li>
 
-                    @php $userRole = auth()->check() ? auth()->user()->role : 'guest'; @endphp
-                    @if(in_array($userRole, ['admin', 'gestor', 'operador', 'atendente', 'Suporte Técnico', 'Gerente', 'Administrador', 'Gestor de Operações', 'guest']))
                     <li class="nav-header">ATENDIMENTOS</li>
                     <li class="nav-item">
                         <a href="/support/customers" class="nav-link {{ request()->is('support/customers*') ? 'active' : '' }}">
@@ -142,6 +158,7 @@
                     @endif
 
                     <!-- 🚜 MÓDULO DO MOTORISTA (VERIFICAÇÕES & DESPESAS) -->
+                    @if(in_array($userRole, ['admin', 'gerente', 'motorista']))
                     <li class="nav-header">MOTORISTA</li>
                     <li class="nav-item">
                         <a href="{{ route('portal.verificacoes.index') }}" class="nav-link {{ request()->is('portal/verificacoes*') ? 'active' : '' }}">
@@ -155,8 +172,10 @@
                             <p>Despesas</p>
                         </a>
                     </li>
+                    @endif
 
                     <!-- 🔧 MÓDULO DO INSTALADOR (VISTORIAS TÉCNICAS) -->
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador', 'instalador']))
                     <li class="nav-header">INSTALADOR</li>
                     <li class="nav-item">
                         <a href="{{ route('portal.instalador.index') }}" class="nav-link {{ request()->is('portal/instalador*') ? 'active' : '' }}">
@@ -164,23 +183,38 @@
                             <p>Instalações</p>
                         </a>
                     </li>
+                    @endif
 
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
                     <li class="nav-header">ADMINISTRAÇÃO</li>
+                    @endif
+                    
+                    @if(in_array($userRole, ['admin', 'gerente']))
                     <li class="nav-item">
                         <a href="/users" class="nav-link {{ request()->is('users*') ? 'active' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>Usuários Internos</p></a>
                     </li>
+                    @endif
+                    
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
                     <li class="nav-item">
                         <a href="/reports" class="nav-link {{ request()->is('reports*') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice"></i><p>Relatórios</p></a>
                     </li>
+                    @endif
+                    
+                    @if($userRole === 'admin')
                     <li class="nav-item">
                         <a href="{{ route('settings.index') }}" class="nav-link {{ request()->is('settings*') ? 'active' : '' }}"><i class="nav-icon fas fa-cog"></i><p>Configurações</p></a>
                     </li>
+                    @endif
+                    
+                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
                     <li class="nav-item">
                         <a href="{{ route('help') }}" class="nav-link {{ request()->is('help*') ? 'active' : '' }} text-info">
                             <i class="nav-icon fas fa-question-circle shadow-sm"></i>
                             <p>Manual de Operações</p>
                         </a>
                     </li>
+                    @endif
                 </ul>
             </nav>
         </div>

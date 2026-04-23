@@ -37,13 +37,27 @@ class LoginController extends Controller
     private function handleSuccessLogin()
     {
         $user = Auth::user();
+        $role = strtolower($user->role ?? '');
 
-        // 🚀 GATILHO DE PRIMEIRO ACESSO (Conforme sua ordem)
+        // 🚀 GATILHO DE PRIMEIRO ACESSO
         if ($user->access_validated === false) {
             $user->update(['access_validated' => true]);
         }
 
-        // 🏎️ REDIRECIONAMENTO INTELIGENTE RTECH (Motorista vs Administrativo)
+        // 🏎️ REDIRECIONAMENTO POR ROLE RTECH (Estrito)
+        if ($role === 'motorista') {
+            return redirect()->route('portal.verificacoes.index');
+        }
+
+        if ($role === 'instalador') {
+            return redirect()->route('portal.instalador.index');
+        }
+
+        if (in_array($role, ['cliente', 'autorizado'])) {
+            return redirect()->route('portal.dashboard');
+        }
+
+        // 🔍 BACKUP PARA SUB-USUÁRIOS LEGADOS
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         if ($subUser) {
             $isDriver = \App\Models\PortalDriver::where('sub_user_id', $subUser->id)->exists();
@@ -52,8 +66,8 @@ class LoginController extends Controller
             }
         }
 
-        // 🛰️ ESTABILIZAÇÃO OURO: Força o redirecionamento administrativo para a URL base
-        return redirect(config('app.url'));
+        // 🛰️ ADMINISTRATIVOS (Admin, Gerente, Operador)
+        return redirect()->to('/');
     }
 
     public function logout(Request $request)

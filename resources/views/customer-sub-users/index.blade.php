@@ -24,6 +24,19 @@
             
             <div class="card-tools ml-auto">
                 <form action="/customer-sub-users" method="GET" class="d-flex align-items-center">
+                    <!-- 🏢 SELETOR DE CLIENTE (ADMIN/GESTOR) -->
+                    @if($isAdminLevel)
+                    <div class="mr-4 d-flex align-items-center border-right pr-4">
+                        <label class="small font-weight-bold text-muted mr-2 mb-0">CLIENTE:</label>
+                        <select name="customer_id" class="form-control form-control-sm select2" onchange="this.form.submit()" style="width: 220px; font-weight: bold; border-radius: 6px;">
+                            <option value="">TODOS OS CLIENTES</option>
+                            @foreach($customers as $c)
+                                <option value="{{ $c->id }}" {{ $selectedCustomerId == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+
                     <!-- 🔍 PESQUISAR -->
                     <div class="input-group input-group-sm" style="width: 250px;">
                         <input type="text" name="search" class="form-control" placeholder="Procurar usuário..." value="{{ $search }}">
@@ -70,11 +83,6 @@
                                     IDENTIFICAÇÃO / USUÁRIO <i class="fas fa-sort{{ $sort == 'name' ? ($direction == 'asc' ? '-up' : '-down') : '' }} ml-1 opacity-50"></i>
                                 </a>
                             </th>
-                            <th style="width: 200px;">
-                                <a href="?{{ http_build_query(array_merge(request()->query(), ['sort' => 'customer_id', 'direction' => ($sort == 'customer_id' && $direction == 'asc') ? 'desc' : 'asc'])) }}" class="text-dark">
-                                    CADERNO / CLIENTE <i class="fas fa-sort{{ $sort == 'customer_id' ? ($direction == 'asc' ? '-up' : '-down') : '' }} ml-1 opacity-50"></i>
-                                </a>
-                            </th>
                             <th style="width: 180px;">PLATAFORMA / SISTEMA</th>
                             <th style="width: 180px;">
                                 <a href="?{{ http_build_query(array_merge(request()->query(), ['sort' => 'external_username', 'direction' => ($sort == 'external_username' && $direction == 'asc') ? 'desc' : 'asc'])) }}" class="text-dark">
@@ -101,11 +109,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center align-middle cursor-pointer" data-toggle="collapse" data-target="#row-sub-{{ $u->id }}">
-                                <span class="badge badge-light border px-3 py-1 font-weight-bold text-teal" style="font-size: 0.9rem;">
-                                    <i class="fas fa-briefcase mr-1 opacity-50"></i>{{ $u->customer->name }}
-                                </span>
-                            </td>
+
                             <td class="text-center align-middle cursor-pointer font-weight-bold" data-toggle="collapse" data-target="#row-sub-{{ $u->id }}">
                                 <span class="text-muted small text-uppercase d-block" style="font-size: 0.65rem;">SISTEMA</span>
                                 <div class="text-dark">{{ $u->platform->name ?? 'N/A' }}</div>
@@ -205,12 +209,10 @@
                             </td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <i class="fas fa-id-card-alt fa-3x text-muted mb-3 opacity-20"></i>
                                 <h4 class="text-muted font-weight-bold">Nenhum usuário externo encontrado</h4>
                             </td>
-                        </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -241,11 +243,15 @@
                     <div class="row">
                         <div class="col-12 form-group mb-3">
                             <label class="text-xs text-uppercase text-muted font-weight-bold">Vincular ao Cliente</label>
-                            <select name="customer_id" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" required>
-                                <option value="">Selecione o Cliente...</option>
-                                @foreach($customers as $c)
-                                    <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->code }})</option>
-                                @endforeach
+                            <select name="customer_id" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" required {{ !$isAdminLevel ? 'readonly' : '' }}>
+                                @if(!$isAdminLevel)
+                                    <option value="{{ auth()->user()->customer_id }}">{{ auth()->user()->customer->name ?? 'Minha Empresa' }}</option>
+                                @else
+                                    <option value="">Selecione o Cliente...</option>
+                                    @foreach($customers as $c)
+                                        <option value="{{ $c->id }}" {{ $selectedCustomerId == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->code }})</option>
+                                    @endforeach
+                                @endif
                             </select>
                         </div>
                         <div class="col-md-6 form-group mb-3">
