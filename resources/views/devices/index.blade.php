@@ -723,6 +723,28 @@
                 if (reasonArea) {
                     reasonArea.addEventListener('input', (e) => localStorage.setItem(cacheKey, e.target.value));
                 }
+
+                // 🚀 Vínculo Dinâmico de Veículo por Cliente (Administrador)
+                const customerSelect = Swal.getPopup().querySelector('#edit_customer_device');
+                const vehicleSelect = Swal.getPopup().querySelector('#new_vehicle_id');
+                
+                if (customerSelect && vehicleSelect) {
+                    customerSelect.addEventListener('change', (e) => {
+                        const selectedCustomerId = e.target.value;
+                        const filteredVehicles = globalVehicles.filter(v => {
+                            return selectedCustomerId ? parseInt(v.customer_id) === parseInt(selectedCustomerId) : false;
+                        });
+                        
+                        let options = '<option value="">-- VINCULAR CARRO --</option>';
+                        if (filteredVehicles.length > 0) {
+                            options += filteredVehicles.map(v => `<option value="${v.id}">${v.plate}</option>`).join('');
+                        } else {
+                            const customerName = customerSelect.options[customerSelect.selectedIndex].text;
+                            options += `<option disabled>Sem veículos livres para ${customerName}</option>`;
+                        }
+                        vehicleSelect.innerHTML = options;
+                    });
+                }
             },
             html: `
                 <div class="text-left px-2">

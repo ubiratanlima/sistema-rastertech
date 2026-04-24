@@ -145,7 +145,8 @@ class DeviceController extends Controller
                 'unlink_vehicle' => 'nullable|boolean',
                 'unlink_reason' => 'nullable|string',
                 'unlink_chip' => 'nullable|boolean',
-                'new_gsm_card_id' => 'nullable|exists:gsm_cards,id'
+                'new_gsm_card_id' => 'nullable|exists:gsm_cards,id',
+                'new_vehicle_id' => 'nullable|exists:vehicles,id'
             ]);
 
             $device = Device::withTrashed()->findOrFail($id);
