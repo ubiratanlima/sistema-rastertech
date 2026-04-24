@@ -1,1 +1,7 @@
 apenas teste
+Edição de teste realizada pelo Antigravity.
+Terceira linha para teste de interface.
+Confirmado: Interface de teste ativa.
+Teste com wsl.localhost realizado.
+Linha final para validação de abertura automática.
+[SYNC_COMPLETE]

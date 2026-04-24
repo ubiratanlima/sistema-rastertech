@@ -1,0 +1,6 @@
+TESTE DE CONEXÃO RASTERTECH
+DATA: 24/04/2026
+
+Se você está lendo isso, a sincronização de arquivos está funcional. 
+O problema está apenas no gatilho de abertura automática das abas.
+TESTE DE REVISÃO ATIVO - POR FAVOR, VERIFIQUE SE ESTÁ VENDO ESTA MUDANÇA.

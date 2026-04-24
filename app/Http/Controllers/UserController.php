@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+/**
+ * 🛡️ CONTROLADOR DE ACESSO TÁTICO
+ * Gerencia a hierarquia de usuários e permissões do sistema.
+ * Revisado para RBAC Centralizado no Model User em 24/04/2026.
+ */
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -51,26 +57,7 @@ class UserController extends Controller
         return view('users.index', compact('users', 'search', 'view'));
     }
 
-    /**
-     * Verifica permissão estrita baseada nas patentes da hierarquia.
-     */
-    private function canOperate(User $targetUser)
-    {
-        $user = auth()->user();
-        $userRole = strtolower($user->role);
-        $targetRole = strtolower($targetUser->role);
 
-        if ($userRole === 'administrador' || $userRole === 'admin' || $user->id === $targetUser->id) {
-            return true;
-        }
-        if ($userRole === 'gerente') {
-            return $targetRole !== 'administrador' && $targetRole !== 'admin';
-        }
-        if ($userRole === 'suporte técnico') {
-            return $targetRole === 'cliente';
-        }
-        return false;
-    }
 
     /**
      * Cadastra um novo Administrador.
@@ -123,7 +110,7 @@ class UserController extends Controller
     {
         $user = User::withTrashed()->findOrFail($id);
         
-        if (!$this->canOperate($user)) {
+        if (!auth()->user()->canManage($user)) {
              return response()->json(['success' => false, 'message' => 'Acesso Negado: Perfil Hierárquico Insuficiente'], 403);
         }
         
@@ -153,7 +140,7 @@ class UserController extends Controller
     {
         $user = User::withTrashed()->findOrFail($id);
         
-        if (!$this->canOperate($user)) {
+        if (!auth()->user()->canManage($user)) {
             abort(403, 'Acesso Negado: Perfil Hierárquico Insuficiente');
         }
 
@@ -170,21 +157,19 @@ class UserController extends Controller
         $userTarget = User::withTrashed()->findOrFail($id);
         $currentUser = auth()->user();
 
-        if (!$this->canOperate($userTarget)) {
+        if (!$currentUser->canManage($userTarget)) {
             return response()->json(['success' => false, 'message' => 'Acesso Negado: Perfil Hierárquico Insuficiente'], 403);
         }
 
         $requestedRole = $request->input('role');
         
         // Bloqueio de auto-elevação ou manipulação ilegal
-        if ($currentUser->id === $userTarget->id && $requestedRole !== $currentUser->role && $currentUser->role !== 'Administrador') {
+        if ($currentUser->id === $userTarget->id && $requestedRole !== $currentUser->role && $currentUser->normalized_role !== 'admin') {
              return response()->json(['success' => false, 'message' => 'Você não tem permissão para alterar sua própria patente.'], 403);
         }
-        if ($currentUser->role === 'Gerente' && $requestedRole === 'Administrador' && $userTarget->role !== 'Administrador') {
-             return response()->json(['success' => false, 'message' => 'Gerentes não podem promover acessos a Administrador.'], 403);
-        }
-        if ($currentUser->role === 'Suporte Técnico' && $currentUser->id !== $userTarget->id && $requestedRole !== 'Cliente') {
-             return response()->json(['success' => false, 'message' => 'Operadores só podem manipular contas typu Cliente.'], 403);
+        
+        if ($currentUser->normalized_role === 'gerente' && strtolower($requestedRole) === 'administrador' && $userTarget->normalized_role !== 'admin') {
+             return response()->json(['success' => false, 'message' => 'Gerentes não podem promover acessos a Administrador MASTER.'], 403);
         }
 
         $rules = [
@@ -198,16 +183,13 @@ class UserController extends Controller
 
         $validated = $request->validate($rules);
 
-        // 🔐 ATUALIZAÇÃO OPCIONAL DE SENHA
         if ($request->filled('password')) {
             $validated['password'] = Hash::make($request->password);
         } else {
             unset($validated['password']);
         }
 
-        // 📸 ATUALIZAÇÃO OPCIONAL DE FOTO
         if ($request->hasFile('image')) {
-            // Remove a antiga se existir
             if ($userTarget->image) {
                 Storage::disk('public')->delete($userTarget->image);
             }
@@ -234,7 +216,7 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
         
-        if (!$this->canOperate($user)) {
+        if (!auth()->user()->canManage($user)) {
              return response()->json(['success' => false, 'message' => 'Acesso Negado: Perfil Hierárquico Insuficiente'], 403);
         }
 

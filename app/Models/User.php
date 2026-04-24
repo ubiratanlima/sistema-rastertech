@@ -1,5 +1,5 @@
 <?php
-
+// 🛡️ MODELO DE SEGURANÇA RASTERTECH - ESTABILIZADO
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,4 +28,44 @@ class User extends Authenticatable
         'password' => 'hashed',
         'access_validated' => 'boolean'
     ];
+
+    /**
+     * NORMALIZAÇÃO DE PATENTE (Padrão Unificado)
+     * Converte variações de texto em chaves operacionais únicas.
+     */
+    public function getNormalizedRoleAttribute()
+    {
+        $role = strtolower($this->role ?? '');
+        if ($role === 'administrador') return 'admin';
+        if ($role === 'gerente' || $role === 'gestor') return 'gerente';
+        if ($role === 'suporte técnico' || $role === 'suporte') return 'suporte';
+        return $role;
+    }
+
+    /**
+     * LÓGICA DE CUSTÓDIA (RBAC CENTRAL)
+     * Define quem tem autoridade sobre quem na hierarquia do quartel-general.
+     */
+    public function canManage(User $targetUser)
+    {
+        $myRole = $this->normalized_role;
+        $targetRole = $targetUser->normalized_role;
+
+        // Administradores MASTER e o próprio dono da conta têm passe livre total
+        if ($myRole === 'admin' || $this->id === $targetUser->id) {
+            return true;
+        }
+
+        // Gerentes comandam todos, exceto os Administradores MASTER
+        if ($myRole === 'gerente') {
+            return $targetRole !== 'admin';
+        }
+
+        // Suporte Técnico pode gerenciar apenas o nível Cliente
+        if ($myRole === 'suporte') {
+            return $targetRole === 'cliente';
+        }
+
+        return false;
+    }
 }

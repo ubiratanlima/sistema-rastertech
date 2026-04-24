@@ -146,8 +146,8 @@
                                 @if($sim->trashed())
                                     <span class="badge bg-danger px-3 py-1 shadow-sm">INATIVADO</span>
                                 @else
-                                    <span class="badge {{ $sim->status === 'active' ? 'bg-success' : 'bg-warning' }} px-3 py-1 shadow-sm">
-                                        {{ $sim->status === 'active' ? 'ATIVO' : 'ESTOQUE' }}
+                                    <span class="badge {{ $sim->customer_name !== 'ESTOQUE' ? 'bg-success' : 'bg-warning' }} px-3 py-1 shadow-sm">
+                                        {{ $sim->customer_name !== 'ESTOQUE' ? 'ATIVO' : 'ESTOQUE' }}
                                     </span>
                                 @endif
                             </td>

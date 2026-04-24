@@ -509,8 +509,9 @@
                     $('#modalEditarUsuario').modal('show');
                 }
             },
-            error: function() {
-                Swal.fire('ERRO', 'Não foi possível carregar os dados para edição.', 'error');
+            error: function(xhr) {
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Não foi possível carregar os dados para edição.';
+                Swal.fire('ERRO', msg, 'error');
             }
         });
     }
@@ -558,7 +559,8 @@
                 }
             },
             error: function(xhr) {
-                Swal.fire('ERRO', xhr.responseJSON.message || 'Erro ao processar as alterações.', 'error');
+                const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Erro ao processar as alterações.';
+                Swal.fire('ERRO', msg, 'error');
             }
         });
     });
@@ -662,7 +664,8 @@
                         }).then(() => { location.reload(); });
                     },
                     error: function(xhr) {
-                        Swal.fire('ERRO', xhr.responseJSON.message || 'Erro ao processar solicitação.', 'error');
+                        const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Erro ao processar solicitação.';
+                        Swal.fire('ERRO', msg, 'error');
                     }
                 });
             }

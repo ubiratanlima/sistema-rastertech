@@ -38,28 +38,36 @@ class SimCardController extends Controller
             });
         }
 
-        // ⚙️ FILTRO DINÂMICO DE VISÃO (QUADRI-ESTADO)
+        // ⚙️ FILTRO DINÂMICO DE VISÃO (Lógica Operacional Rastertech)
         switch ($view) {
             case 'inventory':
-                // ESTOQUE: Não deletado e status não-operacional (ex: 'inactive')
+                // ESTOQUE: Chips sem cliente vinculado (direto ou via device) e não cancelados
                 $query->whereNull('gsm_cards.deleted_at')
-                      ->whereNotIn('gsm_cards.status', ['active', 'canceled']);
+                      ->where('gsm_cards.status', '!=', 'canceled')
+                      ->where(function($q) {
+                          $q->whereNull('gsm_cards.customer_id')
+                            ->whereNull('devices.customer_id');
+                      });
                 break;
             case 'canceled':
-                // CANCELADO: Operação Master de bloqueio/desmame
+                // CANCELADO: Chips desativados permanentemente na operadora
                 $query->whereNull('gsm_cards.deleted_at')
                       ->where('gsm_cards.status', 'canceled');
                 break;
             case 'trash':
-                // INATIVOS: Registros excluídos mas mantidos para auditoria (SoftDelete)
+                // INATIVOS: Registros na Lixeira Tática (SoftDelete)
                 $query->whereNotNull('gsm_cards.deleted_at');
                 break;
             case 'active':
             default:
-                // ATIVO: Não deletado e status 'active'
-                $view = 'active'; // Garante o valor para a view
+                // OPERAÇÃO REAL: Apenas chips ativos COM cliente vinculado
+                $view = 'active';
                 $query->whereNull('gsm_cards.deleted_at')
-                      ->where('gsm_cards.status', 'active');
+                      ->where('gsm_cards.status', 'active')
+                      ->where(function($q) {
+                          $q->whereNotNull('gsm_cards.customer_id')
+                            ->orWhereNotNull('devices.customer_id');
+                      });
                 break;
         }
 
@@ -101,8 +109,9 @@ class SimCardController extends Controller
      */
     public function trash()
     {
-        // 🔒 SEGURANÇA: Apenas administradores/gestores acessam a lixeira
-        if (!auth()->check() || (auth()->user()->role !== 'admin' && auth()->user()->role !== 'manager')) {
+        // 🔒 SEGURANÇA CENTRALIZADA (RBAC MODEL)
+        $user = auth()->user();
+        if (!$user || !in_array($user->normalized_role, ['admin', 'gerente'])) {
             return redirect()->route('sim-cards.index')->with('error', 'Acesso negado à Lixeira Tática.');
         }
 
@@ -217,7 +226,7 @@ class SimCardController extends Controller
 
         return redirect()
             ->route('sim-cards.trash')
-            ->with('success', '📟 Chip restaurado e ativo no inventário.');
+            ->with('success', 'Chip reativado com sucesso.');
     }
 
     /**
@@ -225,8 +234,9 @@ class SimCardController extends Controller
      */
     public function forceDelete($id)
     {
-        // 🔒 SEGURANÇA: Apenas administradores/gestores
-        if (!auth()->check() || (auth()->user()->role !== 'admin' && auth()->user()->role !== 'manager')) {
+        // 🔒 SEGURANÇA CENTRALIZADA (RBAC MODEL)
+        $user = auth()->user();
+        if (!$user || !in_array($user->normalized_role, ['admin', 'gerente'])) {
              return redirect()->route('sim-cards.index')->with('error', 'Ação restrita a Administradores.');
         }
 
