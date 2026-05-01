@@ -15,7 +15,7 @@
                     <h1 class="m-0 text-bold" style="font-size: 2rem;">
                         <i class="fas fa-shield-alt mr-2 text-primary"></i>Dossiê Consolidado <small class="text-muted">#{{ $inst->id }}</small>
                     </h1>
-                    <p class="text-muted mb-0 font-weight-bold uppercase small"><i class="fas fa-history mr-1"></i> Auditoria de Ciclo Completo (Check-in, Elétrica, Checkout)</p>
+                    <p class="text-muted mb-0 font-weight-bold uppercase small"><i class="fas fa-history mr-1"></i> Auditoria de Ciclo Completo (Check-in, Instalação, Checkout)</p>
                 </div>
                 <div class="mt-2 mt-md-0">
                     <span class="badge badge-success px-4 py-2" style="border-radius: 20px; font-size: 0.9rem;">
@@ -40,7 +40,7 @@
                         <div class="col-md-1 d-none d-md-block"><i class="fas fa-chevron-right text-muted opacity-25"></i></div>
                         <div class="col-md-3 mb-2 mb-md-0 border-left border-right border-md-0">
                             <i class="fas fa-bolt text-primary mb-1"></i>
-                            <p class="small text-muted uppercase mb-0 font-weight-bold">Elétrica</p>
+                            <p class="small text-muted uppercase mb-0 font-weight-bold">Instalação</p>
                             <h5 class="text-bold mb-0 text-primary">{{ $inst->processed_at ? $inst->processed_at->format('d/m/Y H:i') : '--' }}</h5>
                         </div>
                         <div class="col-md-1 d-none d-md-block"><i class="fas fa-chevron-right text-muted opacity-25"></i></div>
@@ -151,7 +151,7 @@
                                 <div class="col mb-3">
                                     <div class="gallery-item-rtech rounded shadow-sm border" 
                                          style="background: url('{{ asset('storage/'.$path) }}') center/cover; height: 180px; cursor: zoom-in; position: relative;"
-                                         onclick="viewPhoto('{{ asset('storage/'.$path) }}', 'ELÉTRICA: {{ strtoupper($key) }}')">
+                                         onclick="viewPhoto('{{ asset('storage/'.$path) }}', 'INSTALAÇÃO: {{ strtoupper($key) }}')">
                                         <div class="label-photo text-white px-2 py-1 rounded-bottom w-100" style="background: rgba(0,123,255,0.7); position: absolute; bottom: 0; left: 0; font-size: 0.65rem; font-weight: bold;">
                                             {{ strtoupper(str_replace('_', ' ', $key)) }}
                                         </div>

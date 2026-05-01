@@ -23,18 +23,28 @@ class UserController extends Controller
         $search = $request->input('search');
         $view = $request->input('view', 'active');
         $currentUser = auth()->user();
-        
+
         $query = User::query();
+        
+        // 🛡️ ISOLAMENTO DE HIERARQUIA: Filtrar apenas equipe interna e clientes master
+        $internalRoles = ['Administrador', 'Gerente', 'Suporte', 'Instalador', 'Cliente'];
+        $query->whereIn('role', $internalRoles);
+
+        // 🔍 FILTRO TÁTICO POR CARGO (EXATO)
+        $selectedRole = $request->get('role');
+        if ($selectedRole) {
+            $query->where('role', $selectedRole);
+        }
 
         // 🛡️ REGRAS DE HIERARQUIA E VISIBILIDADE RBAC
         if ($currentUser->role === 'Gerente') {
-            $query->where('role', '!=', 'Administrador');
-        } elseif ($currentUser->role === 'Suporte Técnico') {
-            $query->where(function($q) use ($currentUser) {
-                $q->where('id', $currentUser->id)
-                  ->orWhere('role', 'Cliente');
-            });
-        } elseif ($currentUser->role === 'Técnico Instalador') {
+            // Gerentes não vêem Administradores nem outros Gerentes
+            $query->whereNotIn('role', ['Administrador', 'Gerente']);
+        } elseif ($currentUser->role === 'Suporte') {
+            // Suporte vê apenas Clientes
+            $query->where('role', 'Cliente');
+        } elseif ($currentUser->role === 'Instalador') {
+            // Instaladores vêem apenas a si mesmos
             $query->where('id', $currentUser->id);
         }
 
@@ -54,7 +64,7 @@ class UserController extends Controller
 
         $users = $query->orderBy('name', 'asc')->paginate(15)->appends($request->all());
         
-        return view('users.index', compact('users', 'search', 'view'));
+        return view('users.index', compact('users', 'search', 'view', 'selectedRole'));
     }
 
 
@@ -68,17 +78,19 @@ class UserController extends Controller
         $requestedRole = $request->input('role');
         
         // Blindagem RBAC: Validar se permite criação desse cargo
-        if ($currentUser->role === 'Gerente' && $requestedRole === 'Administrador') {
-            return response()->json(['success' => false, 'message' => 'Hierarquia insuficiente para criar Administradores.'], 403);
+        if ($currentUser->role === 'Gerente' && in_array($requestedRole, ['Administrador', 'Gerente'])) {
+            return response()->json(['success' => false, 'message' => 'Apenas Administradores podem criar novos Gerentes ou Administradores.'], 403);
         }
-        if ($currentUser->role === 'Suporte Técnico' && $requestedRole !== 'Cliente') {
-            return response()->json(['success' => false, 'message' => 'Operadores só podem criar usuários do tipo Cliente.'], 403);
+        
+        $isSuporte = $currentUser->role === 'Suporte';
+        if ($isSuporte && $requestedRole !== 'Cliente') {
+            return response()->json(['success' => false, 'message' => 'Membros de Suporte só podem criar usuários do tipo Cliente.'], 403);
         }
 
         $validated = $request->validate([
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:Técnico Instalador,Suporte Técnico,Administrador,Gerente,Cliente',
+            'role' => 'required|in:Instalador,Suporte,Administrador,Gerente,Cliente',
             'gender' => 'required|in:Masculino,Feminino',
             'password' => 'required|min:8|confirmed',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -168,14 +180,14 @@ class UserController extends Controller
              return response()->json(['success' => false, 'message' => 'Você não tem permissão para alterar sua própria patente.'], 403);
         }
         
-        if ($currentUser->normalized_role === 'gerente' && strtolower($requestedRole) === 'administrador' && $userTarget->normalized_role !== 'admin') {
-             return response()->json(['success' => false, 'message' => 'Gerentes não podem promover acessos a Administrador MASTER.'], 403);
+        if ($currentUser->role === 'Gerente' && in_array($requestedRole, ['Administrador', 'Gerente'])) {
+             return response()->json(['success' => false, 'message' => 'Gerentes não podem promover acessos a Gerente ou Administrador MASTER.'], 403);
         }
 
         $rules = [
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|in:Técnico Instalador,Suporte Técnico,Administrador,Gerente,Cliente',
+            'role' => 'required|in:Instalador,Suporte,Administrador,Gerente,Cliente',
             'gender' => 'required|in:Masculino,Feminino',
             'password' => 'nullable|min:8|confirmed',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'

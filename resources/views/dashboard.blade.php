@@ -23,7 +23,7 @@
     </div>
     
     <div class="row mt-4">
-        <!-- Info Boxes -->
+        <!-- 🛰️ INFRAESTRUTURA -->
         <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box shadow-sm elevation-1 border-0">
                 <span class="info-box-icon bg-success elevation-1"><i class="fas fa-car-side"></i></span>
@@ -59,6 +59,90 @@
                     <span class="info-box-number h3 mb-0">{{ $criticalAlerts }}</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-3 mb-3">
+            <a href="{{ route('users.index', ['role' => 'Administrador']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-user-shield"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Administradores</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countAdmins, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mb-3">
+            <a href="{{ route('users.index', ['role' => 'Gerente']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-users-cog"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Gerentes</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countGerentes, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mb-3">
+            <a href="{{ route('users.index', ['role' => 'Suporte']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #e83e8c 0%, #b21f66 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-headset"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Suporte</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countSuporte, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mb-3">
+            <a href="{{ route('users.index', ['role' => 'Instalador']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-tools"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Instaladores</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countInstaladores, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <!-- 🌍 ECOSSISTEMA EXTERNO -->
+        <div class="col-12 col-sm-4 col-md-4">
+            <a href="{{ route('users.index', ['role' => 'cliente']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-briefcase"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Clientes Master</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countClientes, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-4 col-md-4">
+            <a href="{{ route('customer-sub-users.index', ['role' => 'motorista']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0" style="background: linear-gradient(135deg, #343a40 0%, #212529 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-id-card"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Motoristas</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countMotoristas, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-sm-4 col-md-4">
+            <a href="{{ route('customer-sub-users.index', ['role' => 'autorizado']) }}" class="text-decoration-none">
+                <div class="info-box shadow-sm border-0" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white;">
+                    <span class="info-box-icon bg-transparent"><i class="fas fa-user-check"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text text-uppercase small font-weight-bold opacity-75">Autorizados</span>
+                        <span class="info-box-number h3 mb-0">{{ number_format($countAutorizados, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 

@@ -16,8 +16,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name', 'email', 'role', 'image', 'gender', 'theme', 'password', 
         'customer_id', 'external_username', 'external_password',
-        'validation_token', 'access_validated'
+        'validation_token', 'access_validated', 'validated_by', 'validation_method'
     ];
+
+    public function validator() { return $this->belongsTo(User::class, 'validated_by'); }
 
     protected $hidden = [
         'password', 'remember_token',
@@ -30,42 +32,31 @@ class User extends Authenticatable
     ];
 
     /**
-     * NORMALIZAÇÃO DE PATENTE (Padrão Unificado)
-     * Converte variações de texto em chaves operacionais únicas.
-     */
-    public function getNormalizedRoleAttribute()
-    {
-        $role = strtolower($this->role ?? '');
-        if ($role === 'administrador') return 'admin';
-        if ($role === 'gerente' || $role === 'gestor') return 'gerente';
-        if ($role === 'suporte técnico' || $role === 'suporte') return 'suporte';
-        return $role;
-    }
-
-    /**
      * LÓGICA DE CUSTÓDIA (RBAC CENTRAL)
      * Define quem tem autoridade sobre quem na hierarquia do quartel-general.
      */
     public function canManage(User $targetUser)
     {
-        $myRole = $this->normalized_role;
-        $targetRole = $targetUser->normalized_role;
+        $myRole = $this->role;
+        $targetRole = $targetUser->role;
 
         // Administradores MASTER e o próprio dono da conta têm passe livre total
-        if ($myRole === 'admin' || $this->id === $targetUser->id) {
+        if ($myRole === 'Administrador' || $this->id === $targetUser->id) {
             return true;
         }
 
-        // Gerentes comandam todos, exceto os Administradores MASTER
-        if ($myRole === 'gerente') {
-            return $targetRole !== 'admin';
+        // Gerentes comandam apenas os níveis operacionais
+        if ($myRole === 'Gerente') {
+            return !in_array($targetRole, ['Administrador', 'Gerente']);
         }
 
-        // Suporte Técnico pode gerenciar apenas o nível Cliente
-        if ($myRole === 'suporte') {
-            return $targetRole === 'cliente';
+        // Suporte pode gerenciar apenas o nível Cliente
+        if ($myRole === 'Suporte') {
+            return $targetRole === 'Cliente';
         }
 
         return false;
     }
+
+    public function customer() { return $this->belongsTo(Customer::class); }
 }

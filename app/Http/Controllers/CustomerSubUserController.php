@@ -21,22 +21,98 @@ class CustomerSubUserController extends Controller
     {
         $user = auth()->user();
         $userRole = strtolower($user->role);
-        $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+        $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'suporte', 'administrador']);
 
         $search = $request->input('search');
         $sort = $request->input('sort', 'id');
         $direction = $request->input('direction', 'desc');
         $view = $request->input('view', 'active');
         $selectedCustomerId = $request->input('customer_id');
+        $selectedRole = $request->input('role');
 
-        $query = CustomerSubUser::with(['customer', 'platform']);
+        $query = CustomerSubUser::with(['customer', 'platform', 'driver']);
 
-        // 🛡️ ISOLAMENTO DE DADOS
+        // 🔄 AUTO-SYNC TÁTICO: Garante que Motoristas do PortalDriver apareçam aqui
+        if (!$isAdminLevel && $user->customer_id) {
+            $driversMissingSubUser = \App\Models\PortalDriver::where('customer_id', $user->customer_id)
+                ->whereNotExists(function($q) use ($user) {
+                    $q->select(\DB::raw(1))
+                      ->from('customer_sub_users')
+                      ->where('customer_id', $user->customer_id)
+                      ->whereRaw('customer_sub_users.email = portal_drivers.email');
+                })->get();
+
+            foreach ($driversMissingSubUser as $driver) {
+                $email = $driver->email ?? ($driver->cpf . '@rastertech.com.br');
+                $platform = Platform::first();
+                
+                // Evita duplicidade se já existir um subuser com este email em outro cliente
+                $exists = CustomerSubUser::where('email', $email)->exists();
+                if ($exists) continue;
+
+                $subUser = CustomerSubUser::create([
+                    'customer_id' => $user->customer_id,
+                    'platform_id' => $platform ? $platform->id : 1,
+                    'name' => $driver->name,
+                    'email' => $email,
+                    'role' => 'Motorista',
+                    'external_username' => $email,
+                    'external_password' => '123456',
+                    'access_validated' => true
+                ]);
+
+                $driver->update(['sub_user_id' => $subUser->id, 'email' => $email]);
+
+                User::updateOrCreate(
+                    ['email' => $email],
+                    [
+                        'name' => $subUser->name,
+                        'email' => $subUser->email,
+                        'password' => Hash::make($subUser->external_password),
+                        'role' => 'Motorista',
+                        'customer_id' => $subUser->customer_id,
+                        'access_validated' => true,
+                        'external_username' => $subUser->external_username,
+                        'external_password' => $subUser->external_password
+                    ]
+                );
+            }
+
+            // 🗑️ LIMPEZA DE ÓRFÃOS: Remove credenciais que não existem na Ficha de Motorista
+            $orphanedSubUsers = CustomerSubUser::where('customer_id', $user->customer_id)
+                ->where('role', 'Motorista')
+                ->whereNotExists(function($q) {
+                    $q->select(\DB::raw(1))
+                      ->from('portal_drivers')
+                      ->whereRaw('portal_drivers.email = customer_sub_users.email');
+                })->get();
+
+            foreach ($orphanedSubUsers as $orphan) {
+                // Remove o User vinculado também
+                User::where('email', $orphan->email)->delete();
+                $orphan->delete();
+            }
+        }
+
+        // 🛡️ ISOLAMENTO DE DADOS (MULTI-TENANT)
         if (!$isAdminLevel) {
+            // Se não for Admin, trava no cliente do usuário logado
             $query->where('customer_id', $user->customer_id);
             $selectedCustomerId = $user->customer_id;
+            
+            // 🛑 SEGURANÇA MÁXIMA: Autorizado NUNCA vê outros Autorizados
+            // Ele só pode gerenciar Motoristas da sua frota.
+            if (trim(strtolower($user->role)) === 'autorizado') {
+                $query->where(\DB::raw('LOWER(role)'), 'motorista');
+                $selectedRole = 'Motorista'; // Força o título/filtro visual
+            }
         } elseif ($selectedCustomerId) {
             $query->where('customer_id', $selectedCustomerId);
+        }
+
+        // 🔍 FILTRO POR CARGO (Se não foi forçado acima)
+        if ($selectedRole && trim(strtolower($user->role)) !== 'autorizado') {
+            $query->where(\DB::raw('LOWER(role)'), trim(strtolower($selectedRole)));
         }
 
         if ($view === 'trash') {
@@ -67,7 +143,7 @@ class CustomerSubUserController extends Controller
         
         return view('customer-sub-users.index', compact(
             'subUsers', 'customers', 'platforms', 'search', 'sort', 
-            'direction', 'view', 'selectedCustomerId', 'isAdminLevel'
+            'direction', 'view', 'selectedCustomerId', 'isAdminLevel', 'selectedRole', 'userRole'
         ));
     }
 
@@ -76,15 +152,25 @@ class CustomerSubUserController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $user = auth()->user();
+        $isAutorizado = strtolower($user->role) === 'autorizado';
+
+        $rules = [
             'customer_id' => 'required|exists:customers,id',
             'platform_id' => 'required|exists:platforms,id',
             'name' => 'required|max:100',
             'email' => 'required|email|unique:customer_sub_users,email',
-            'external_username' => 'required|unique:customer_sub_users,external_username|max:50',
+            'role' => 'required|in:Autorizado',
             'external_password' => 'required|min:4',
-        ]);
+        ];
 
+        if ($request->role === 'Motorista') {
+            return redirect()->back()->with('error', '🚛 Motoristas devem ser cadastrados pelo Portal de Clientes (Ficha de Motorista) para validação legal.');
+        }
+
+        $validated = $request->validate($rules);
+
+        $validated['external_username'] = $validated['email'];
         $validated['validation_token'] = Str::random(60);
         $subUser = CustomerSubUser::create($validated);
 
@@ -95,7 +181,7 @@ class CustomerSubUserController extends Controller
                 'name' => $subUser->name,
                 'email' => $subUser->email,
                 'password' => Hash::make($subUser->external_password),
-                'role' => strtolower($subUser->role ?: 'operator'),
+                'role' => $subUser->role,
                 'customer_id' => $subUser->customer_id,
                 'validation_token' => $subUser->validation_token,
                 'access_validated' => false,
@@ -116,14 +202,25 @@ class CustomerSubUserController extends Controller
     public function update(Request $request, $id)
     {
         $subUser = CustomerSubUser::findOrFail($id);
-        $validated = $request->validate([
+        $user = auth()->user();
+        $isAutorizado = strtolower($user->role) === 'autorizado';
+
+        $rules = [
             'customer_id' => 'required|exists:customers,id',
             'platform_id' => 'required|exists:platforms,id',
             'name' => 'required|max:100',
             'email' => 'required|email|unique:customer_sub_users,email,' . $id,
-            'external_username' => 'required|unique:customer_sub_users,external_username,' . $id . '|max:50',
+            'role' => 'required|in:Motorista,Autorizado',
             'external_password' => 'nullable|min:4',
-        ]);
+        ];
+
+        if ($isAutorizado) {
+            $rules['role'] = 'required|in:Motorista';
+        }
+
+        $validated = $request->validate($rules);
+
+        $validated['external_username'] = $validated['email'];
 
         // 🔄 DETECÇÃO DE MUDANÇA DE E-MAIL
         if ($validated['email'] !== $subUser->email) {
@@ -142,7 +239,7 @@ class CustomerSubUserController extends Controller
         $userData = [
             'name' => $subUser->name,
             'email' => $subUser->email,
-            'role' => strtolower($subUser->role ?: 'operator'),
+            'role' => $subUser->role,
             'external_username' => $subUser->external_username,
             'external_password' => $subUser->external_password
         ];
@@ -180,16 +277,54 @@ class CustomerSubUserController extends Controller
         $subUser->update([
             'email_verified_at' => now(),
             'validation_token' => null,
+            'access_validated' => true,
+            'validation_method' => 'email'
         ]);
 
         // ✅ Sincronizar ativação na tabela de Users
         \App\Models\User::where('external_username', $subUser->external_username)->update([
             'email_verified_at' => now(),
-            'validation_token' => null
+            'validation_token' => null,
+            'access_validated' => true,
+            'validation_method' => 'email'
         ]);
 
         return view('customer-sub-users.verified', compact('subUser'))
             ->with('success', 'E-mail validado com sucesso! Sua conta está ativada.');
+    }
+
+    /**
+     * Validação Manual pelo Administrador (Bypass de E-mail)
+     */
+    public function validateManual($id)
+    {
+        try {
+            $subUser = CustomerSubUser::findOrFail($id);
+            $validatorId = auth()->id();
+            
+            // 🛡️ Auditoria obrigatória: Quem, Quando e Como
+            $subUser->update([
+                'email_verified_at' => now(),
+                'validation_token' => null,
+                'access_validated' => true,
+                'validation_method' => 'manual',
+                'validated_by' => $validatorId
+            ]);
+
+            // ✅ Sincronizar ativação na tabela de Users (Login Central)
+            \App\Models\User::where('external_username', $subUser->external_username)->update([
+                'email_verified_at' => now(),
+                'validation_token' => null,
+                'access_validated' => true,
+                'validation_method' => 'manual',
+                'validated_by' => $validatorId
+            ]);
+
+            return redirect()->back()->with('success', '✅ Acesso de ' . $subUser->name . ' validado manualmente!');
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', '❌ Erro no servidor: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -27,6 +27,7 @@
                     <!-- 🔍 PESQUISAR -->
                     <div class="input-group input-group-sm" style="width: 250px;">
                         <input type="text" name="search" class="form-control" placeholder="Placa, Modelo ou Cliente..." value="{{ $search }}">
+                        <input type="hidden" name="view" value="{{ $view }}">
                         <input type="hidden" name="sort" value="{{ $sort }}">
                         <input type="hidden" name="direction" value="{{ $direction }}">
                         <div class="input-group-append">
@@ -36,8 +37,18 @@
                         </div>
                     </div>
 
+                    <!-- ⚙️ SELETOR DE VISÃO -->
+                    <div class="ml-4 d-flex align-items-center">
+                        <label class="small font-weight-bold text-muted mr-2 mb-0">VISÃO:</label>
+                        <select name="view" class="form-control form-control-sm" onchange="this.form.submit()" style="width: 150px; font-weight: bold; border-radius: 6px;">
+                            <option value="active" {{ $view == 'active' ? 'selected' : '' }}>🟢 ATIVOS (C/ RAST.)</option>
+                            <option value="inactive" {{ $view == 'inactive' ? 'selected' : '' }}>🟡 INATIVOS (S/ RAST.)</option>
+                            <option value="trash" {{ $view == 'trash' ? 'selected' : '' }}>⛔ EXCLUÍDOS</option>
+                        </select>
+                    </div>
+
                     <!-- ➕ NOVO VEÍCULO -->
-                    <button type="button" class="btn btn-sm btn-primary ml-4 px-3 font-weight-bold shadow-sm" onclick="Swal.fire('Em breve', 'Módulo de cadastro rápido em desenvolvimento.', 'info')" style="border-radius: 6px; height: 31px; display: flex; align-items: center;">
+                    <button type="button" class="btn btn-sm btn-primary ml-4 px-3 font-weight-bold shadow-sm" onclick="openCreateVehicleModal()" style="border-radius: 6px; height: 31px; display: flex; align-items: center;">
                         <i class="fas fa-plus-circle mr-2"></i> NOVO VEÍCULO
                     </button>
                 </form>
@@ -73,7 +84,7 @@
                         @forelse($vehicles as $v)
                         @php
                             $device = $v->devices->first();
-                            $hasDevice = $v->devices->isNotEmpty();
+                            $hasDevice = $v->devices_count > 0;
                         @endphp
                         <!-- 🏁 LINHA MASTER -->
                         <tr style="transition: background 0.3s; height: 75px;">
@@ -82,6 +93,17 @@
                                     <div class="mercosul-header">BRASIL</div>
                                     <div class="mercosul-body" style="font-size: 1.1rem;">{{ $v->plate }}</div>
                                 </div>
+                                @if($search)
+                                    <div class="mt-1">
+                                        @if($v->trashed())
+                                            <span class="badge badge-danger" style="font-size: 0.6rem; letter-spacing: 0.5px;">LIXEIRA</span>
+                                        @elseif(!$hasDevice)
+                                            <span class="badge badge-warning text-dark" style="font-size: 0.6rem; letter-spacing: 0.5px;">INATIVO</span>
+                                        @elseif($view !== 'active' && $hasDevice)
+                                            <span class="badge badge-success" style="font-size: 0.6rem; letter-spacing: 0.5px;">ATIVO</span>
+                                        @endif
+                                    </div>
+                                @endif
                             </td>
                             <td class="align-middle px-4 accordion-toggle cursor-pointer" data-toggle="collapse" data-target="#row-fleet-{{ $v->id }}">
                                 <div class="font-weight-bold text-dark" style="font-size: 1rem;">{{ $v->brand }}</div>
@@ -117,37 +139,54 @@
                             </td>
                             <td class="text-center align-middle px-4">
                                 <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
-                                    <button class="btn btn-light btn-square-sm border-right" onclick="viewFleetDossier(this)" 
-                                            title="Visualizar Detalhes"
-                                            data-has-device="{{ $hasDevice ? 'true' : 'false' }}"
-                                            data-plate="{{ $v->plate }}"
-                                            data-internal-code="{{ $device->internal_code ?? '' }}"
-                                            data-model="{{ $device->deviceModel->name ?? '' }}"
-                                            data-imei="{{ $device->imei ?? '' }}"
-                                            data-sim="{{ $device->gsmCard->phone_number ?? '---' }}"
-                                            data-updated="{{ $device->updated_at ?? '---' }}"
-                                    >
-                                        <i class="fas fa-eye text-info"></i>
-                                    </button>
-                                    <button class="btn btn-light btn-square-sm border-right" onclick="openFleetDeviceEdit(this)"
-                                            title="Gestão de Hardware"
-                                            data-has-device="{{ $hasDevice ? 'true' : 'false' }}"
-                                            data-id="{{ $device->id ?? 0 }}"
-                                            data-internal-code="{{ $device->internal_code ?? '' }}"
-                                            data-model="{{ $device->deviceModel->name ?? '' }}"
-                                            data-imei="{{ $device->imei ?? '' }}"
-                                            data-sim="{{ $device->gsmCard->phone_number ?? '---' }}"
-                                            data-sim-operator="{{ $device->gsmCard->provider->name ?? '---' }}"
-                                            data-vehicle-plate="{{ $v->plate }}"
-                                            data-vehicle-id="{{ $v->id }}"
-                                            data-customer-id="{{ $v->customer_id }}"
-                                            data-status="{{ $device->status ?? 'active' }}"
-                                    >
-                                        <i class="fas fa-tools text-warning"></i>
-                                    </button>
-                                    <button class="btn btn-light btn-square-sm" onclick="confirmFleetDelete({{ $v->id }}, '{{ $v->plate }}')" title="Remover da Frota">
-                                        <i class="fas fa-trash text-danger"></i>
-                                    </button>
+                                    @if($v->trashed())
+                                        <button class="btn btn-light btn-square-sm" onclick="event.stopPropagation(); document.getElementById('form-restore-{{ $v->id }}').submit();" title="Restaurar Veículo">
+                                            <i class="fas fa-undo-alt text-success"></i>
+                                        </button>
+                                        <form id="form-restore-{{ $v->id }}" action="{{ route('fleets.restore', $v->id) }}" method="POST" class="d-none">@csrf @method('PUT')</form>
+                                    @else
+                                        <button class="btn btn-light btn-square-sm border-right" onclick="viewFleetDossier(this)" 
+                                                title="Visualizar Detalhes"
+                                                data-id="{{ $v->id }}"
+                                                data-plate="{{ $v->plate }}"
+                                                data-brand="{{ $v->brand }}"
+                                                data-model="{{ $v->model }}"
+                                                data-year="{{ $v->year }}"
+                                                data-color="{{ $v->color }}"
+                                                data-renavam="{{ $v->renavam }}"
+                                                data-chassi="{{ $v->chassi }}"
+                                                data-photo-front="{{ $v->photo_front ? asset('storage/' . $v->photo_front) : '' }}"
+                                                data-photo-back="{{ $v->photo_back ? asset('storage/' . $v->photo_back) : '' }}"
+                                                data-customer="{{ $v->customer->company_name ?? $v->customer->name ?? '---' }}"
+                                                data-has-device="{{ $hasDevice ? 'true' : 'false' }}"
+                                                data-internal-code="{{ $hasDevice ? $device->internal_code : '' }}"
+                                                data-model-device="{{ ($hasDevice && $device->deviceModel) ? $device->deviceModel->name : '' }}"
+                                                data-imei="{{ $hasDevice ? $device->imei : '' }}"
+                                                data-sim="{{ ($hasDevice && $device->gsmCard) ? $device->gsmCard->phone_number : '---' }}"
+                                                data-updated="{{ ($hasDevice && $device->updated_at) ? $device->updated_at->format('d/m/Y H:i') : '---' }}"
+                                        >
+                                            <i class="fas fa-eye text-info"></i>
+                                        </button>
+                                        <button class="btn btn-light btn-square-sm border-right" onclick="openFleetDeviceEdit(this)"
+                                                title="Gestão de Hardware"
+                                                data-has-device="{{ $hasDevice ? 'true' : 'false' }}"
+                                                data-id="{{ $device->id ?? 0 }}"
+                                                data-internal-code="{{ $device->internal_code ?? '' }}"
+                                                data-model="{{ ($hasDevice && $device->deviceModel) ? $device->deviceModel->name : '' }}"
+                                                data-imei="{{ $hasDevice ? $device->imei : '' }}"
+                                                data-sim="{{ ($hasDevice && $device->gsmCard) ? $device->gsmCard->phone_number : '---' }}"
+                                                data-sim-operator="{{ ($hasDevice && $device->gsmCard && $device->gsmCard->provider) ? $device->gsmCard->provider->name : '---' }}"
+                                                data-vehicle-plate="{{ $v->plate }}"
+                                                data-vehicle-id="{{ $v->id }}"
+                                                data-customer-id="{{ $v->customer_id }}"
+                                                data-status="{{ $device->status ?? 'active' }}"
+                                        >
+                                            <i class="fas fa-tools text-warning"></i>
+                                        </button>
+                                        <button class="btn btn-light btn-square-sm" onclick="confirmFleetDelete({{ $v->id }}, '{{ $v->plate }}')" title="Remover da Frota">
+                                            <i class="fas fa-trash text-danger"></i>
+                                        </button>
+                                    @endif
                                 </div>
                                 <form id="form-delete-{{ $v->id }}" action="{{ route('fleets.destroy', $v->id) }}" method="POST" class="d-none">@csrf @method('DELETE')</form>
                             </td>
@@ -270,45 +309,111 @@
     </div>
 </div>
 
+@include('fleets.modals.create')
+
 @push('scripts')
 <script>
-    // 👁️ VISUALIZAR DOSSIÊ
+    window.openCreateVehicleModal = () => $('#modalCreateVehicle').modal('show');
+    
+    $('.custom-file-input').on('change', function() {
+        let fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').addClass("selected").html(fileName);
+    });
+    // 👁️ VISUALIZAR DOSSIÊ (SIMULAÇÃO DE DOCUMENTO)
     window.viewFleetDossier = function(el) {
         const data = $(el).data();
-        if(!data.hasDevice) {
-            Swal.fire({ icon: 'info', title: 'Atenção', text: 'Este veículo não possui dispositivo vinculado.' });
-            return;
-        }
         
         Swal.fire({
-            title: '<i class="fas fa-microchip mr-2 text-warning"></i> DOSSIÊ DO ATIVO',
-            width: '500px',
-            confirmButtonText: 'FECHAR',
-            confirmButtonColor: '#6c757d',
+            title: `<div class="d-flex align-items-center justify-content-center" style="font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px;"><i class="fas fa-id-card mr-3 text-primary"></i> Dossiê Digital: ${data.plate}</div>`,
+            width: '850px',
+            confirmButtonText: '<i class="fas fa-times-circle mr-2"></i>FECHAR DOCUMENTO',
+            confirmButtonColor: '#1e293b',
             html: `
-                <div class="text-left px-2">
-                    <div class="mercosul-plate shadow-sm mx-auto mb-4" style="transform: scale(1.1);">
-                        <div class="mercosul-header">BRASIL</div>
-                        <div class="mercosul-body">${data.plate}</div>
-                    </div>
-                    <div class="row bg-light p-3 rounded border">
-                        <div class="col-6 mb-2">
-                            <label class="small text-muted font-weight-bold text-uppercase d-block mb-0">RTECH CODE</label>
-                            <span class="font-weight-bold text-primary">${data.internalCode}</span>
+                <div class="text-left py-2" style="font-family: 'Inter', sans-serif;">
+                    
+                    <!-- 🚘 CABEÇALHO TIPO DOCUMENTO -->
+                    <div class="row mb-4">
+                        <div class="col-md-5 text-center border-right">
+                            <div class="mercosul-plate shadow-sm mb-3" style="transform: scale(1.3); margin-top: 20px;">
+                                <div class="mercosul-header">BRASIL</div>
+                                <div class="mercosul-body">${data.plate}</div>
+                            </div>
+                            <div class="badge badge-primary px-3 py-1 mt-3 text-uppercase" style="font-size: 0.8rem;">Veículo Homologado</div>
                         </div>
-                        <div class="col-6 mb-2 text-right">
-                            <label class="small text-muted font-weight-bold text-uppercase d-block mb-0">IMEI</label>
-                            <span class="font-weight-bold">${data.imei}</span>
+                        <div class="col-md-7 pl-4">
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">Marca / Fabricante</label>
+                                    <div class="h6 font-weight-bold text-dark">${data.brand}</div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">Modelo / Versão</label>
+                                    <div class="h6 font-weight-bold text-dark">${data.model}</div>
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">Ano</label>
+                                    <div class="h6 font-weight-bold text-dark">${data.year || '---'}</div>
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">Cor</label>
+                                    <div class="h6 font-weight-bold text-dark">${data.color || '---'}</div>
+                                </div>
+                                <div class="col-4 mb-3">
+                                    <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">ID</label>
+                                    <div class="h6 font-weight-bold text-primary">#${data.id}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🛠️ DADOS TÉCNICOS -->
+                    <div class="p-3 bg-light rounded border shadow-xs mb-4">
+                        <div class="row">
+                            <div class="col-6 border-right">
+                                <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">RENAVAM</label>
+                                <div class="small font-weight-bold text-dark">${data.renavam || 'NÃO INFORMADO'}</div>
+                            </div>
+                            <div class="col-6 pl-3">
+                                <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-0">CHASSI</label>
+                                <div class="small font-weight-bold text-dark text-truncate">${data.chassi || 'NÃO INFORMADO'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 📡 STATUS OPERACIONAL -->
+                    <div class="mb-4">
+                        <div class="small text-primary font-weight-bold mb-2 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-satellite-dish mr-2"></i>Status de Rastreamento</div>
+                        <!-- STATUS OPERACIONAL DINÂMICO -->
+                        <div class="p-3 border rounded shadow-xs ${data.hasDevice ? 'bg-white border-left-indicator' : 'bg-light'}" style="${data.hasDevice ? 'border-left: 4px solid #3b82f6 !important;' : ''}">
+                            ${data.hasDevice ? `
+                                <div class="row align-items-center">
+                                    <div class="col-1"><i class="fas fa-microchip text-primary fa-lg opacity-50"></i></div>
+                                    <div class="col-3 border-right"><label class="tiny-text text-muted d-block text-uppercase font-weight-bold">Código RTECH</label><div class="small font-weight-bold text-dark">${data.internalCode}</div></div>
+                                    <div class="col-5 border-right"><label class="tiny-text text-muted d-block text-uppercase font-weight-bold">IMEI / Modelo</label><div class="small text-muted">${data.imei} / <span class="text-primary">${data.modelDevice}</span></div></div>
+                                    <div class="col-3"><label class="tiny-text text-muted d-block text-uppercase font-weight-bold">Último Sinal</label><div class="small font-weight-bold text-success">${data.updated}</div></div>
+                                </div>
+                            ` : `
+                                <div class="text-center py-2 text-muted small"><i class="fas fa-exclamation-triangle mr-2 text-warning"></i> Veículo sem tecnologia vinculada no momento.</div>
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- 📸 REGISTRO FOTOGRÁFICO -->
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-2">Visão Frontal</label>
+                            <div class="photo-box rounded border bg-light d-flex align-items-center justify-content-center overflow-hidden" style="height: 180px;">
+                                ${data.photoFront ? `<img src="${data.photoFront}" class="img-fluid w-100 h-100" style="object-fit: cover;">` : '<i class="fas fa-camera fa-2x text-muted opacity-20"></i>'}
+                            </div>
                         </div>
                         <div class="col-6">
-                            <label class="small text-muted font-weight-bold text-uppercase d-block mb-0">CHIP</label>
-                            <span class="font-weight-bold">${data.sim}</span>
-                        </div>
-                        <div class="col-6 text-right">
-                            <label class="small text-muted font-weight-bold text-uppercase d-block mb-0">ATUALIZADO</label>
-                            <span class="small font-weight-bold">${data.updated}</span>
+                            <label class="tiny-text text-muted d-block text-uppercase font-weight-bold mb-2">Visão Traseira / Lateral</label>
+                            <div class="photo-box rounded border bg-light d-flex align-items-center justify-content-center overflow-hidden" style="height: 180px;">
+                                ${data.photoBack ? `<img src="${data.photoBack}" class="img-fluid w-100 h-100" style="object-fit: cover;">` : '<i class="fas fa-camera fa-2x text-muted opacity-20"></i>'}
+                            </div>
                         </div>
                     </div>
+
                 </div>`
         });
     }

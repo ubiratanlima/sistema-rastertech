@@ -36,7 +36,7 @@
                         </div>
                         <ul class="list-group list-group-flush small">
                             <li class="list-group-item bg-transparent px-0"><i class="fas fa-calendar-alt mr-1"></i> Entrada: {{ $installation->checkin_at->format('d/m/Y H:i') }}</li>
-                            <li class="list-group-item bg-transparent px-0"><i class="fas fa-bolt mr-1 text-primary"></i> Elétrica: {{ $installation->processed_at->format('d/m/Y H:i') }}</li>
+                            <li class="list-group-item bg-transparent px-0"><i class="fas fa-bolt mr-1 text-primary"></i> Instalação: {{ $installation->processed_at->format('d/m/Y H:i') }}</li>
                         </ul>
                     </div>
                 </div>

@@ -28,6 +28,40 @@
         /* MODO COLAPSADO: APENAS EMBLEMA */
         .sidebar-collapse .brand-image-raster { width: 50px !important; height: 50px !important; object-fit: cover; object-position: left; margin-left: 0 !important; border-radius: 8px; }
         .sidebar-collapse .brand-link { justify-content: center; }
+        /* 🇧🇷 ESTILO PLACA MERCOSUL GLOBAL */
+        .mercosul-plate { 
+            display: inline-flex; 
+            flex-direction: column; 
+            background: #fff; 
+            border: 1.5px solid #000; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            min-width: 100px; 
+            line-height: 1; 
+            vertical-align: middle; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-decoration: none !important;
+        }
+        .mercosul-header { 
+            background: #003399; 
+            color: #fff; 
+            font-size: 0.4rem; 
+            text-align: center; 
+            padding: 1px 0; 
+            font-weight: 800; 
+            letter-spacing: 1px; 
+            border-bottom: 0.5px solid #000; 
+        }
+        .mercosul-body { 
+            color: #000; 
+            font-size: 1.1rem; 
+            text-align: center; 
+            padding: 3px 8px; 
+            font-weight: bold; 
+            font-family: 'Roboto Mono', monospace; 
+            letter-spacing: -0.5px; 
+        }
+        .dark-mode .mercosul-plate { border-color: #fff; }
     </style>
     @stack('styles')
 </head>
@@ -63,7 +97,11 @@
             <img src="{{ asset('img/logo_rastertech.png') }}" alt="Rastertech Logo" class="brand-image-raster">
         </a>
         <div class="sidebar">
-            <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center" 
+                 style="cursor: pointer; transition: all 0.3s; border-radius: 8px;" 
+                 onmouseover="this.style.background='rgba(0,0,0,0.05)'" 
+                 onmouseout="this.style.background='transparent'"
+                 data-toggle="modal" data-target="#modalPerfil">
                 <div class="image">
                     @if(optional(auth()->user())->image)
                         <img src="{{ asset('storage/' . auth()->user()->image) }}" class="img-circle elevation-2 profile-img" alt="User Image" style="width: 39px; height: 39px; object-fit: cover;">
@@ -74,8 +112,20 @@
                     @endif
                 </div>
                 <div class="info">
-                    <a href="#" class="d-block text-bold" data-toggle="modal" data-target="#modalPerfil">{{ optional(auth()->user())->name ?? 'Usuário' }}</a>
+                    <span class="d-block text-bold text-dark-mode-fix">
+                        {{ explode(' ', optional(auth()->user())->name ?? 'Usuário')[0] }}
+                    </span>
                     <span class="small text-muted">{{ optional(auth()->user())->role ?? 'N/A' }}</span>
+                    @php
+                        $systemRoles = ['Administrador', 'Gerente', 'Suporte', 'Instalador'];
+                        $userRole = auth()->user()->role ?? '';
+                        $isSystemUser = in_array($userRole, $systemRoles);
+                    @endphp
+                    @if(!$isSystemUser && auth()->user()->customer_id)
+                        <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.65rem;">
+                            <i class="fas fa-building mr-1"></i> {{ auth()->user()->customer->name ?? 'Minha Empresa' }}
+                        </div>
+                    @endif
                 </div>
             </div>
             <nav class="mt-2 text-sm text-uppercase font-weight-bold">
@@ -86,7 +136,7 @@
                 @endphp
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
                     
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte']))
                     <li class="nav-item">
                         <a href="/" class="nav-link {{ request()->is('/') ? 'active' : '' }}"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p></a>
                     </li>
@@ -112,7 +162,7 @@
                     </li>
                     @endif
 
-                    @if(in_array($userRole, ['admin', 'gerente', 'cliente', 'autorizado', 'operador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'cliente', 'autorizado', 'suporte']))
                     <li class="nav-header">DEPARTAMENTO TÉCNICO</li>
                     @endif
                     
@@ -122,13 +172,13 @@
                     </li>
                     @endif
 
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador', 'cliente', 'autorizado']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte', 'cliente', 'autorizado']))
                     <li class="nav-item">
                         <a href="/customer-sub-users" class="nav-link {{ request()->is('customer-sub-users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Credenciais APPs</p></a>
                     </li>
                     @endif
 
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte']))
                     <li class="nav-item">
                         <a href="/providers" class="nav-link {{ request()->is('providers*') ? 'active' : '' }}"><i class="nav-icon fas fa-industry"></i><p>Fornecedores</p></a>
                     </li>
@@ -175,7 +225,7 @@
                     @endif
 
                     <!-- 🔧 MÓDULO DO INSTALADOR (VISTORIAS TÉCNICAS) -->
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador', 'instalador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte', 'instalador']))
                     <li class="nav-header">INSTALADOR</li>
                     <li class="nav-item">
                         <a href="{{ route('portal.instalador.index') }}" class="nav-link {{ request()->is('portal/instalador*') ? 'active' : '' }}">
@@ -185,7 +235,7 @@
                     </li>
                     @endif
 
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte']))
                     <li class="nav-header">ADMINISTRAÇÃO</li>
                     @endif
                     
@@ -195,7 +245,7 @@
                     </li>
                     @endif
                     
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte']))
                     <li class="nav-item">
                         <a href="/reports" class="nav-link {{ request()->is('reports*') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice"></i><p>Relatórios</p></a>
                     </li>
@@ -207,7 +257,7 @@
                     </li>
                     @endif
                     
-                    @if(in_array($userRole, ['admin', 'gerente', 'operador']))
+                    @if(in_array($userRole, ['admin', 'gerente', 'suporte']))
                     <li class="nav-item">
                         <a href="{{ route('help') }}" class="nav-link {{ request()->is('help*') ? 'active' : '' }} text-info">
                             <i class="nav-icon fas fa-question-circle shadow-sm"></i>

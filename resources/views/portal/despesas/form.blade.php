@@ -10,8 +10,10 @@
             <a href="{{ route('portal.despesas.index') }}" class="btn btn-sm btn-light border mb-2 shadow-none" style="border-radius: 8px;">
                 <i class="fas fa-arrow-left mr-1"></i> Voltar ao Histórico
             </a>
-            <h1 class="m-0 text-bold" style="font-size: 2rem;">
-                <i class="fas fa-cart-plus mr-2 text-orange"></i>Registrar Nova DESPESA
+            <h1 class="m-0 text-bold title-form-responsive" style="font-size: 2rem;">
+                <i class="fas fa-cart-plus mr-2 text-orange"></i>
+                <span class="d-none d-md-inline">Registrar Nova DESPESA</span>
+                <span class="d-md-none">Registrar Despesa</span>
             </h1>
             <p class="text-muted mb-0">Preencha os dados do lançamento para o dossiê do veículo.</p>
         </div>
@@ -109,7 +111,7 @@
                 <!-- 🏁 BOTÃO DE SALVAMENTO -->
                 <button type="submit" class="btn btn-orange btn-lg btn-block shadow-sm py-3 text-bold text-uppercase" 
                         style="border-radius: 12px; font-size: 1.2rem; background-color: #fd7e14 !important; border: 0; color: white;">
-                    <i class="fas fa-cloud-upload-alt mr-2"></i> Finalizar Lançamento de Despesa
+                    <i class="fas fa-cloud-upload-alt mr-2"></i> REGISTRAR
                 </button>
             </div>
         </div>
@@ -119,6 +121,10 @@
 <style>
     .text-orange { color: #fd7e14 !important; }
     .bg-light { background: #f8f9fa !important; }
+
+    @media (max-width: 768px) {
+        .title-form-responsive { font-size: 1.6rem !important; }
+    }
 </style>
 
 @push('scripts')

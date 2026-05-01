@@ -49,6 +49,16 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link font-weight-bold" id="evolution-go-tab" data-toggle="tab" href="#evolution-go" role="tab">
+                    <i class="fas fa-rocket mr-1"></i> Evolution GO
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link font-weight-bold" id="evolution-crm-tab" data-toggle="tab" href="#evolution-crm" role="tab">
+                    <i class="fas fa-users-cog mr-1"></i> Evolution CRM
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link font-weight-bold" id="general-tab" data-toggle="tab" href="#general" role="tab">
                     <i class="fas fa-sliders-h mr-1"></i> Geral
                 </a>
@@ -327,6 +337,77 @@
                                 <input type="text" name="evolution_webhook_url" class="form-control"
                                     value="{{ $evolution['evolution_webhook_url']->value ?? '' }}"
                                     placeholder="https://sistema.rastertech.com.br/webhook/whatsapp">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- ABA EVOLUTION GO --}}
+            <div class="tab-pane fade" id="evolution-go" role="tabpanel">
+                <div class="card shadow-sm mb-4" style="border-radius: 12px; border-top: 4px solid #3498db;">
+                    <div class="card-body p-4">
+                        <h6 class="font-weight-bold text-uppercase text-muted mb-4">
+                            <i class="fas fa-rocket mr-1" style="color:#3498db;"></i> Integração Evolution GO
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-8 form-group">
+                                <label class="small font-weight-bold text-uppercase text-muted">
+                                    <i class="fas fa-link mr-1"></i> URL do Servidor Evolution GO
+                                </label>
+                                <input type="text" name="evolution_go_api_url" class="form-control"
+                                    value="{{ $evolution_go['evolution_go_api_url']->value ?? '' }}"
+                                    placeholder="https://go.evolution.com.br">
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label class="small font-weight-bold text-uppercase text-muted">
+                                    <i class="fas fa-key mr-1"></i> API Key (Global)
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="evolution_go_api_key" id="evolution_go_key" class="form-control"
+                                        value="{{ $evolution_go['evolution_go_api_key']->value ?? '' }}">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="var i=document.getElementById('evolution_go_key');i.type=i.type==='password'?'text':'password';this.querySelector('i').classList.toggle('fa-eye');this.querySelector('i').classList.toggle('fa-eye-slash')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ABA EVOLUTION CRM --}}
+            <div class="tab-pane fade" id="evolution-crm" role="tabpanel">
+                <div class="card shadow-sm" style="border-radius: 12px; border-top: 4px solid #e67e22;">
+                    <div class="card-body p-4">
+                        <h6 class="font-weight-bold text-uppercase text-muted mb-4">
+                            <i class="fas fa-users-cog mr-1" style="color:#e67e22;"></i> Integração Evolution CRM
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-8 form-group">
+                                <label class="small font-weight-bold text-uppercase text-muted">
+                                    <i class="fas fa-link mr-1"></i> Base URL Evolution CRM
+                                </label>
+                                <input type="text" name="evolution_crm_base_url" class="form-control"
+                                    value="{{ $evolution_crm['evolution_crm_base_url']->value ?? '' }}"
+                                    placeholder="https://crm.evolution.com.br/api/v1">
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label class="small font-weight-bold text-uppercase text-muted">
+                                    <i class="fas fa-ticket-alt mr-1"></i> API Access Token
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="evolution_crm_access_token" id="evolution_crm_token" class="form-control"
+                                        value="{{ $evolution_crm['evolution_crm_access_token']->value ?? '' }}">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="var i=document.getElementById('evolution_crm_token');i.type=i.type==='password'?'text':'password';this.querySelector('i').classList.toggle('fa-eye');this.querySelector('i').classList.toggle('fa-eye-slash')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

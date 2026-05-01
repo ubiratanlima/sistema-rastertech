@@ -11,9 +11,10 @@
                 <h1 class="m-0 text-bold" style="font-size: 2.2rem;">
                     <i class="fas fa-tools mr-2 text-primary"></i>Central do Instalador
                 </h1>
-                <p class="text-muted mb-0">Gestão e auditoria de vistorias técnicas e instalações (FLUXO TRIFÁSICO).</p>
+                <p class="text-muted mb-0 font-weight-bold small uppercase"><i class="fas fa-stream mr-1"></i> Auditoria de vistorias técnicas e instalações</p>
             </div>
-            <a href="{{ route('portal.instalador.checkin') }}" class="btn btn-primary btn-lg shadow-sm px-4 py-3 text-bold animate__animated animate__pulse animate__infinite" style="border-radius: 12px; font-size: 1.1rem; background-color: #007bff !important; border: 0; color: white;">
+            <!-- 🔘 BOTÃO OTIMIZADO PARA MOBILE (SEM ANIMAÇÃO E 100% LARGURA) -->
+            <a href="{{ route('portal.instalador.checkin') }}" class="btn btn-primary btn-lg shadow-sm px-4 py-3 text-bold w-100 w-md-auto mb-3 mb-md-0" style="border-radius: 12px; font-size: 1.1rem; background-color: #007bff !important; border: 0; color: white;">
                 <i class="fas fa-plus-circle mr-2"></i> INICIAR NOVA VISTORIA
             </a>
         </div>
@@ -28,37 +29,43 @@
                         <table class="table table-hover align-middle m-0">
                             <thead class="bg-light border-bottom">
                                 <tr>
-                                    <th class="py-3 px-4 text-muted small text-uppercase" style="width: 120px;">Data</th>
-                                    <th class="py-3 text-muted small text-uppercase">Veículo / Placa</th>
-                                    <th class="py-3 text-muted small text-uppercase">Cliente</th>
-                                    <th class="py-3 text-muted small text-uppercase text-center">Status / Progresso</th>
-                                    <th class="py-3 px-4 text-muted small text-uppercase text-right">Ações</th>
+                                    <!-- 👁️ COLUNAS OCULTADAS NO MOBILE: DATA, CLIENTE, STATUS -->
+                                    <th class="py-3 px-4 text-muted small text-uppercase text-center d-none d-md-table-cell" style="width: 120px;">Data</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center">Veículo / Placa</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center d-none d-md-table-cell">Cliente</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center d-none d-md-table-cell">Instalador</th>
+                                    <th class="py-3 text-muted small text-uppercase text-center d-none d-md-table-cell">Status / Progresso</th>
+                                    <th class="py-3 px-4 text-muted small text-uppercase text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($installations as $inst)
                                 <tr class="animate__animated animate__fadeInUp animate__faster border-bottom">
-                                    <td class="py-3 px-4 align-middle">
+                                    <td class="py-3 px-4 align-middle d-none d-md-table-cell">
                                         <div class="d-flex flex-column text-muted">
                                             <span class="font-weight-bold text-dark" style="font-size: 0.95rem;">{{ $inst->created_at->format('d/m/Y') }}</span>
                                             <small style="font-size: 0.75rem;">{{ $inst->created_at->format('H:i') }}h</small>
                                         </div>
                                     </td>
-                                    <td class="align-middle">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary-light p-2 rounded mr-3 text-primary" style="background: rgba(0,123,255,0.1);">
-                                                <i class="fas fa-car-side"></i>
-                                            </div>
-                                            <div>
-                                                <span class="d-block font-weight-bold text-uppercase">{{ $inst->vehicle_plate }}</span>
-                                                <small class="text-muted d-block text-truncate" style="max-width: 250px;">{{ $inst->vehicle_details }}</small>
+                                    <td class="align-middle text-center">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <!-- 🏷️ PLACA MERCOSUL RESPONSIVA -->
+                                            <div class="mercosul-plate">
+                                                <div class="plate-header">
+                                                    <span>BRASIL</span>
+                                                    <i class="fas fa-certificate" style="font-size: 0.3rem;"></i>
+                                                </div>
+                                                <span class="plate-text">{{ $inst->vehicle_plate }}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="align-middle font-weight-bold text-dark">
+                                    <td class="align-middle text-center font-weight-bold text-dark d-none d-md-table-cell">
                                         {{ $inst->customer_name }}
                                     </td>
-                                    <td class="align-middle text-center">
+                                    <td class="align-middle text-center text-muted d-none d-md-table-cell" style="font-size: 0.9rem;">
+                                        <i class="fas fa-user-config mr-1"></i> {{ $inst->installer->name ?? 'N/A' }}
+                                    </td>
+                                    <td class="align-middle text-center d-none d-md-table-cell">
                                         @if($inst->status == 'checked_in')
                                             <span class="badge badge-warning px-3 py-2" style="border-radius: 8px;">
                                                 <i class="fas fa-truck-loading mr-1"></i> AGUARDANDO INSTALAÇÃO
@@ -82,18 +89,18 @@
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="py-3 px-4 align-middle text-right">
+                                    <td class="py-3 px-4 align-middle text-center">
                                         @if($inst->status == 'checked_in')
-                                            <a href="{{ route('portal.instalador.process', $inst->id) }}" class="btn btn-warning btn-sm text-bold px-3" style="border-radius: 8px;">
-                                                <i class="fas fa-bolt mr-1"></i> INICIAR INSTALAÇÃO
+                                            <a href="{{ route('portal.instalador.process', $inst->id) }}" class="btn btn-warning btn-sm text-bold px-3 py-2" style="border-radius: 8px; font-size: 0.8rem;">
+                                                <i class="fas fa-bolt mr-1"></i> INSTALAR
                                             </a>
                                         @elseif($inst->status == 'processing')
-                                            <a href="{{ route('portal.instalador.checkout', $inst->id) }}" class="btn btn-primary btn-sm text-bold px-3" style="border-radius: 8px;">
-                                                <i class="fas fa-sign-out-alt mr-1"></i> FINALIZAR CHECKOUT
+                                            <a href="{{ route('portal.instalador.checkout', $inst->id) }}" class="btn btn-primary btn-sm text-bold px-3 py-2" style="border-radius: 8px; font-size: 0.8rem;">
+                                                <i class="fas fa-sign-out-alt mr-1"></i> FINALIZAR
                                             </a>
                                         @else
-                                            <a href="{{ route('portal.instalador.show', $inst->id) }}" class="btn btn-outline-dark btn-sm px-3" style="border-radius: 8px;">
-                                                <i class="fas fa-eye mr-1"></i> VER INSTALAÇÃO
+                                            <a href="{{ route('portal.instalador.show', $inst->id) }}" class="btn btn-outline-dark btn-sm px-3 py-2" style="border-radius: 8px; font-size: 0.8rem;">
+                                                <i class="fas fa-eye mr-1"></i> VER
                                             </a>
                                         @endif
                                     </td>
@@ -127,5 +134,24 @@
 <style>
     .bg-primary-light { background: rgba(0,123,255,0.08); }
     .w-33 { width: 33%; } .w-66 { width: 66%; } .w-100 { width: 100%; }
+
+    /* 🏷️ PLACA MERCOSUL (PADRÃO RASTERTECH) */
+    .mercosul-plate {
+        width: 80px; height: 32px; background: #fff; border: 1.5px solid #333; border-radius: 4px;
+        position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 0 auto;
+    }
+    .plate-header {
+        width: 100%; height: 8px; background: #003399; color: white; font-size: 0.4rem;
+        display: flex; justify-content: space-between; align-items: center; padding: 0 3px;
+        position: absolute; top: 0; border-radius: 2px 2px 0 0; font-weight: bold;
+    }
+    .plate-text { font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; color: #111; letter-spacing: 0.5px; margin-top: 6px; }
+
+    @media (min-width: 768px) {
+        .mercosul-plate { width: 100px; height: 40px; border: 2px solid #333; }
+        .plate-header { height: 10px; font-size: 0.5rem; padding: 0 5px; }
+        .plate-text { font-size: 1.1rem; margin-top: 8px; }
+    }
 </style>
 @endsection

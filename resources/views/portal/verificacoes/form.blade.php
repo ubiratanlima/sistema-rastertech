@@ -10,7 +10,7 @@
             <a href="{{ route('portal.verificacoes.index') }}" class="btn btn-sm btn-light border mb-2 shadow-none" style="border-radius: 8px;">
                 <i class="fas fa-arrow-left mr-1"></i> Voltar ao Dashboard
             </a>
-            <h1 class="m-0 text-bold" style="font-size: 2rem;">
+            <h1 class="m-0 text-bold title-form-responsive" style="font-size: 2rem;">
                 @if($type == 'entry')
                     <i class="fas fa-sign-in-alt mr-2 text-success"></i>Realizar CHECK-IN
                 @else
@@ -24,7 +24,37 @@
     <!-- 📝 FORMULÁRIO TÁTICO -->
     <form action="{{ route('portal.verificacoes.store') }}" method="POST" enctype="multipart/form-data" id="checklistForm">
         @csrf
-        <input type="hidden" name="driver_id" value="{{ $driver ? $driver->id : '0' }}">
+        @if($isSupervisor)
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; border-left: 5px solid #20c997;">
+                        <div class="card-body p-4 d-flex align-items-center">
+                            <div class="bg-teal-soft rounded-circle p-3 mr-4">
+                                <i class="fas fa-user-check text-teal fa-2x"></i>
+                            </div>
+                            <div class="flex-fill">
+                                <label class="text-uppercase text-muted font-weight-bold d-block mb-1" style="font-size: 0.75rem;">Motorista Responsável</label>
+                                @if($type == 'entry')
+                                    <select name="driver_id" class="form-control form-control-lg border-0 bg-light select2" style="border-radius: 10px;" required>
+                                        <option value="">--- SELECIONE O MOTORISTA ---</option>
+                                        @foreach($drivers as $d)
+                                            <option value="{{ $d->id }}" {{ (old('driver_id') == $d->id) ? 'selected' : '' }}>{{ $d->name }} (CPF: {{ $d->cpf }})</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i> Selecione o motorista que iniciará esta jornada.</small>
+                                @else
+                                    <h4 class="text-bold mb-0 text-dark">{{ $driver->name ?? 'N/A' }}</h4>
+                                    <input type="hidden" name="driver_id" value="{{ $driver->id ?? '0' }}">
+                                    <small class="text-primary font-weight-bold"><i class="fas fa-lock mr-1"></i> Encerrando jornada de {{ $driver->name ?? 'N/A' }}.</small>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @else
+            <input type="hidden" name="driver_id" value="{{ $driver ? $driver->id : '0' }}">
+        @endif
         
         @if($errors->any())
             <div class="alert alert-danger border-0 shadow-sm mb-4 animate__animated animate__shakeX" style="border-radius: 12px;">
@@ -47,7 +77,7 @@
             </div>
         @endif
 
-        <input type="hidden" name="type" value="{{ $type }}">
+        <input type="hidden" name="type" id="type_checklist" value="{{ $type }}">
 
         <div class="row">
             <!-- 🚛 DADOS DO VEÍCULO E ODÔMETRO -->
@@ -59,7 +89,7 @@
                     <div class="card-body p-4">
                         <div class="form-group mb-4">
                             <label class="text-uppercase text-muted font-weight-bold" style="font-size: 0.75rem;">Selecione o Veículo</label>
-                            <select name="vehicle_id" class="form-control form-control-lg border-0 bg-light select2" style="border-radius: 10px;" required {{ ($type == 'exit' && $currentVehicleId && !$isSupervisor) ? 'readonly' : '' }}>
+                            <select name="vehicle_id" id="vehicle_selector" class="form-control form-control-lg border-0 bg-light select2" style="border-radius: 10px;" required {{ ($type == 'exit' && $currentVehicleId && !$isSupervisor) ? 'readonly' : '' }}>
                                 <option value="">--- ESCOLHA O VEÍCULO ---</option>
                                 @foreach($vehicles as $v)
                                     @if($type == 'exit' && !$v->is_locked && $currentVehicleId != $v->id)
@@ -85,14 +115,26 @@
                                    placeholder="0" step="1" min="0" style="border-radius: 10px;" required value="{{ old('odometer', ($type == 'exit' && $activeJourney) ? $activeJourney->odometer : '') }}">
                             
                             <div class="mt-2">
-                                <span class="badge {{ $isSupervisor ? 'badge-warning' : 'badge-light border' }} text-muted px-2 py-1" style="font-size: 0.8rem;">
-                                    <i class="fas fa-history mr-1"></i> 
-                                    @if($type == 'entry')
-                                        Último Checkout: <strong>{{ number_format($last_odometer, 0, ',', '.') }}</strong> KM
-                                    @else
-                                        Entrada desta jornada: <strong>{{ number_format($last_odometer, 0, ',', '.') }}</strong> KM
-                                    @endif
-                                </span>
+                                @if($type == 'entry')
+                                    <!-- ⚡ BOTÃO DE AUTO-PREENCHIMENTO (EXCLUSIVO CHECK-IN) -->
+                                    <button type="button" id="btn_autofill_odometer" class="btn btn-light btn-sm border d-flex align-items-center w-100 py-2 px-3 shadow-xs hover-zoom" style="border-radius: 10px; transition: all 0.2s;">
+                                        <div class="text-left flex-fill">
+                                            <small class="text-uppercase text-muted font-weight-bold d-block" style="font-size: 0.6rem; letter-spacing: 0.5px;">Último Checkout</small>
+                                            <span class="text-bold text-dark" id="last_odometer_display" style="font-size: 0.95rem;">
+                                                {{ number_format($last_odometer, 0, ',', '.') }} KM
+                                            </span>
+                                        </div>
+                                        <div class="bg-success-soft rounded-circle p-2 ml-2">
+                                            <i class="fas fa-level-up-alt text-success"></i>
+                                        </div>
+                                    </button>
+                                @else
+                                    <!-- ℹ️ BADGE INFORMATIVO (OBRIGATÓRIO DIGITAR NO CHECKOUT) -->
+                                    <span class="badge {{ $isSupervisor ? 'badge-warning' : 'badge-light border' }} text-muted px-3 py-2 w-100 text-left" style="font-size: 0.8rem; border-radius: 10px;">
+                                        <i class="fas fa-history mr-1"></i> Entrada desta jornada: <strong id="last_odometer_display">{{ number_format($last_odometer, 0, ',', '.') }}</strong> KM
+                                    </span>
+                                @endif
+                                
                                 <input type="hidden" id="last_odometer_value" value="{{ $last_odometer }}">
                                 <div id="odometer_warning" class="text-danger small mt-1 font-weight-bold" style="display: none;"></div>
                             </div>
@@ -201,6 +243,13 @@
     .preview-image { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; }
     .opacity-25 { opacity: 0.25; }
     .text-teal { color: #20c997 !important; }
+    .bg-success-soft { background-color: rgba(40, 167, 69, 0.1); }
+    .hover-zoom:hover { transform: scale(1.02); }
+    .shadow-xs { box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+
+    @media (max-width: 768px) {
+        .title-form-responsive { font-size: 1.6rem !important; }
+    }
 </style>
 
 @push('scripts')
@@ -249,7 +298,6 @@
 
         /**
          * LOADING AO SALVAR (EVITA CLIQUE DUPLO)
-         * Corrigido para só disparar se o formulário for válido
          */
         $('#checklistForm').on('submit', function(e) {
             if (this.checkValidity()) {
@@ -262,13 +310,13 @@
 
         // 🛡️ VALIDAÇÃO DE ODÔMETRO EM TEMPO REAL
         const odometerInput = $('#odometer_input');
-        const lastKm = parseInt($('#last_odometer_value').val()) || 0;
         const warning = $('#odometer_warning');
-        const type = "{{ $type }}";
+        const type = $('#type_checklist').val();
         const isSupervisor = {{ $isSupervisor ? 'true' : 'false' }};
 
-        odometerInput.on('input change', function() {
-            const currentKm = parseInt($(this).val()) || 0;
+        function validateOdometer() {
+            const currentKm = parseInt(odometerInput.val()) || 0;
+            const lastKm = parseInt($('#last_odometer_value').val()) || 0;
             let error = false;
             let msg = "";
 
@@ -285,16 +333,51 @@
             }
 
             if (error) {
-                $(this).addClass('is-invalid').css('border', '2px solid #dc3545');
+                odometerInput.addClass('is-invalid').css('border', '2px solid #dc3545');
                 warning.text(msg).show();
                 if (isSupervisor) {
-                    warning.removeClass('text-danger').addClass('text-warning').html(msg + "<br><small>Como Supervisor, você pode salvar, mas justifique abaixo.</small>");
-                    $(this).css('border', '2px solid #ffc107');
+                    warning.removeClass('text-danger').addClass('text-warning').html(msg + "<br><small>Como Supervisor, você pode salvar, mas justifique.</small>");
+                    odometerInput.css('border', '2px solid #ffc107');
                 }
             } else {
-                $(this).removeClass('is-invalid').css('border', 'none');
+                odometerInput.removeClass('is-invalid').css('border', 'none');
                 warning.hide();
             }
+        }
+
+        odometerInput.on('input change', validateOdometer);
+
+        /**
+         * 🔄 AJAX: BUSCA DINÂMICA DE ÚLTIMO ODÔMETRO AO MUDAR VEÍCULO
+         */
+        $('#vehicle_selector').on('change', function() {
+            const vehicleId = $(this).val();
+            if (!vehicleId) return;
+
+            $('#last_odometer_display').html('<i class="fas fa-spinner fa-spin mr-2"></i> Consultando...');
+            
+            $.get(`/portal/verificacoes/last-odometer/${vehicleId}`, function(response) {
+                if (response.success) {
+                    const km = response.odometer;
+                    $('#last_odometer_value').val(km);
+                    $('#last_odometer_display').text(km.toLocaleString('pt-BR') + ' KM');
+                    validateOdometer(); // Revalida o campo atual
+                }
+            });
+        });
+
+        /**
+         * ⚡ AÇÃO: AUTO-PREENCHER ODÔMETRO
+         */
+        $('#btn_autofill_odometer').on('click', function() {
+            const km = $('#last_odometer_value').val();
+            odometerInput.val(km).trigger('change');
+            
+            // Efeito visual de feedback
+            $(this).addClass('animate__animated animate__pulse');
+            setTimeout(() => $(this).removeClass('animate__animated animate__pulse'), 500);
+            
+            toastr.success('KM preenchido automaticamente!', '', { timeOut: 1000 });
         });
     });
 </script>

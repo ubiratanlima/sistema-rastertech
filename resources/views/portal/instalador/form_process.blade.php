@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Fase 2: Instalação Elétrica | Rastertech')
+@section('title', 'Fase 2: Instalação | Rastertech')
 
 @section('content')
 <div class="container-fluid pb-5">
@@ -11,7 +11,7 @@
                 <i class="fas fa-arrow-left mr-1"></i> Voltar
             </a>
             <h1 class="m-0 text-bold" style="font-size: 2rem;">
-                <i class="fas fa-bolt mr-2 text-primary"></i>Fase 2: INSTALAÇÃO ELÉTRICA
+                <i class="fas fa-bolt mr-2 text-primary"></i>Fase 2: INSTALAÇÃO
             </h1>
             <p class="text-muted mb-0 font-weight-bold uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">Mapeamento técnico de chicotes e conexões</p>
         </div>
@@ -58,7 +58,7 @@
                 </div>
             </div>
 
-            <!-- 📸 VISTORIA ELÉTRICA (SLOTS DINÂMICOS) -->
+            <!-- 📸 VISTORIA DE INSTALAÇÃO (SLOTS DINÂMICOS) -->
             <div class="col-md-8">
                 <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
                     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
@@ -93,7 +93,7 @@
                         <!-- 🏁 BOTÃO DE SALVAMENTO -->
                         <button type="submit" class="btn btn-primary btn-lg btn-block shadow-sm py-4 text-bold text-uppercase mt-4" 
                                 id="btnSave" style="border-radius: 15px; font-size: 1.3rem; border: 0; background: linear-gradient(135deg, #007bff 0%, #004085 100%);">
-                            <i class="fas fa-check-circle mr-2"></i> CONCLUIR PARTE ELÉTRICA
+                            <i class="fas fa-check-circle mr-2"></i> CONCLUIR INSTALAÇÃO
                         </button>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
         let errors = [];
         const isBlockEnabled = $('#has_block').is(':checked');
 
-        // 📸 VALIDAÇÃO DE FOTOS OBRIGATÓRIAS (ELÉTRICA)
+        // 📸 VALIDAÇÃO DE FOTOS OBRIGATÓRIAS (INSTALAÇÃO)
         let mandatoryPhotos = {
             'chicote': 'Foto do Chicote',
             'acc': 'Fio do ACC',
@@ -195,7 +195,7 @@
             e.preventDefault();
             Swal.fire({
                 icon: 'warning',
-                title: '<span class="text-bold">PENDÊNCIAS ELÉTRICAS</span>',
+                title: '<span class="text-bold">PENDÊNCIAS DE INSTALAÇÃO</span>',
                 html: `<div class="text-left font-weight-bold text-muted small uppercase mb-2">As evidências abaixo são obrigatórias:</div>
                        <ul class="text-left text-primary font-weight-bold" style="list-style: none; padding-left: 0;">
                         ${errors.map(err => `<li><i class="fas fa-bolt mr-2"></i>${err}</li>`).join('')}

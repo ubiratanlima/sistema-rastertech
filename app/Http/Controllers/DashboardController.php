@@ -12,6 +12,15 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+
+        // 🎯 REDIRECIONAMENTO INTELIGENTE (Raiz)
+        // Se for Cliente ou Autorizado, o lugar dele é no Portal de Clientes
+        if (in_array($role, ['cliente', 'autorizado'])) {
+            return redirect()->route('portal.dashboard');
+        }
+
         // 🧬 Contadores Totais
         $totalDevices = DB::table('devices')->count() ?? 1000;
         $totalSims = DB::table('gsm_cards')->count() ?? 500;
@@ -38,6 +47,15 @@ class DashboardController extends Controller
         $onlineNow = DB::table('devices')->where('status', 'active')->count();
         $criticalAlerts = DB::table('gsm_cards')->where('status', 'suspended')->count();
 
+        // 👥 CENSO DE USUÁRIOS (TÁTICO, CASE-INSENSITIVE E MAPEADO)
+        $countAdmins      = DB::table('users')->where('role', 'Administrador')->whereNull('deleted_at')->count();
+        $countGerentes    = DB::table('users')->where('role', 'Gerente')->whereNull('deleted_at')->count();
+        $countClientes    = DB::table('users')->where('role', 'Cliente')->whereNull('deleted_at')->count();
+        $countSuporte     = DB::table('users')->where('role', 'Suporte')->whereNull('deleted_at')->count();
+        $countInstaladores = DB::table('users')->where('role', 'Instalador')->whereNull('deleted_at')->count();
+        $countMotoristas  = DB::table('customer_sub_users')->where('role', 'Motorista')->whereNull('deleted_at')->count();
+        $countAutorizados = DB::table('customer_sub_users')->where('role', 'Autorizado')->whereNull('deleted_at')->count();
+
         return view('dashboard', compact(
             'totalDevices', 
             'totalSims', 
@@ -45,7 +63,14 @@ class DashboardController extends Controller
             'criticalAlerts',
             'chartLabels',
             'chartData',
-            'latestPositions'
+            'latestPositions',
+            'countAdmins',
+            'countGerentes',
+            'countClientes',
+            'countSuporte',
+            'countInstaladores',
+            'countMotoristas',
+            'countAutorizados'
         ));
     }
 }

@@ -14,10 +14,15 @@ class SystemSettingsController extends Controller
         $sms       = SystemSetting::getGroup('sms');
         $asaas     = SystemSetting::getGroup('asaas');
         $spark     = SystemSetting::getGroup('spark');
-        $evolution = SystemSetting::getGroup('evolution');
-        $general   = SystemSetting::getGroup('general');
+        $evolution     = SystemSetting::getGroup('evolution');
+        $evolution_go  = SystemSetting::getGroup('evolution_go');
+        $evolution_crm = SystemSetting::getGroup('evolution_crm');
+        $general       = SystemSetting::getGroup('general');
 
-        return view('settings.index', compact('smtp', 'sms', 'asaas', 'spark', 'evolution', 'general'));
+        return view('settings.index', compact(
+            'smtp', 'sms', 'asaas', 'spark', 'evolution', 
+            'evolution_go', 'evolution_crm', 'general'
+        ));
     }
 
     public function update(Request $request)

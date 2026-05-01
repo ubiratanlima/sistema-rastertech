@@ -3,29 +3,26 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\DeviceCommand;
 use App\Models\DeviceModel;
 
 class DeviceCommandController extends Controller
 {
     /**
-     * Lista todos os comandos SMS configurados por modelo.
+     * Lista todos os comandos SMS agrupados por modelo para visualização em acordeon.
      */
     public function index(Request $request)
     {
-        $view      = $request->get('view', 'active');
-        $sort      = $request->get('sort', 'description');
-        $direction = $request->get('direction', 'asc');
-        $search    = $request->get('search');
+        $view   = $request->get('view', 'active');
+        $search = $request->get('search');
 
-        $query = DeviceCommand::with('deviceModel');
+        $query = DeviceCommand::has('deviceModel')->with('deviceModel');
 
-        // 🌓 FILTRO: VISÃO TÁTICA (ATIVOS OU LIXEIRA)
         if ($view === 'trash') {
             $query->onlyTrashed();
         }
 
-        // 🔍 FILTRO: BUSCA INTELIGENTE (CASE-INSENSITIVE)
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('description', 'ILIKE', "%{$search}%")
@@ -36,65 +33,89 @@ class DeviceCommandController extends Controller
             });
         }
 
-        // 📶 ORDENAÇÃO DINÂMICA PADRONIZADA
-        $commands = $query->orderBy($sort, $direction)
-                          ->paginate(15)
-                          ->withQueryString();
+        // 🧬 Agrupamento estratégico por Modelo
+        $commandsGrouped = $query->orderBy('execution_order', 'asc')
+                                 ->get()
+                                 ->groupBy('device_model_id');
         
         $deviceModels = DeviceModel::orderBy('name')->get();
-
-        // Preparação de dados JSON para os Dossiês/Edição
-        $commandData = $commands->mapWithKeys(function ($c) {
-            return [$c->id => [
-                'id'               => $c->id,
-                'device_model_id'  => $c->device_model_id,
-                'model_name'       => $c->deviceModel->name,
-                'description'      => $c->description,
-                'command_template' => $c->command_template,
-                'execution_order'  => $c->execution_order,
-                'deleted_at'       => $c->deleted_at
-            ]];
-        });
         
-        return view('device-commands.index', compact('commands', 'deviceModels', 'view', 'sort', 'direction', 'search', 'commandData'));
+        return view('device-commands.index', compact('commandsGrouped', 'deviceModels', 'view', 'search'));
     }
 
     /**
-     * Cadastra um novo Template de Comando SMS.
+     * Salva uma lista de comandos em lote para um modelo.
      */
-    public function store(Request $request)
+    public function batchStore(Request $request)
     {
         $validated = $request->validate([
             'device_model_id' => 'required|exists:device_models,id',
-            'description' => 'required|max:100',
-            'command_template' => 'required',
-            'execution_order' => 'required|integer'
+            'commands'         => 'required|array|min:1',
+            'commands.*.description' => 'required|max:100',
+            'commands.*.command_template' => 'required',
+            'commands.*.execution_order'  => 'required|integer'
         ]);
 
-        DeviceCommand::create($validated);
+        foreach ($validated['commands'] as $cmd) {
+            DeviceCommand::create([
+                'device_model_id'  => $validated['device_model_id'],
+                'description'      => $cmd['description'],
+                'command_template' => $cmd['command_template'],
+                'execution_order'  => $cmd['execution_order']
+            ]);
+        }
 
-        return redirect()->back()->with('success', '💬 Template de Comando registrado com sucesso!');
+        return response()->json(['success' => true, 'message' => 'Biblioteca de comandos sincronizada com sucesso!']);
     }
 
     /**
-     * Atualiza um template de comando (Suporte AJAX).
+     * Retorna todos os comandos de um modelo para edição.
      */
-    public function update(Request $request, $id)
+    public function getCommandsByModel($modelId)
     {
-        $command = DeviceCommand::findOrFail($id);
+        $commands = DeviceCommand::where('device_model_id', $modelId)
+                                 ->orderBy('execution_order', 'asc')
+                                 ->get();
         
+        return response()->json($commands);
+    }
+
+    /**
+     * Sincroniza (Atualiza/Remove/Cria) comandos de um modelo em lote.
+     */
+    public function batchUpdate(Request $request, $modelId)
+    {
         $validated = $request->validate([
-            'description'      => 'required|max:100',
-            'command_template' => 'required',
-            'execution_order'  => 'required|integer'
+            'commands' => 'required|array',
+            'commands.*.id' => 'nullable|exists:device_commands,id',
+            'commands.*.description' => 'required|max:100',
+            'commands.*.command_template' => 'required',
+            'commands.*.execution_order'  => 'required|integer',
+            'removed_ids' => 'nullable|array',
+            'removed_ids.*' => 'exists:device_commands,id'
         ]);
 
-        $command->update($validated);
+        DB::transaction(function() use ($validated, $modelId) {
+            // 1. Remover excluídos
+            if (!empty($validated['removed_ids'])) {
+                DeviceCommand::whereIn('id', $validated['removed_ids'])->delete();
+            }
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Template de comando atualizado na biblioteca.'
-        ]);
+            // 2. Atualizar ou Criar
+            foreach ($validated['commands'] as $cmd) {
+                DeviceCommand::updateOrCreate(
+                    ['id' => $cmd['id'] ?? null],
+                    [
+                        'device_model_id'  => $modelId,
+                        'description'      => $cmd['description'],
+                        'command_template' => $cmd['command_template'],
+                        'execution_order'  => $cmd['execution_order']
+                    ]
+                );
+            }
+        });
+
+        return response()->json(['success' => true, 'message' => 'Configurações de modelo atualizadas com sucesso!']);
     }
 
     /**
@@ -105,39 +126,16 @@ class DeviceCommandController extends Controller
         $command = DeviceCommand::withTrashed()->findOrFail($id);
         $command->restore();
 
-        return redirect()
-            ->route('device-commands.index')
-            ->with('success', 'Comando reativado com sucesso');
+        return redirect()->route('device-commands.index')->with('success', 'Comando reativado!');
     }
 
     /**
-     * Remove um template de comando (SoftDelete).
+     * Remove um único comando (SoftDelete).
      */
     public function destroy($id)
     {
-        try {
-            $command = DeviceCommand::findOrFail($id);
-            $command->delete();
-
-            if (request()->ajax()) {
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Comando desativado com sucesso.'
-                ]);
-            }
-
-            return redirect()
-                ->route('device-commands.index')
-                ->with('success', 'Comando desativado com sucesso.');
-
-        } catch (\Exception $e) {
-            if (request()->ajax()) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Erro interno ao inativar comando: ' . $e->getMessage()
-                ], 500);
-            }
-            throw $e;
-        }
+        $command = DeviceCommand::findOrFail($id);
+        $command->delete();
+        return response()->json(['success' => true]);
     }
 }

@@ -30,7 +30,7 @@ class AdminInstallationController extends Controller
             });
         }
 
-        $installations = $query->orderBy('created_at', 'desc')->paginate(20);
+        $installations = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
         return view('admin.installations.index', compact('installations'));
     }
 
@@ -40,6 +40,19 @@ class AdminInstallationController extends Controller
     public function show($id)
     {
         $inst = Installation::with(['installer', 'validator'])->findOrFail($id);
+
+        // 🛡️ TRAVA DE SEGURANÇA: Não abre a tela de validação se o técnico não concluiu as fases
+        if (!$inst->completed_at) {
+            $fase = "Fase 1: Vistoria em andamento";
+            if ($inst->checkin_at) $fase = "Fase 1 completa | Fase 2: Instalação em andamento";
+            if ($inst->processed_at) $fase = "Fase 2 completa | Fase 3: Checkout em andamento";
+
+            return redirect()->route('admin.installations.index')->with('info_status', [
+                'title' => 'Instalação em Andamento',
+                'message' => "O instalador ainda não concluiu todas as etapas em campo.\n\n{$fase}"
+            ]);
+        }
+
         return view('admin.installations.show', compact('inst'));
     }
 

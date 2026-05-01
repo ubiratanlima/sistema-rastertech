@@ -197,12 +197,47 @@ class CustomerController extends Controller
             'complement' => 'nullable|string|max:100',
             'neighborhood' => 'nullable|string|max:100',
             'city' => 'nullable|string|max:100',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'vehicles' => 'nullable|string',
+            'v_plate' => 'nullable|string|max:10',
+            'v_brand' => 'nullable|string|max:50',
+            'v_model' => 'nullable|string|max:50'
         ];
 
         $validated = $request->validate($rules);
-        Customer::create($validated);
-        return redirect()->route('customers.index')->with('success', "Cliente registrado com sucesso.");
+        
+        DB::transaction(function() use ($validated, $request) {
+            $customer = Customer::create(collect($validated)->except(['vehicles', 'v_plate', 'v_brand', 'v_model'])->toArray());
+            
+            // 🚛 INTEGRAÇÃO TÁTICA: Se vier um veículo no wizard, salva na frota
+            if ($request->filled('v_plate')) {
+                $customer->vehicles()->create([
+                    'plate' => strtoupper(trim($request->v_plate)),
+                    'brand' => $request->v_brand ?? '---',
+                    'model' => $request->v_model ?? '---',
+                ]);
+            }
+            
+            // Suporte legado para JSON se houver
+            if ($request->filled('vehicles')) {
+                $vehicles = json_decode($request->vehicles, true);
+                if (is_array($vehicles)) {
+                    foreach ($vehicles as $v) {
+                        if (!empty($v['plate'])) {
+                            $customer->vehicles()->firstOrCreate(
+                                ['plate' => strtoupper(trim($v['plate']))],
+                                [
+                                    'brand' => $v['brand'] ?? '---',
+                                    'model' => $v['model'] ?? '---',
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+        });
+
+        return redirect()->route('customers.index')->with('success', "Cliente e frota inicial registrados com sucesso.");
     }
 
     public function update(Request $request, Customer $customer)

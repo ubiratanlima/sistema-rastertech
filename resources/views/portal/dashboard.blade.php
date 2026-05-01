@@ -6,36 +6,49 @@
 <div class="container-fluid" id="portal-container">
     <!-- ⚓ TOPO ESTRATÉGICO (INDICADORES TÁTICOS) -->
     <div class="row mb-4 animate__animated animate__fadeIn">
-        <div class="col-12 col-md-4 mb-3" onclick="loadComponent('suporte')" style="cursor: pointer;">
-            <div class="card bg-warning shadow-sm border-0 h-100 hover-zoom" style="border-radius: 12px; transition: transform 0.2s;">
-                <div class="card-body d-flex align-items-center justify-content-between p-4">
-                    <div>
-                        <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">SUPORTE RTECH</div>
-                        <h3 class="text-bold m-0">CHAT SUPORTE</h3>
-                    </div>
-                    <i class="fas fa-headset fa-3x opacity-50"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4 mb-3" onclick="loadComponent('motoristas')" style="cursor: pointer;">
-            <div class="card bg-teal shadow-sm border-0 h-100 hover-zoom text-white" style="border-radius: 12px; background-color: #20c997 !important; transition: transform 0.2s;">
-                <div class="card-body d-flex align-items-center justify-content-between p-4">
-                    <div>
-                        <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">LOGÍSTICA TOTAL</div>
-                        <h3 class="text-bold m-0">MOTORISTAS</h3>
-                    </div>
-                    <i class="fas fa-id-card fa-3x opacity-50"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4 mb-3" onclick="loadComponent('veiculos')" style="cursor: pointer;">
+        <div class="col-12 col-md-3 mb-3" onclick="loadComponent('veiculos')" style="cursor: pointer;">
             <div class="card bg-dark shadow-sm border-0 h-100 hover-zoom text-white" style="border-radius: 12px; transition: transform 0.2s;">
-                <div class="card-body d-flex align-items-center justify-content-between p-4">
+                <div class="card-body d-flex align-items-center justify-content-between p-3">
                     <div>
-                        <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">SITUAÇÃO DE FROTA</div>
-                        <h3 class="text-bold m-0">VEÍCULOS</h3>
+                        <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">SITUAÇÃO DE FROTA</div>
+                        <h4 class="text-bold m-0">VEÍCULOS</h4>
                     </div>
-                    <i class="fas fa-truck-moving fa-3x opacity-50"></i>
+                    <i class="fas fa-truck-moving fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3 mb-3">
+            <a href="{{ route('portal.verificacoes.index') }}" class="text-decoration-none">
+                <div class="card bg-danger shadow-sm border-0 h-100 hover-zoom text-white" style="border-radius: 12px; background-color: #dc3545 !important; transition: transform 0.2s;">
+                    <div class="card-body d-flex align-items-center justify-content-between p-3">
+                        <div>
+                            <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">OPERAÇÃO TÁTICA</div>
+                            <h4 class="text-bold m-0">CHECK-IN / OUT</h4>
+                        </div>
+                        <i class="fas fa-clipboard-check fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-3 mb-3" onclick="loadComponent('motoristas')" style="cursor: pointer;">
+            <div class="card bg-teal shadow-sm border-0 h-100 hover-zoom text-white" style="border-radius: 12px; background-color: #20c997 !important; transition: transform 0.2s;">
+                <div class="card-body d-flex align-items-center justify-content-between p-3">
+                    <div>
+                        <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">LOGÍSTICA TOTAL</div>
+                        <h4 class="text-bold m-0">MOTORISTAS</h4>
+                    </div>
+                    <i class="fas fa-id-card fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3 mb-3" onclick="loadComponent('suporte')" style="cursor: pointer;">
+            <div class="card bg-warning shadow-sm border-0 h-100 hover-zoom" style="border-radius: 12px; transition: transform 0.2s;">
+                <div class="card-body d-flex align-items-center justify-content-between p-3">
+                    <div>
+                        <div class="text-uppercase font-weight-bold opacity-75 mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">SUPORTE RTECH</div>
+                        <h4 class="text-bold m-0">CHAT SUPORTE</h4>
+                    </div>
+                    <i class="fas fa-headset fa-2x opacity-50"></i>
                 </div>
             </div>
         </div>
@@ -81,9 +94,11 @@
         <div class="card-header bg-transparent border-0 px-4 pt-4 d-flex justify-content-between align-items-center">
             <h4 class="m-0 text-bold" id="component-title">Monitoramento de Veículos</h4>
             <div class="d-flex" style="gap: 10px;">
+                @if(optional(auth()->user())->role !== 'Autorizado')
                 <button class="btn btn-sm btn-light border" onclick="loadComponent('perfil')" title="Minha Conta">
                     <i class="fas fa-user-cog mr-1"></i><span class="d-none d-sm-inline">Meu Perfil</span>
                 </button>
+                @endif
             </div>
         </div>
         <div class="card-body p-4" id="portal-content">

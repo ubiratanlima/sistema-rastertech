@@ -228,10 +228,11 @@
 </div>
 
 @include('customers.modals.edit')
+@include('customers.modals.create')
 
 @push('scripts')
 <script>
-    window.openCreateCustomerModal = () => Swal.fire('Novo Registro', 'Em breve: Interface de Cadastro Integrada', 'info');
+    window.openCreateCustomerModal = () => $('#modalCreateCustomer').modal('show');
     
     window.viewDossier = function(el) {
         const id = $(el).data('id');
@@ -565,17 +566,26 @@
             }
         });
     };
-    $('#edit_zip').on('blur', function() {
-        const cep = $(this).val().replace(/\D/g, '');
+    // 🌎 BUSCA GLOBAL DE CEP (RASTERTECH STANDARD)
+    $(document).on('blur', '.cep-lookup', function() {
+        const $input = $(this);
+        const prefix = $input.data('prefix') || '';
+        const cep = $input.val().replace(/\D/g, '');
+        
         if (cep.length === 8) {
-            $(this).addClass('is-loading'); // Placeholder visual opcional
+            $input.addClass('is-loading').prop('readonly', true);
             $.getJSON(`https://viacep.com.br/ws/${cep}/json/`, function(d) {
+                $input.removeClass('is-loading').prop('readonly', false);
                 if (!("erro" in d)) {
-                    $('#edit_street').val(d.logradouro).addClass('animate__animated animate__fadeIn');
-                    $('#edit_neigh').val(d.bairro).addClass('animate__animated animate__fadeIn');
-                    $('#edit_city').val(d.localidade).addClass('animate__animated animate__fadeIn');
-                    $('#edit_number').focus();
+                    $(`#${prefix}street`).val(d.logradouro).addClass('animate__animated animate__fadeIn');
+                    $(`#${prefix}neigh`).val(d.bairro).addClass('animate__animated animate__fadeIn');
+                    $(`#${prefix}city`).val(d.localidade).addClass('animate__animated animate__fadeIn');
+                    $(`#${prefix}number`).focus();
+                } else {
+                    Swal.fire({ icon: 'warning', title: 'CEP não encontrado', text: 'Verifique o número e tente novamente.', timer: 2000, showConfirmButton: false });
                 }
+            }).fail(function() {
+                $input.removeClass('is-loading').prop('readonly', false);
             });
         }
     });

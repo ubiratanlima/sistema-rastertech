@@ -148,9 +148,11 @@
                     <!-- 🛡️ Identidade -->
                     <div class="row mb-4">
                         <div class="col-12"><h5 class="text-bold text-teal border-bottom pb-2 mb-4">1. DADOS DE IDENTIDADE</h5></div>
-                        <div class="col-md-6 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Nome Completo</label><input type="text" name="name" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
+                        <div class="col-md-6 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Nome Completo <span class="text-danger">*</span></label><input type="text" name="name" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
+                        <div class="col-md-6 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">E-mail (Login do App) <span class="text-danger">*</span></label><input type="email" name="email" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;" placeholder="exemplo@rastertech.com.br"></div>
+                        <div class="col-md-6 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Senha do App (Deixe em branco para 123456)</label><input type="password" name="external_password" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;" placeholder="••••••••"></div>
                         <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Nascimento</label><input type="date" name="birth_date" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
-                        <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">CPF</label><input type="text" name="cpf" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;" placeholder="000.000.000-00"></div>
+                        <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">CPF <span class="text-danger">*</span></label><input type="text" name="cpf" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;" placeholder="000.000.000-00"></div>
                         <div class="col-md-4 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">RG</label><input type="text" name="rg" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
                         <div class="col-md-4 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Órgão Emissor / UF</label><input type="text" name="issuer_uf" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;" placeholder="Ex: SSP / SP"></div>
                         <div class="col-md-4 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Nacionalidade</label><input type="text" name="nationality" value="Brasileira" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
@@ -167,12 +169,12 @@
                     <!-- 🛡️ CNH Técnico -->
                     <div class="row mb-4">
                         <div class="col-12"><h5 class="text-bold text-teal border-bottom pb-2 mb-4">3. CNH</h5></div>
-                        <div class="col-md-4 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Número de Registro</label><input type="text" name="cnh_number" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
+                        <div class="col-md-4 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Número de Registro <span class="text-danger">*</span></label><input type="text" name="cnh_number" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
                         <div class="col-md-2 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Categoria</label><select name="category" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;">
                             <option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="C">C</option><option value="D">D</option><option value="AD">AD</option><option value="AE">AE</option>
                         </select></div>
-                        <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Emissão</label><input type="date" name="issue_date" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
-                        <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Validade</label><input type="date" name="cnh_expiry" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
+                        <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Emissão <span class="text-danger">*</span></label><input type="date" name="issue_date" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
+                        <div class="col-md-3 mb-3"><label class="font-weight-bold text-muted text-uppercase mb-1" style="font-size: 13px;">Validade <span class="text-danger">*</span></label><input type="date" name="cnh_expiry" class="form-control form-control-lg border-0 shadow-sm" style="background: #f1f3f4; border-radius: 8px;"></div>
                     </div>
 
                     <!-- 🛡️ CNH Digital -->
@@ -205,7 +207,9 @@
         // Popula os campos do formulário
         $('#field-driver_id').val(driver.id);
         $('input[name="name"]').val(driver.name);
+        $('input[name="email"]').val(driver.email);
         $('input[name="cpf"]').val(driver.cpf);
+        $('input[name="external_password"]').val(driver.external_password);
         $('input[name="rg"]').val(driver.rg);
         $('input[name="issuer_uf"]').val(driver.issuer + ' / ' + driver.uf);
         $('input[name="nationality"]').val(driver.nationality);
@@ -244,6 +248,18 @@
 
     function saveDriver(e) {
         if(e) e.preventDefault();
+
+        const name = $('input[name="name"]').val();
+        const email = $('input[name="email"]').val();
+        const cpf = $('input[name="cpf"]').val();
+        const cnh = $('input[name="cnh_number"]').val();
+        const issue = $('input[name="issue_date"]').val();
+        const expiry = $('input[name="cnh_expiry"]').val();
+
+        if (!name || !email || !cpf || !cnh || !issue || !expiry) {
+            Swal.fire('ATENÇÃO', 'Preencha todos os campos obrigatórios (marcados com *) antes de prosseguir.', 'warning');
+            return;
+        }
         
         // 🚥 PREPARAÇÃO DOS DADOS MULTIPART
         const form = $('#formMotorista')[0];
@@ -268,8 +284,27 @@
                 });
             },
             error: function(err) {
-                console.error('Erro na requisição AJAX:', err);
-                alert('Falha na comunicação com o servidor central ao enviar arquivos.');
+                console.error('❌ [PORTAL] ERRO NO UPLOAD:', err);
+                let msg = 'Falha na comunicação com o servidor central.';
+                
+                if (err.status === 413) {
+                    msg = 'O arquivo é muito grande para o servidor. Tente uma foto menor ou com menos resolução.';
+                } else if (err.responseJSON && err.responseJSON.error) {
+                    if (typeof err.responseJSON.error === 'object') {
+                        msg = Object.values(err.responseJSON.error).flat().join('<br>');
+                    } else {
+                        msg = err.responseJSON.error;
+                    }
+                } else if (err.responseJSON && err.responseJSON.message) {
+                    msg = err.responseJSON.message;
+                }
+
+                Swal.fire({
+                    title: 'FALHA NO ENVIO',
+                    html: msg, // Usar html para suportar as quebras de linha <br>
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
             }
         });
     }
@@ -316,8 +351,22 @@
                     loadComponent('motoristas', 'open_id=' + driverId);
                 });
             },
-            error: function() {
-                Swal.fire('ERRO', 'Falha ao enviar arquivo.', 'error');
+            error: function(err) {
+                let msg = 'Falha ao enviar arquivo para a central.';
+                if (err.status === 413) {
+                    msg = 'Arquivo muito grande. O servidor rejeitou o envio.';
+                } else if (err.responseJSON && err.responseJSON.error) {
+                    if (typeof err.responseJSON.error === 'object') {
+                        msg = Object.values(err.responseJSON.error).flat().join('<br>');
+                    } else {
+                        msg = err.responseJSON.error;
+                    }
+                }
+                Swal.fire({
+                    title: 'ERRO NO UPLOAD',
+                    html: msg,
+                    icon: 'error'
+                });
             }
         });
     }

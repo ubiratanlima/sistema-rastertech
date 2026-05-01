@@ -15,11 +15,13 @@ class InstallerPortalController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = Installation::query();
+        $query = Installation::with('installer');
 
-        // 🛡️ GOD MODE: Se não for administrador/gestor, vê apenas as próprias obras
-        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
-        if (!in_array($user->role, $adminRoles)) {
+        $adminRoles = ['admin', 'gerente', 'suporte', 'administrador'];
+        $userRole = strtolower($user->role);
+        
+        if (!in_array($userRole, $adminRoles)) {
+            // Se for apenas instalador, vê apenas as suas próprias obras
             $query->where('installer_id', $user->id);
         }
 
@@ -174,10 +176,11 @@ class InstallerPortalController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $adminRoles = ['admin', 'gestor', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $adminRoles = ['admin', 'gerente', 'suporte', 'administrador'];
+        $userRole = strtolower($user->role);
         
         $query = Installation::query();
-        if (!in_array($user->role, $adminRoles)) {
+        if (!in_array($userRole, $adminRoles)) {
             $query->where('installer_id', $user->id);
         }
 

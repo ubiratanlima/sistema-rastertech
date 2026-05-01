@@ -21,15 +21,29 @@
         }
 
         body.login-page {
-            background: #f4f6f9;
+            background-image: url('https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?q=80&w=2062&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+        }
+
+        body.login-page::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.85); /* Mais branco/transparente */
+            z-index: 0;
         }
 
         .login-box {
             width: 400px;
+            position: relative;
+            z-index: 1;
         }
 
         .card {
@@ -38,10 +52,10 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
         }
 
-        .login-logo a {
-            color: var(--brand-color);
-            font-weight: 800;
-            letter-spacing: -1px;
+        .login-logo img {
+            max-width: 280px;
+            height: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
 
         .btn-brand {
@@ -72,8 +86,10 @@
 </head>
 <body class="login-page">
 <div class="login-box animate__animated animate__fadeIn">
-    <div class="login-logo mb-4">
-        <a href="/"><b>RASTER</b>TECH</a>
+    <div class="login-logo mb-4 text-center">
+        <a href="/">
+            <img src="{{ asset('img/logo_rastertech.png') }}" alt="Rastertech Logo">
+        </a>
     </div>
     <!-- /.login-logo -->
     <div class="card">

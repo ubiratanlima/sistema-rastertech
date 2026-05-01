@@ -50,6 +50,19 @@
                         </div>
                     </div>
 
+                    <!-- ⚙️ SELETOR DE CARGO -->
+                    <div class="ml-2 d-flex align-items-center mr-3">
+                        <label class="small font-weight-bold text-muted mr-2 mb-0">CARGO:</label>
+                        <select name="role" class="form-control form-control-sm" onchange="this.form.submit()" style="width: 160px; font-weight: bold; border-radius: 6px;">
+                            <option value="" {{ !$selectedRole ? 'selected' : '' }}>👥 TODOS</option>
+                            <option value="Administrador" {{ $selectedRole == 'Administrador' ? 'selected' : '' }}>🛡️ ADMINISTRADOR</option>
+                            <option value="Gerente" {{ $selectedRole == 'Gerente' ? 'selected' : '' }}>💼 GERENTE</option>
+                            <option value="Suporte" {{ $selectedRole == 'Suporte' ? 'selected' : '' }}>🎧 SUPORTE</option>
+                            <option value="Instalador" {{ $selectedRole == 'Instalador' ? 'selected' : '' }}>🛠️ INSTALADOR</option>
+                            <option value="Cliente" {{ $selectedRole == 'Cliente' ? 'selected' : '' }}>🏢 CLIENTE</option>
+                        </select>
+                    </div>
+
                     <!-- ⚙️ SELETOR DE VISÃO -->
                     <div class="ml-2 d-flex align-items-center mr-3">
                         <label class="small font-weight-bold text-muted mr-2 mb-0">VISÃO:</label>
@@ -105,6 +118,15 @@
                                                 <span class="badge badge-primary-soft ml-1" style="font-size: 0.65rem;">VOCÊ</span>
                                             @endif
                                         </div>
+                                        @php
+                                            $systemRoles = ['Administrador', 'Gerente', 'Suporte', 'Instalador'];
+                                            $isSystemUser = in_array($user->role, $systemRoles);
+                                        @endphp
+                                        @if(!$isSystemUser && $user->customer)
+                                            <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                                <i class="fas fa-building mr-1"></i> {{ $user->customer->name }}
+                                            </div>
+                                        @endif
                                         @if($user->trashed())
                                             <span class="badge bg-danger px-2 shadow-sm" style="font-size: 0.65rem;">ACESSO REVOGADO</span>
                                         @else
@@ -221,11 +243,11 @@
                             @php $uRole = auth()->user()->role; @endphp
                             @if($uRole === 'Administrador')
                                 <option value="Administrador">Administrador</option>
+                                <option value="Gerente">Gerente</option>
                             @endif
                             @if(in_array($uRole, ['Administrador', 'Gerente']))
-                                <option value="Gerente">Gerente</option>
-                                <option value="Suporte Técnico">Suporte Técnico</option>
-                                <option value="Técnico Instalador">Técnico Instalador</option>
+                                <option value="Suporte">Suporte</option>
+                                <option value="Instalador">Instalador</option>
                             @endif
                             <option value="Cliente">Cliente</option>
                         </select>
@@ -370,11 +392,11 @@
                             @php $uRole = auth()->user()->role; @endphp
                             @if($uRole === 'Administrador')
                                 <option value="Administrador">Administrador</option>
+                                <option value="Gerente">Gerente</option>
                             @endif
                             @if(in_array($uRole, ['Administrador', 'Gerente']))
-                                <option value="Gerente">Gerente</option>
-                                <option value="Suporte Técnico">Suporte Técnico</option>
-                                <option value="Técnico Instalador">Técnico Instalador</option>
+                                <option value="Suporte">Suporte</option>
+                                <option value="Instalador">Instalador</option>
                             @endif
                             <option value="Cliente">Cliente</option>
                         </select>

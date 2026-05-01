@@ -92,7 +92,7 @@
                                 <div class="row">
                                     <div class="col-md-4 form-group">
                                         <label class="tiny-text text-muted text-uppercase font-weight-bold mb-1">CEP</label>
-                                        <input type="text" name="zip_code" id="edit_zip" class="form-control gold-input" placeholder="00000-000">
+                                        <input type="text" name="zip_code" id="edit_zip" class="form-control gold-input cep-lookup" data-prefix="edit_" placeholder="00000-000">
                                     </div>
                                     <div class="col-md-8 form-group">
                                         <label class="tiny-text text-muted text-uppercase font-weight-bold mb-1">Rua / Avenida</label>

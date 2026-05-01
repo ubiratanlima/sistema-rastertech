@@ -19,6 +19,7 @@ use App\Http\Controllers\Portal\CustomerPortalController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\Auth\LoginController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes - RASTERTECH COMMAND CENTER v1.0
@@ -50,8 +51,8 @@ Route::get('/setup-test-user', function() {
 // 🚧 Rotas Protegidas por Autenticação
 Route::group(['middleware' => ['auth']], function () {
 
-    // 🚀 ACESSO GLOBAL (Admin, Gerente, Operador, Motorista)
-    Route::group(['middleware' => ['role:admin,gerente,operador,motorista']], function () {
+    // 🚀 ACESSO GLOBAL (Admin, Gerente, Operador, Motorista, Cliente, Autorizado)
+    Route::group(['middleware' => ['role:admin,gerente,suporte,motorista,cliente,autorizado']], function () {
         
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -80,6 +81,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 
         Route::get('/fleets', [VehicleController::class, 'index'])->name('fleets.index');
+        Route::post('/fleets', [VehicleController::class, 'store'])->name('fleets.store');
+        Route::put('/fleets/{id}/restore', [VehicleController::class, 'restore'])->name('fleets.restore');
         Route::get('/missoes', [\App\Http\Controllers\VehicleMissionController::class, 'index'])->name('missions.index');
         Route::delete('/fleets/{id}', [VehicleController::class, 'destroy'])->name('fleets.destroy');
 
@@ -103,8 +106,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::delete('/device-models/{id}', [DeviceModelController::class, 'destroy'])->name('device-models.destroy');
 
         Route::get('/device-commands', [DeviceCommandController::class, 'index'])->name('device-commands.index');
-        Route::post('/device-commands', [DeviceCommandController::class, 'store'])->name('device-commands.store');
-        Route::put('/device-commands/{id}', [DeviceCommandController::class, 'update'])->name('device-commands.update');
+        Route::post('/device-commands/batch', [DeviceCommandController::class, 'batchStore'])->name('device-commands.batch-store');
+        Route::get('/device-commands/by-model/{modelId}', [DeviceCommandController::class, 'getCommandsByModel'])->name('device-commands.by-model');
+        Route::put('/device-commands/batch/{modelId}', [DeviceCommandController::class, 'batchUpdate'])->name('device-commands.batch-update');
         Route::put('/device-commands/{id}/restore', [DeviceCommandController::class, 'restore'])->name('device-commands.restore');
         Route::delete('/device-commands/{id}', [DeviceCommandController::class, 'destroy'])->name('device-commands.destroy');
 
@@ -142,13 +146,14 @@ Route::group(['middleware' => ['auth']], function () {
     });
 
     // 📱 CREDENCIAIS APPS (Admin, Gerente, Operador, Cliente, Autorizado)
-    Route::group(['middleware' => ['role:admin,gerente,operador,cliente,autorizado']], function () {
+    Route::group(['middleware' => ['role:admin,gerente,suporte,cliente,autorizado']], function () {
         Route::get('/customer-sub-users', [CustomerSubUserController::class, 'index'])->name('customer-sub-users.index');
         Route::post('/customer-sub-users', [CustomerSubUserController::class, 'store'])->name('customer-sub-users.store');
         Route::put('/customer-sub-users/{id}', [CustomerSubUserController::class, 'update'])->name('customer-sub-users.update');
         Route::put('/customer-sub-users/{id}/restore', [CustomerSubUserController::class, 'restore'])->name('customer-sub-users.restore');
         Route::delete('/customer-sub-users/{id}', [CustomerSubUserController::class, 'destroy'])->name('customer-sub-users.destroy');
         Route::get('/customer-sub-users/verify/{token}', [CustomerSubUserController::class, 'verifyEmail'])->name('customer-sub-users.verify');
+        Route::get('/customer-sub-users/{id}/validate', [CustomerSubUserController::class, 'validateManual'])->name('customer-sub-users.validate-manual');
     });
 
     // 🌐 PORTAIS (Cliente, Motorista, Instalador)
@@ -173,19 +178,20 @@ Route::group(['middleware' => ['auth']], function () {
         });
 
         // 2. MÓDULO MOTORISTA
-        Route::group(['middleware' => ['role:admin,gerente,motorista']], function () {
+        Route::group(['middleware' => ['role:admin,gerente,suporte,motorista,cliente,autorizado']], function () {
             Route::get('/verificacoes', [CustomerPortalController::class, 'verificacoes'])->name('verificacoes.index');
             Route::get('/verificacoes/nova/{type}', [CustomerPortalController::class, 'createChecklist'])->name('verificacoes.create');
             Route::post('/verificacoes/salvar', [CustomerPortalController::class, 'storeChecklistAction'])->name('verificacoes.store');
             Route::get('/verificacoes/{id}', [CustomerPortalController::class, 'showChecklist'])->name('verificacoes.show');
 
+            Route::get('/verificacoes/last-odometer/{vehicle_id}', [CustomerPortalController::class, 'getLastOdometer'])->name('verificacoes.last-odometer');
             Route::get('/despesas', [CustomerPortalController::class, 'despesas'])->name('despesas.index');
             Route::get('/despesas/nova', [CustomerPortalController::class, 'createDespesa'])->name('despesas.create');
             Route::post('/despesas/salvar', [CustomerPortalController::class, 'storeDespesaAction'])->name('despesas.store');
         });
 
         // 3. MÓDULO INSTALADOR
-        Route::group(['middleware' => ['role:admin,gerente,operador,instalador']], function () {
+        Route::group(['middleware' => ['role:admin,gerente,suporte,instalador']], function () {
             Route::get('/instalador', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'index'])->name('instalador.index');
             Route::get('/instalador/checkin', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'createCheckin'])->name('instalador.checkin');
             Route::post('/instalador/checkin/salvar', [\App\Http\Controllers\Portal\InstallerPortalController::class, 'storeCheckin'])->name('instalador.checkin.store');

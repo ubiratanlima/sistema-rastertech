@@ -92,6 +92,9 @@ class CustomerPortalController extends Controller
                 return view('portal.components.motoristas', compact('drivers'));
             
             case 'perfil':
+                if (strtolower($user->role) === 'autorizado') {
+                    return response()->json(['error' => 'Acesso negado: Somente o Cliente titular pode gerenciar o perfil e WhatsApp.'], 403);
+                }
                 $whatsapps = \App\Models\CustomerWhatsappNumber::where('customer_id', $customer->id)->get();
                 $sectors = \Illuminate\Support\Facades\DB::table('whatsapp_sectors')->orderBy('name')->get();
                 return view('portal.components.perfil', compact('customer', 'whatsapps', 'sectors'));
@@ -115,6 +118,10 @@ class CustomerPortalController extends Controller
     {
         $user = Auth::user();
 
+        if (strtolower($user->role) === 'autorizado') {
+            return redirect()->back()->with('error', 'Acesso negado: Você não tem permissão para alterar os dados do cliente.');
+        }
+
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -123,6 +130,7 @@ class CustomerPortalController extends Controller
         ];
 
         $request->validate($rules);
+
 
         $user->name = $request->name;
         $user->email = $request->email;
@@ -145,6 +153,11 @@ class CustomerPortalController extends Controller
 
     public function addWhatsapp(Request $request)
     {
+        $user = Auth::user();
+        if (strtolower($user->role) === 'autorizado') {
+            return response()->json(['error' => 'Acesso negado: Você não tem permissão para gerenciar contatos de WhatsApp.'], 403);
+        }
+
         $customerId = session('portal_customer_id') ?? 1;
 
         // 🛑 LIMITE OPERACIONAL: Máximo 20 números por cliente
@@ -182,6 +195,11 @@ class CustomerPortalController extends Controller
 
     public function deleteWhatsapp($id)
     {
+        $user = Auth::user();
+        if (strtolower($user->role) === 'autorizado') {
+            return response()->json(['error' => 'Acesso negado.'], 403);
+        }
+
         $customerId = session('portal_customer_id') ?? 1;
         \App\Models\CustomerWhatsappNumber::where('id', $id)->where('customer_id', $customerId)->delete();
         return response()->json(['success' => 'WhatsApp removido!']);
@@ -193,7 +211,16 @@ class CustomerPortalController extends Controller
     public function saveDriver(Request $request)
     {
         try {
-            $customerId = session('portal_customer_id') ?? 1;
+            $user = Auth::user();
+            $userRole = strtolower($user->role);
+            $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'suporte', 'administrador', 'gestor']);
+
+            // 🛡️ DEFINIÇÃO DO CUSTOMER_ID (Prioridade: Usuário Logado > Sessão > Default)
+            if (!$isAdminLevel) {
+                $customerId = $user->customer_id;
+            } else {
+                $customerId = session('portal_customer_id') ?? 1;
+            }
 
             // 🛡️ MODO OPERACIONAL: SE FOR UMA ATUALIZAÇÃO SÓ DE FOTO (DIRECT UPLOAD)
             if ($request->has('driver_id') && !$request->has('name')) {
@@ -209,14 +236,23 @@ class CustomerPortalController extends Controller
                 $request->validate([
                     'driver_id' => 'nullable|exists:portal_drivers,id',
                     'name' => 'required|string|max:150',
+                    'email' => 'required|email',
                     'cpf' => 'required|string|max:20',
                     'cnh_number' => 'required|string|max:25',
-                    'cnh_front' => 'nullable|image|max:20480',
-                    'cnh_back' => 'nullable|image|max:20480'
+                    'issue_date' => 'required|date',
+                    'cnh_expiry' => 'required|date',
+                    'cnh_front' => 'nullable|image|max:51200',
+                    'cnh_back' => 'nullable|image|max:51200',
+                    'external_password' => 'nullable|min:4'
                 ]);
 
                 $data = $request->except(['cnh_front', 'cnh_back', 'issuer_uf', 'driver_id', '_token']);
                 $data['customer_id'] = $customerId;
+                
+                // Senha padrão se não informada
+                if (empty($data['external_password'])) {
+                    $data['external_password'] = '123456';
+                }
 
                 // 🏗️ TRATAMENTO DE ÓRGÃO EMISSOR (SSP/SP)
                 if ($request->issuer_uf) {
@@ -228,6 +264,41 @@ class CustomerPortalController extends Controller
                 $driver = \App\Models\PortalDriver::updateOrCreate(
                     ['id' => $request->driver_id],
                     $data
+                );
+
+                // 🔗 SINCRONIZAÇÃO DE CREDENCIAIS (Raiz)
+                // Se o motorista não tem sub_user, criamos um para ele aparecer em "Credenciais Apps"
+                $platform = \App\Models\Platform::first(); // Pega a primeira plataforma como padrão
+                
+                $subUser = \App\Models\CustomerSubUser::updateOrCreate(
+                    ['email' => $driver->email],
+                    [
+                        'customer_id' => $customerId,
+                        'platform_id' => $platform ? $platform->id : 1,
+                        'name' => $driver->name,
+                        'role' => 'Motorista',
+                        'external_username' => $driver->email,
+                        'external_password' => $driver->external_password,
+                        'access_validated' => true
+                    ]
+                );
+
+                // Atualiza o vínculo no motorista
+                $driver->update(['sub_user_id' => $subUser->id]);
+
+                // Garante o registro na tabela de Users para login
+                \App\Models\User::updateOrCreate(
+                    ['external_username' => $subUser->external_username],
+                    [
+                        'name' => $subUser->name,
+                        'email' => $subUser->email,
+                        'password' => \Illuminate\Support\Facades\Hash::make($subUser->external_password),
+                        'role' => 'Motorista',
+                        'customer_id' => $subUser->customer_id,
+                        'access_validated' => true,
+                        'external_username' => $subUser->external_username,
+                        'external_password' => $subUser->external_password
+                    ]
                 );
             }
 
@@ -279,8 +350,8 @@ class CustomerPortalController extends Controller
         $user = Auth::user();
         
         // Papéis que possuem visão de supervisão (vêem todos os motoristas do cliente)
-        $supervisorRoles = ['admin', 'gerente', 'operador', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
-        $isSupervisor = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+        $supervisorRoles = ['Administrador', 'Gerente', 'Suporte', 'Cliente', 'Autorizado'];
+        $isSupervisor = in_array($user->role, $supervisorRoles);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = null;
@@ -298,8 +369,11 @@ class CustomerPortalController extends Controller
         $query = VehicleMission::with(['vehicle', 'driver', 'entryChecklist', 'exitChecklist', 'customer']);
         
         if ($isSupervisor) {
-            // Supervisor/Operador/Gestor/Admin - Vê TUDO na Torre de Controle de Jornadas
-            // Filtro por customer_id foi removido para unificar a visão com "Missões em Campo"
+            // 🛡️ ISOLAMENTO MULTI-TENANT: Se for Cliente ou Autorizado, filtra pelo seu ID
+            if (in_array($user->role, ['Cliente', 'Autorizado'])) {
+                $query->where('customer_id', $user->customer_id);
+            }
+            // Admin, Gerente e Suporte (Rastertech) possuem visão global
         } else {
             // Motorista vê apenas as missões iniciadas por ele
             $query->where('driver_id', $driver->id);
@@ -308,15 +382,21 @@ class CustomerPortalController extends Controller
         $checklists = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // 📊 ESTADO DA JORNADA ATUAL (Último Registro para o Dashboard)
-        $stateDriver = $driver ?: PortalDriver::where('customer_id', $user->customer_id)->first();
-        $lastChecklist = $stateDriver ? VehicleChecklist::where('driver_id', $stateDriver->id)->orderBy('created_at', 'desc')->first() : null;
-        $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+        $lastChecklist = null;
+        if ($isSupervisor && in_array($user->role, ['Cliente', 'Autorizado'])) {
+            // Para o Cliente, 'isOnline' significa se existe alguém em campo na frota dele
+            $isOnline = VehicleMission::where('customer_id', $user->customer_id)->whereNull('exit_id')->exists();
+        } else {
+            $stateDriver = $driver ?: PortalDriver::where('customer_id', $user->customer_id)->first();
+            $lastChecklist = $stateDriver ? VehicleChecklist::where('driver_id', $stateDriver->id)->orderBy('created_at', 'desc')->first() : null;
+            $isOnline = ($lastChecklist && $lastChecklist->type == 'entry');
+        }
 
         // 📊 HISTÓRICO IMUTÁVEL (Últimos 30 dias)
         $checklists = $query->orderBy('created_at', 'desc')->paginate(10);
 
         // Papéis que possuem visão de supervisão (vêem todos os motoristas do cliente)
-        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $supervisorRoles = ['Administrador', 'Gerente', 'Suporte', 'Cliente', 'Autorizado'];
         $isSupervisor = in_array($user->role, $supervisorRoles);
 
         return view('portal.verificacoes.index', compact('driver', 'checklists', 'lastChecklist', 'isOnline', 'isSupervisor'));
@@ -328,7 +408,7 @@ class CustomerPortalController extends Controller
     public function createChecklist(Request $request, $type)
     {
         $user = Auth::user();
-        $isSupervisor = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+        $isSupervisor = in_array($user->role, ['Administrador', 'Gerente', 'Suporte', 'Cliente', 'Autorizado']);
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
@@ -377,19 +457,25 @@ class CustomerPortalController extends Controller
                 }
             }
 
-            if (!$isOnline && !$isSupervisor) {
-                return redirect()->route('portal.verificacoes.index')->with('warning', 'Nenhuma jornada ativa encontrada para liberação.');
+            if (!$isOnline) {
+                $msg = 'Não há nenhuma jornada ativa disponível para Check-out.';
+                return redirect()->route('portal.verificacoes.index')->with('warning', $msg);
             }
         }
+
+        // 🛡️ Papéis com visão gerencial (Global ou do Próprio Cliente)
+        $isGlobal = in_array($user->role, ['Administrador', 'Gerente', 'Suporte']);
+        $isTenant = in_array($user->role, ['Cliente', 'Autorizado']);
 
         // 🚛 VEÍCULOS DISPONÍVEIS NA FROTA DO CLIENTE
         if ($type == 'exit' && $activeJourney) {
             $vehicles = Vehicle::where('customer_id', $activeJourney->vehicle->customer_id)->get();
-        } elseif ($isSupervisor) {
-            $vehicles = Vehicle::orderBy('plate')->get(); // Global vê todos no Check-in
+        } elseif ($isGlobal) {
+            $vehicles = Vehicle::orderBy('plate')->get(); // Global vê todos
         } else {
-            $customerId = $user->customer_id ?? 1;
-            $vehicles = Vehicle::where('customer_id', $customerId)->get();
+            // Cliente ou Motorista: vê apenas a frota do cliente dele
+            $targetCustomerId = $isTenant ? $user->customer_id : ($driver ? $driver->customer_id : null);
+            $vehicles = Vehicle::where('customer_id', $targetCustomerId)->get();
         }
         
         // 🎯 PRÉ-SELEÇÃO DO VEÍCULO E GARANTIA NA LISTA
@@ -422,7 +508,17 @@ class CustomerPortalController extends Controller
         $lastRecord = VehicleChecklist::where('vehicle_id', $currentVehicleId)->orderBy('created_at', 'desc')->first();
         $last_odometer = $lastRecord ? $lastRecord->odometer : 0;
 
-        return view('portal.verificacoes.form', compact('driver', 'vehicles', 'type', 'currentVehicleId', 'isSupervisor', 'activeJourney', 'last_odometer'));
+        // 👥 LISTA DE MOTORISTAS PARA SUPERVISORES (Check-in manual por ADM/Autorizado)
+        $drivers = [];
+        if ($isSupervisor) {
+            $driversQuery = PortalDriver::activeAndValid();
+            if (!$isGlobal) {
+                $driversQuery->where('customer_id', $user->customer_id);
+            }
+            $drivers = $driversQuery->orderBy('name')->get();
+        }
+
+        return view('portal.verificacoes.form', compact('driver', 'vehicles', 'type', 'currentVehicleId', 'isSupervisor', 'activeJourney', 'last_odometer', 'drivers'));
     }
 
     /**
@@ -431,7 +527,7 @@ class CustomerPortalController extends Controller
     public function storeChecklistAction(Request $request)
     {
         $user = Auth::user();
-        $supervisorRoles = ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações'];
+        $supervisorRoles = ['Administrador', 'Gerente', 'Suporte', 'Cliente', 'Autorizado'];
         $isAdmin = in_array($user->role, $supervisorRoles);
 
         // 🛡️ REGRAS DE VALIDAÇÃO DINÂMICAS
@@ -469,9 +565,26 @@ class CustomerPortalController extends Controller
             'photo_5.required' => 'A foto da Lateral Esquerda é obrigatória.',
         ]);
 
+        // 🛡️ VALIDAÇÃO DE PROPRIEDADE (SEGURANÇA TÁTICA)
+        $vehicle = Vehicle::findOrFail($request->vehicle_id);
+        $isGlobal = in_array($user->role, ['Administrador', 'Gerente', 'Suporte']);
+        
+        if (!$isGlobal) {
+            $ownerId = $user->customer_id;
+            if (!$ownerId) {
+                $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+                $driverProfile = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
+                $ownerId = $driverProfile ? $driverProfile->customer_id : null;
+            }
+
+            if ($vehicle->customer_id != $ownerId) {
+                abort(403, 'Acesso Negado: Este veículo não pertence à sua frota.');
+            }
+        }
+
         // 🛡️ VALIDAÇÃO DE CONTINUIDADE DE ODÔMETRO (HODÔMETRO TÁTICO)
         $lastCheck = VehicleChecklist::where('vehicle_id', $request->vehicle_id)->orderBy('created_at', 'desc')->first();
-        $isSupervisor = in_array($user->role, ['admin', 'gestor', 'operator', 'Gerente', 'Administrador', 'Gestor de Operações']);
+        $isSupervisor = in_array($user->role, ['Administrador', 'Gerente', 'Suporte', 'Cliente', 'Autorizado']);
         
         if ($lastCheck) {
             $lastKm = $lastCheck->odometer;
@@ -584,11 +697,40 @@ class CustomerPortalController extends Controller
     }
 
     /**
+     * 🔍 BUSCA DINÂMICA DE ÚLTIMO ODÔMETRO (AJAX)
+     */
+    public function getLastOdometer($vehicle_id)
+    {
+        $user = Auth::user();
+        $vehicle = Vehicle::findOrFail($vehicle_id);
+        $isGlobal = in_array($user->role, ['Administrador', 'Gerente', 'Suporte']);
+
+        if (!$isGlobal) {
+            $ownerId = $user->customer_id;
+            if (!$ownerId) {
+                $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+                $driverProfile = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
+                $ownerId = $driverProfile ? $driverProfile->customer_id : null;
+            }
+
+            if ($vehicle->customer_id != $ownerId) {
+                return response()->json(['success' => false, 'message' => 'Veículo inválido para sua frota.'], 403);
+            }
+        }
+
+        $lastRecord = VehicleChecklist::where('vehicle_id', $vehicle_id)->orderBy('created_at', 'desc')->first();
+        return response()->json([
+            'success' => true,
+            'odometer' => $lastRecord ? $lastRecord->odometer : 0
+        ]);
+    }
+
+    /**
      * 👁️ VISUALIZAÇÃO DE HISTÓRICO (SOMENTE LEITURA)
      */
     public function showChecklist($id)
     {
-        $checklist = VehicleChecklist::with(['vehicle', 'driver'])->findOrFail($id);
+        $checklist = VehicleChecklist::with(['vehicle', 'driver', 'performedBy'])->findOrFail($id);
         return view('portal.verificacoes.show', compact('checklist'));
     }
 
@@ -598,12 +740,15 @@ class CustomerPortalController extends Controller
     public function despesas(Request $request)
     {
         $user = Auth::user();
-        $isAdmin = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+        // 🛡️ Papéis com visão gerencial (Global ou do Próprio Cliente)
+        $isGlobal = in_array($user->role, ['Administrador', 'Gerente', 'Suporte']);
+        $isTenant = in_array($user->role, ['Cliente', 'Autorizado']);
+        $isSupervisor = $isGlobal || $isTenant;
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
 
-        if (!$isAdmin && !$driver) {
+        if (!$isSupervisor && !$driver) {
             return redirect()->route('dashboard')->with('error', 'Acesso negado: Perfil de motorista não encontrado.');
         }
 
@@ -613,13 +758,21 @@ class CustomerPortalController extends Controller
         $dateStart = $request->input('date_start');
         $dateEnd = $request->input('date_end');
 
-        // 💰 HISTÓRICO DE DESPESAS (GLOBAL PARA ADMIN / ESPECÍFICO PARA MOTORISTA)
+        // 💰 HISTÓRICO DE DESPESAS
         $query = VehicleExpense::with(['vehicle.customer', 'driver']);
         
-        if (!$isAdmin) {
+        if (!$isSupervisor) {
+            // Motorista comum vê apenas as suas
             $query->where('driver_id', $driver->id);
         } else {
-            if ($customerId) {
+            // Gestores (Global ou Tenant)
+            if ($isTenant) {
+                // 🛡️ TRAVA MULTI-TENANT: Cliente vê apenas sua frota
+                $query->whereHas('vehicle', function($q) use ($user) {
+                    $q->where('customer_id', $user->customer_id);
+                });
+            } elseif ($customerId) {
+                // Admin Global filtra se solicitado
                 $query->whereHas('vehicle', function($q) use ($customerId) {
                     $q->where('customer_id', $customerId);
                 });
@@ -644,15 +797,17 @@ class CustomerPortalController extends Controller
         // DADOS PARA OS FILTROS
         $customers = collect();
         $vehicles = collect();
-        if ($isAdmin) {
+        if ($isGlobal) {
             $customers = \App\Models\Customer::orderBy('name')->get();
             $vehicles = Vehicle::orderBy('plate')->get();
+        } elseif ($isTenant) {
+            $vehicles = Vehicle::where('customer_id', $user->customer_id)->orderBy('plate')->get();
         } elseif ($driver) {
             $vehicles = Vehicle::where('customer_id', $driver->customer_id)->orderBy('plate')->get();
         }
 
         return view('portal.despesas.index', compact(
-            'driver', 'expenses', 'isAdmin', 'totalAmount', 'customers', 'vehicles', 
+            'driver', 'expenses', 'isSupervisor', 'totalAmount', 'customers', 'vehicles', 
             'customerId', 'vehicleId', 'dateStart', 'dateEnd'
         ));
     }
@@ -663,20 +818,23 @@ class CustomerPortalController extends Controller
     public function createDespesa(Request $request)
     {
         $user = Auth::user();
-        $isAdmin = in_array(strtolower($user->role), ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
+        $isGlobal = in_array($user->role, ['Administrador', 'Gerente', 'Suporte']);
+        $isTenant = in_array($user->role, ['Cliente', 'Autorizado']);
+        $isSupervisor = $isGlobal || $isTenant;
 
         $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
         $driver = $subUser ? PortalDriver::where('sub_user_id', $subUser->id)->first() : null;
 
-        if (!$isAdmin && !$driver) {
+        if (!$isSupervisor && !$driver) {
             return redirect()->route('dashboard')->with('error', 'Acesso negado.');
         }
 
         // Se for admin/gestor global, carrega toda a base de veículos
-        if ($isAdmin) {
+        if ($isGlobal) {
             $vehicles = Vehicle::orderBy('plate')->get();
         } else {
-            $vehicles = Vehicle::where('customer_id', $driver->customer_id)->get();
+            // Cliente ou Motorista: vê apenas a frota do cliente dele
+            $vehicles = Vehicle::where('customer_id', ($isTenant ? $user->customer_id : $driver->customer_id))->get();
         }
 
         // Categorias Padrão Ouro RTECH

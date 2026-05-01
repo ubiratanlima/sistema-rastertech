@@ -16,11 +16,11 @@
                     <i class="fas fa-building mr-1"></i> {{ $customer->name ?? 'Rastertech Operacional' }}
                 </p>
             </div>
-            <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
-                <button onclick="window.print()" class="btn btn-secondary btn-lg shadow-sm px-4 py-3 text-bold mr-2 mb-2" style="border-radius: 12px; font-size: 1.1rem; border: 0;">
+            <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2 w-100-mobile">
+                <button onclick="window.print()" class="btn btn-secondary btn-lg shadow-sm px-4 py-3 text-bold mr-2 mb-2 d-none d-md-inline-block" style="border-radius: 12px; font-size: 1.1rem; border: 0;">
                     <i class="fas fa-print mr-2"></i> IMPRIMIR RELATÓRIO
                 </button>
-                <a href="{{ route('portal.despesas.create') }}" class="btn btn-orange btn-lg shadow-sm px-4 py-3 text-bold animate__animated animate__pulse animate__infinite mb-2" style="border-radius: 12px; font-size: 1.1rem; background-color: #fd7e14 !important; border: 0; color: white;">
+                <a href="{{ route('portal.despesas.create') }}" class="btn btn-orange btn-lg shadow-sm px-4 py-3 text-bold mb-2 btn-action-mobile" style="border-radius: 12px; font-size: 1.1rem; background-color: #fd7e14 !important; border: 0; color: white;">
                     <i class="fas fa-plus-circle mr-2"></i> NOVA DESPESA
                 </a>
             </div>
@@ -28,7 +28,7 @@
     </div>
 
     <!-- 🔍 FILTROS AVANÇADOS -->
-    <div class="card shadow-sm border-0 mb-4 animate__animated animate__fadeInDown" style="border-radius: 12px;">
+    <div class="card shadow-sm border-0 mb-4 animate__animated animate__fadeInDown d-none d-md-block" style="border-radius: 12px;">
         <div class="card-body p-3">
             <form action="{{ route('portal.despesas.index') }}" method="GET" class="row align-items-end m-0">
                 
@@ -123,7 +123,7 @@
                     </div>
                 @endif
                 
-                <div class="card shadow border-0 mt-4 bg-dark text-white" style="border-radius: 12px;">
+                <div class="card shadow border-0 mt-4 bg-dark text-white d-none d-md-block" style="border-radius: 12px;">
                     <div class="card-body p-4 d-flex justify-content-between align-items-center">
                         <h4 class="m-0 text-uppercase text-bold text-orange"><i class="fas fa-calculator mr-2"></i> TOTAL DO PERÍODO</h4>
                         <h2 class="m-0 text-bold text-orange">R$ {{ number_format($totalAmount, 2, ',', '.') }}</h2>
@@ -232,24 +232,7 @@
             </table>
         </div>
 
-        <!-- ASSINATURAS -->
-        <div style="margin-top: 60px;">
-            <table style="width: 100%; text-align: center; font-size: 11px;">
-                <tr>
-                    <td style="width: 50%;">
-                        ______________________________________________________<br>
-                        <strong>{{ auth()->user()->name }}</strong><br>
-                        Assinatura do Emissor
-                    </td>
-                    <td style="width: 50%;">
-                        ______________________________________________________<br>
-                        <strong>Vistoriador / Auditor</strong><br>
-                        Assinatura do Responsável
-                    </td>
-                </tr>
-            </table>
-        </div>
-
+        <!-- 🏁 FIM DO RELATÓRIO -->
     </div>
 </div>
 
@@ -264,6 +247,54 @@
     
     .print-area { display: none; }
 
+    /* 🏷️ PLACA MERCOSUL (VERSÃO REDUZIDA 20%) */
+    .mercosul-plate {
+        width: 80px; height: 32px; background: #fff; border: 1.5px solid #333; border-radius: 4px;
+        position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 0 auto;
+    }
+    .plate-header {
+        width: 100%; height: 8px; background: #003399; color: white; font-size: 0.4rem;
+        display: flex; justify-content: space-between; align-items: center; padding: 0 3px;
+        position: absolute; top: 0; border-radius: 2px 2px 0 0; font-weight: bold;
+    }
+    .plate-text { font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; color: #111; letter-spacing: 0.5px; margin-top: 6px; }
+
+    @media (min-width: 768px) {
+        .mercosul-plate { width: 100px; height: 40px; border: 2px solid #333; }
+        .plate-header { height: 10px; font-size: 0.5rem; padding: 0 5px; }
+        .plate-text { font-size: 1.1rem; margin-top: 8px; }
+    }
+
+    /* 📱 AJUSTES MOBILE */
+    @media (max-width: 768px) {
+        .container-fluid { padding-left: 0 !important; padding-right: 0 !important; }
+        .card-body { padding: 10px !important; }
+        .table th, .table td { padding-left: 5px !important; padding-right: 5px !important; }
+        .value-responsive { font-size: 0.88rem !important; }
+        .btn-action-mobile { width: 100% !important; font-size: 1rem !important; padding: 12px !important; }
+        .w-100-mobile { width: 100% !important; }
+    }
+</style>
+
+<!-- 🖼️ MODAL DE VISUALIZAÇÃO DE COMPROVANTE (UX RASTERTECH) -->
+<div class="modal fade" id="photoModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden; background: #1a1a1a;">
+            <div class="modal-header border-0 p-3 d-flex justify-content-between align-items-center">
+                <h5 class="modal-title text-white font-weight-bold ml-2" id="photoTitle">COMPROVANTE</h5>
+                <button type="button" class="close text-white opacity-100" data-dismiss="modal" aria-label="Close" style="outline: none;">
+                    <span aria-hidden="true" style="font-size: 2rem;">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0 text-center bg-dark d-flex align-items-center justify-content-center" style="min-height: 300px;">
+                <img src="" id="modalPhoto" class="img-fluid animate__animated animate__zoomIn" style="max-height: 80vh; width: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
     /* 🖨️ ESTILOS ESTÉTICOS DA IMPRESSÃO CSS (NOTA FISCAL) */
     @media print {
         @page { size: A4; margin: 15mm; }
@@ -380,6 +411,15 @@
             $('.select2').select2({ theme: 'bootstrap4' });
         }
     });
+
+    /**
+     * 🖼️ MOTOR DE VISUALIZAÇÃO DE FOTOS
+     */
+    function viewPhoto(url, title) {
+        $('#modalPhoto').attr('src', url);
+        $('#photoTitle').text(title);
+        $('#photoModal').modal('show');
+    }
 </script>
 @endpush
 @endsection

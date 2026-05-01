@@ -30,6 +30,19 @@ class CheckRole
             // Aliases explícitos permitidos para retrocompatibilidade de nomes de exibição
             if ($role === 'gestor') $userRoles[] = 'gerente';
             if ($role === 'administrador') $userRoles[] = 'admin';
+
+            // 🛡️ BLOQUEIO DE SEGURANÇA (Raiz): Motoristas com CNH vencida não operam
+            if (in_array($role, ['motorista', 'driver'])) {
+                $user = Auth::user();
+                $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+                if ($subUser) {
+                    $driverProfile = \App\Models\PortalDriver::where('sub_user_id', $subUser->id)->first();
+                    if ($driverProfile && !$driverProfile->isValidCnh()) {
+                        Auth::logout();
+                        return redirect('/login')->withErrors(['login' => 'ACESSO INTERROMPIDO: Sua CNH está vencida. Procure o administrativo.']);
+                    }
+                }
+            }
         }
 
         $allowed = false;
@@ -49,10 +62,7 @@ class CheckRole
         }
 
         if (!$allowed) {
-            // DEBUG TEMPORARIO: Exibir os papéis no abort para depuração rápida
-            $debugRole = json_encode($userRoles);
-            $debugRequired = json_encode($flatRoles);
-            abort(403, "Acesso restrito. Sua Role no Banco: $debugRole | Exigido na Rota: $debugRequired");
+            abort(403, "Acesso restrito. Sua conta não possui permissão para acessar esta funcionalidade.");
         }
 
         return $next($request);

@@ -39,6 +39,18 @@ class LoginController extends Controller
         $user = Auth::user();
         $role = strtolower($user->role ?? '');
 
+        // 🛡️ TRAVA DE SEGURANÇA RASTERTECH (Raiz): Motoristas com CNH vencida não entram
+        if (in_array($role, ['motorista', 'driver'])) {
+            $subUser = \App\Models\CustomerSubUser::where('external_username', $user->external_username)->first();
+            if ($subUser) {
+                $driverProfile = \App\Models\PortalDriver::where('sub_user_id', $subUser->id)->first();
+                if ($driverProfile && !$driverProfile->isValidCnh()) {
+                    Auth::logout();
+                    return redirect('/login')->withErrors(['login' => 'ACESSO BLOQUEADO: Sua CNH está vencida no sistema. Procure o administrativo para atualizar.']);
+                }
+            }
+        }
+
         // 🚀 GATILHO DE PRIMEIRO ACESSO
         if ($user->access_validated === false) {
             $user->update(['access_validated' => true]);

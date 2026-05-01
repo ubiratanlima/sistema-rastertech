@@ -12,11 +12,31 @@
                 <i class="fas fa-key mr-2 text-teal"></i>Credenciais Apps
             </h1>
             <p class="text-muted small mb-0 d-none d-sm-block">Gestão de acessos externos para portais e aplicativos de monitoramento.</p>
+            @if(!$isAdminLevel && auth()->user()->customer)
+                <div class="mt-2">
+                    <span class="badge badge-light border text-uppercase px-3 py-2 shadow-sm" style="font-size: 0.85rem; color: #444; border-radius: 8px;">
+                        <i class="fas fa-building mr-2 text-teal"></i> {{ auth()->user()->customer->name }}
+                    </span>
+                </div>
+            @endif
         </div>
     </div>
 
     <!-- 📊 CARD PRINCIPAL -->
     <div class="card card-outline shadow-sm border-0 animate__animated animate__fadeInUp" style="border-radius: 12px; overflow: hidden; border-top: 3px solid #20c997;">
+        
+        <!-- EXIBIÇÃO DE MENSAGENS DE SUCESSO OU ERRO -->
+        @if(session('success'))
+            <div class="alert alert-success m-3 mb-0" style="border-radius: 8px;">
+                {!! session('success') !!}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger m-3 mb-0" style="border-radius: 8px;">
+                {!! session('error') !!}
+            </div>
+        @endif
+
         <div class="card-header border-0 bg-transparent px-4 py-3 d-flex align-items-center">
             <h3 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                 <i class="fas fa-shield-alt mr-2 text-teal"></i>Portaria de Acessos
@@ -47,6 +67,16 @@
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
+                    </div>
+
+                    <!-- ⚙️ SELETOR DE CARGO -->
+                    <div class="ml-4 d-flex align-items-center">
+                        <label class="small font-weight-bold text-muted mr-2 mb-0">CARGO:</label>
+                        <select name="role" class="form-control form-control-sm" onchange="this.form.submit()" style="width: 140px; font-weight: bold; border-radius: 6px;">
+                            <option value="" {{ !$selectedRole ? 'selected' : '' }}>👥 TODOS</option>
+                            <option value="Motorista" {{ strtolower($selectedRole) == 'motorista' ? 'selected' : '' }}>🚛 MOTORISTA</option>
+                            <option value="Autorizado" {{ strtolower($selectedRole) == 'autorizado' ? 'selected' : '' }}>🔑 AUTORIZADO</option>
+                        </select>
                     </div>
 
                     <!-- ⚙️ SELETOR DE VISÃO -->
@@ -106,6 +136,7 @@
                                     <div>
                                         <div class="font-weight-bold text-dark" style="font-size: 11pt;">{{ $u->name }}</div>
                                         <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 7.5pt;">{{ $u->email }}</div>
+                                        <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;"><i class="fas fa-building mr-1"></i> {{ $u->customer->name ?? 'N/A' }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -125,7 +156,11 @@
                                 @elseif(!$u->access_validated)
                                     <span class="badge badge-info px-3 py-1 text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">CONTA ATIVADA</span>
                                 @else
-                                    <span class="badge badge-success px-3 py-1 text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">ACESSO VALIDADO</span>
+                                    @if($u->validation_method === 'manual')
+                                        <span class="badge badge-success px-3 py-1 text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px; background-color: #20c997;">VALIDADA POR: {{ explode(' ', $u->validator->name ?? 'Admin')[0] }}</span>
+                                    @else
+                                        <span class="badge badge-success px-3 py-1 text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px; background-color: #20c997;">VALIDADA VIA E-MAIL</span>
+                                    @endif
                                 @endif
                             </td>
                             <td class="text-center align-middle px-4">
@@ -139,8 +174,12 @@
                                          <button class="btn btn-light btn-square-sm border-right" onclick="showCredentials(this)" 
                                                 data-name="{{ $u->name }}" 
                                                 data-customer-code="{{ $u->customer->code ?? 'N/A' }}"
+                                                data-customer-name="{{ $u->customer->name ?? 'Cliente' }}"
+                                                data-company-name="{{ $u->customer->company_name ?? 'Rastertech' }}"
+                                                data-role="{{ $u->role }}"
+                                                data-cnh-valid="{{ $u->driver ? ($u->driver->isValidCnh() ? 'VÁLIDA' : 'VENCIDA') : 'N/A' }}"
                                                 data-platform="{{ $u->platform->name ?? 'INDEPENDENTE' }}"
-                                                data-url="{{ $u->platform->url ?? '#' }}"
+                                                data-url="{{ $u->role === 'Motorista' ? config('app.url') : ($u->platform->url ?? config('app.url')) }}"
                                                 data-android="{{ $u->platform->app_android_url ?? '' }}"
                                                 data-ios="{{ $u->platform->app_ios_url ?? '' }}"
                                                 data-username="{{ $u->external_username }}" 
@@ -156,6 +195,13 @@
                                                 data-role="{{ $u->role }}" title="Editar Case">
                                             <i class="fas fa-tools text-warning"></i>
                                         </button>
+
+                                        @if(!$u->access_validated)
+                                            <a href="{{ route('customer-sub-users.validate-manual', $u->id) }}" class="btn btn-light btn-square-sm border-right" onclick="return confirm('Ativar acesso agora?')" title="Validar Manualmente (Ativar Agora)">
+                                                <i class="fas fa-user-check text-success"></i>
+                                            </a>
+                                        @endif
+
                                         <button class="btn btn-light btn-square-sm" onclick="confirmDelete({{ $u->id }}, '{{ $u->name }}')" title="Inativar">
                                             <i class="fas fa-user-slash text-danger"></i>
                                         </button>
@@ -182,8 +228,21 @@
                                                         <span class="font-weight-bold text-dark">{{ $u->role ?: 'Padrão' }}</span>
                                                     </div>
                                                     <div class="col-sm-4 mb-3 text-center">
-                                                        <label class="small text-muted font-weight-bold text-uppercase d-block">E-mail Validado em</label>
-                                                        <span class="font-weight-bold text-muted small">---</span>
+                                                        <label class="small text-muted font-weight-bold text-uppercase d-block">Validação</label>
+                                                        @if($u->email_verified_at)
+                                                            <div class="font-weight-bold text-dark mb-0" style="font-size: 0.85rem;">
+                                                                {{ $u->email_verified_at->format('d/m/Y H:i') }}
+                                                            </div>
+                                                            <div class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.65rem;">
+                                                                @if($u->validation_method === 'manual')
+                                                                    <i class="fas fa-user-shield text-warning mr-1"></i> Manual: {{ explode(' ', $u->validator->name ?? 'Admin')[0] }}
+                                                                @else
+                                                                    <i class="fas fa-envelope-open-text text-success mr-1"></i> Via E-mail
+                                                                @endif
+                                                            </div>
+                                                        @else
+                                                            <span class="font-weight-bold text-muted small">PENDENTE</span>
+                                                        @endif
                                                     </div>
                                                     <div class="col-sm-4 mb-3 text-right">
                                                         <label class="small text-muted font-weight-bold text-uppercase d-block">Cadastrado em</label>
@@ -197,7 +256,11 @@
                                                             </div>
                                                             <div class="col-6 text-right">
                                                                 <label class="small text-muted font-weight-bold text-uppercase mb-0">Status de Acesso</label>
-                                                                <div class="h6 mb-0 text-success"><i class="fas fa-check-circle mr-1"></i> VALIDADA</div>
+                                                                @if($u->access_validated)
+                                                                    <div class="h6 mb-0 text-success"><i class="fas fa-check-circle mr-1"></i> VALIDADA</div>
+                                                                @else
+                                                                    <div class="h6 mb-0 text-warning"><i class="fas fa-clock mr-1"></i> AGUARDANDO</div>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                     </div>
@@ -243,16 +306,20 @@
                     <div class="row">
                         <div class="col-12 form-group mb-3">
                             <label class="text-xs text-uppercase text-muted font-weight-bold">Vincular ao Cliente</label>
-                            <select name="customer_id" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" required {{ !$isAdminLevel ? 'readonly' : '' }}>
-                                @if(!$isAdminLevel)
-                                    <option value="{{ auth()->user()->customer_id }}">{{ auth()->user()->customer->name ?? 'Minha Empresa' }}</option>
-                                @else
+                            @if(!$isAdminLevel)
+                                <div class="form-control form-control-lg border-0 shadow-sm d-flex align-items-center" style="background: #f1f3f5; border-radius: 8px; font-weight: bold; color: #495057;">
+                                    <i class="fas fa-building mr-2 text-muted"></i>
+                                    {{ auth()->user()->customer->name ?? 'Minha Empresa' }}
+                                </div>
+                                <input type="hidden" name="customer_id" value="{{ auth()->user()->customer_id }}">
+                            @else
+                                <select name="customer_id" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" required>
                                     <option value="">Selecione o Cliente...</option>
                                     @foreach($customers as $c)
                                         <option value="{{ $c->id }}" {{ $selectedCustomerId == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->code }})</option>
                                     @endforeach
-                                @endif
-                            </select>
+                                </select>
+                            @endif
                         </div>
                         <div class="col-md-6 form-group mb-3">
                             <label class="text-xs text-uppercase text-muted font-weight-bold"><i class="fas fa-user mr-1"></i> Nome Completo</label>
@@ -267,15 +334,25 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-12 form-group mb-3">
-                            <label class="text-xs text-uppercase text-muted font-weight-bold"><i class="fas fa-envelope mr-1"></i> E-mail de Contato</label>
+                        <div class="col-md-6 form-group mb-3">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold"><i class="fas fa-envelope mr-1"></i> Login (E-mail)</label>
                             <input type="email" name="email" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="joao@empresa.com" required>
                         </div>
-                        <div class="col-6 form-group mb-0">
-                            <label class="text-xs text-uppercase text-muted font-weight-bold"><i class="fas fa-id-badge mr-1"></i> Usuário (ID)</label>
-                            <input type="text" name="external_username" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="joao.silva" required>
+                        <div class="col-md-6 form-group mb-3">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold"><i class="fas fa-briefcase mr-1"></i> Cargo / Função</label>
+                            @if($userRole === 'autorizado')
+                                <div class="form-control form-control-lg border-0 shadow-sm d-flex align-items-center" style="background: #f1f3f5; border-radius: 8px; font-weight: bold; color: #495057;">
+                                    MOTORISTA
+                                </div>
+                                <input type="hidden" name="role" value="Motorista">
+                            @else
+                                <select name="role" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" required>
+                                    <option value="Motorista">MOTORISTA</option>
+                                    <option value="Autorizado">AUTORIZADO</option>
+                                </select>
+                            @endif
                         </div>
-                        <div class="col-6 form-group mb-0">
+                        <div class="col-12 form-group mb-0">
                             <label class="text-xs text-uppercase text-muted font-weight-bold"><i class="fas fa-key mr-1"></i> Senha Inicial</label>
                             <input type="password" name="external_password" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="******" required>
                         </div>
@@ -316,12 +393,22 @@
                         <select id="edit_platform_id" class="form-control">${platformOpts}</select>
                     </div>
                     <div class="form-group mb-3">
-                        <label class="text-xs text-uppercase text-muted font-weight-bold"><i class='fas fa-envelope mr-1'></i> E-mail</label>
+                        <label class="text-xs text-uppercase text-muted font-weight-bold"><i class='fas fa-envelope mr-1'></i> Login (E-mail)</label>
                         <input type="email" id="edit_email" class="form-control" value="${d.email}">
                     </div>
                     <div class="form-group mb-3">
-                        <label class="text-xs text-uppercase text-muted font-weight-bold"><i class='fas fa-id-badge mr-1'></i> Usuário APP</label>
-                        <input type="text" id="edit_username" class="form-control" value="${d.username}">
+                        <label class="text-xs text-uppercase text-muted font-weight-bold"><i class='fas fa-briefcase mr-1'></i> Cargo / Função</label>
+                        @if($userRole === 'autorizado')
+                            <div class="form-control d-flex align-items-center" style="background: #f1f3f5; font-weight: bold; color: #495057;">
+                                MOTORISTA
+                            </div>
+                            <input type="hidden" id="edit_role" value="Motorista">
+                        @else
+                            <select id="edit_role" class="form-control">
+                                <option value="Motorista" ${d.role == 'Motorista' ? 'selected' : ''}>MOTORISTA</option>
+                                <option value="Autorizado" ${d.role == 'Autorizado' ? 'selected' : ''}>AUTORIZADO</option>
+                            </select>
+                        @endif
                     </div>
                     <div class="form-group mb-0">
                         <label class="text-xs text-uppercase text-muted font-weight-bold"><i class='fas fa-key mr-1'></i> Nova Senha (deixe em branco se não quiser trocar)</label>
@@ -340,8 +427,8 @@
                 const data = {
                     name: $('#edit_name').val(),
                     email: $('#edit_email').val(),
+                    role: $('#edit_role').val(),
                     platform_id: $('#edit_platform_id').val(),
-                    external_username: $('#edit_username').val(),
                     external_password: $('#edit_password').val(),
                     customer_id: d.customer,
                     _token: '{{ csrf_token() }}'
@@ -383,6 +470,7 @@
     // 👁️ VER CREDENCIAIS (CARTEIRINHA TÁTICA)
     window.showCredentials = function(el) {
         const d = $(el).data();
+        const isMotorista = d.role.toLowerCase() === 'motorista';
         
         let androidBtn = d.android ? `<a href="${d.android}" target="_blank" class="btn btn-dark btn-sm rounded-pill px-3 mr-2 d-inline-flex align-items-center shadow-sm" style="border: 2px solid #3DDC84; background: #1a1a1a;">
                                         <i class="fab fa-google-play mr-2" style="color: #3DDC84; font-size: 1.1rem;"></i>
@@ -392,6 +480,30 @@
                                 <i class="fab fa-apple mr-2" style="color: #A2AAAD; font-size: 1.1rem;"></i>
                                 <span class="font-weight-bold" style="font-size: 0.7rem; letter-spacing: 0.5px; color: white;">APP IPHONE</span>
                               </a>` : '';
+
+        // 🏗️ CONSTRUÇÃO DO HEADER DINÂMICO
+        let headerContent = '';
+        if (isMotorista) {
+            const cnhColor = d.cnhValid === 'VENCIDA' ? '#ff4757' : 'rgba(255,255,255,0.2)';
+            const cnhBadge = `<div class="mt-3 py-1 px-3 d-inline-block shadow-sm animate__animated animate__pulse animate__infinite" style="background: ${cnhColor}; border-radius: 5px; border: ${d.cnhValid === 'VENCIDA' ? '2px solid white' : 'none'};">
+                                <span class="text-white font-weight-bold small"><i class="fas fa-id-card mr-1"></i> CNH: ${d.cnhValid}</span>
+                             </div>`;
+            
+            headerContent = `
+                <div style="max-width: 250px; margin: 0 auto;">
+                    <h5 class="text-white font-weight-bold mb-0 text-uppercase" style="letter-spacing: 0.5px; font-size: 1.1rem; line-height: 1.2;">${d.customerName}</h5>
+                    <div class="text-white opacity-75 small font-weight-bold text-uppercase mt-1" style="font-size: 0.7rem;">${d.companyName}</div>
+                    ${cnhBadge}
+                </div>
+            `;
+        } else {
+            headerContent = `
+                <h5 class="text-white font-weight-bold mb-0 text-uppercase" style="letter-spacing: 2px; font-size: 1.6rem;">${d.customerCode}</h5>
+                <div class="badge badge-light px-3 py-1 font-weight-bold mt-1 shadow-sm" style="font-size: 0.7rem; border-radius: 20px; color: #17a2b8;">
+                    <i class="fas fa-shield-alt mr-1"></i> CÓDIGO DE SEGURANÇA
+                </div>
+            `;
+        }
 
         Swal.fire({
             title: '<i class="fas fa-id-badge text-teal mr-2"></i>CARTÃO DE ACESSO',
@@ -404,15 +516,11 @@
                         <div class="mb-3">
                              <img src="{{ asset('img/logo_rastertech.png') }}" style="height: 52px; width: auto; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1));">
                         </div>
-                        <h5 class="text-white font-weight-bold mb-0 text-uppercase" style="letter-spacing: 2px; font-size: 1.6rem;">${d.customerCode}</h5>
-                        <div class="badge badge-light px-3 py-1 font-weight-bold mt-1 shadow-sm" style="font-size: 0.7rem; border-radius: 20px; color: #17a2b8;">
-                            <i class="fas fa-shield-alt mr-1"></i> CÓDIGO DE SEGURANÇA
-                        </div>
+                        ${headerContent}
                     </div>
                     
                     <!-- CORPO DA CARTEIRA -->
                     <div class="p-4 text-left">
-                        <!-- BOTÃO ACESSO WEB (Substituindo Texto) -->
                         <div class="mb-4">
                             <a href="${d.url}" target="_blank" class="btn btn-block shadow-sm font-weight-bold py-3 d-flex align-items-center justify-content-center" 
                                style="background: #20c997; color: white; border-radius: 12px; border: none; font-size: 0.9rem; transition: all 0.3s; transform: scale(1);"
@@ -440,6 +548,7 @@
                             </div>
                         </div>
 
+                        ${!isMotorista ? `
                         <div class="text-center">
                             <label class="small text-muted font-weight-bold text-uppercase mb-2 d-block">Baixar Aplicativo</label>
                             <div class="d-flex justify-content-center">
@@ -448,6 +557,7 @@
                             </div>
                             ${(!androidBtn && !iosBtn) ? '<span class="text-muted small italic">Links não configurados na plataforma</span>' : ''}
                         </div>
+                        ` : ''}
                     </div>
                     
                     <!-- NOVO RODAPÉ COM MARCA E SLOGAN -->
@@ -460,7 +570,7 @@
                 </div>
             `,
             showConfirmButton: true,
-            confirmButtonText: 'SALVAR E FECHAR',
+            confirmButtonText: 'FECHAR',
             confirmButtonColor: '#20c997'
         });
     }

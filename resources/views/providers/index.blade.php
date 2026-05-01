@@ -130,11 +130,11 @@
                                             <i class="fas fa-power-off fa-lg text-danger"></i>
                                         </button>
                                     @else
-                                        <form action="{{ route('providers.restore', $provider->id) }}" method="POST" class="m-0 w-100">
+                                        <form action="{{ route('providers.restore', $provider->id) }}" method="POST" class="m-0">
                                             @csrf
                                             @method('PUT')
-                                            <button type="submit" class="btn btn-light btn-block font-weight-bold text-success py-2 px-4" title="Reativar Fornecedor">
-                                                <i class="fas fa-recycle mr-2"></i> REATIVAR PARCEIRO
+                                            <button type="submit" class="btn btn-light btn-square w-100" title="Reativar Fornecedor">
+                                                <i class="fas fa-undo fa-lg text-success"></i>
                                             </button>
                                         </form>
                                     @endif

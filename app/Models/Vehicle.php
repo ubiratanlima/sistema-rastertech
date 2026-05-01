@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Vehicle extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['plate', 'brand', 'model', 'customer_id'];
+    protected $fillable = [
+        'plate', 'brand', 'model', 'year', 'color', 'renavam', 'chassi', 
+        'photo_front', 'photo_back', 'customer_id'
+    ];
 
     public function customer() { return $this->belongsTo(Customer::class); }
     public function devices() { return $this->hasMany(Device::class); }

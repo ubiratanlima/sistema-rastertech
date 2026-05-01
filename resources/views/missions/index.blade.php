@@ -110,7 +110,7 @@
                                 @endif
                             </td>
                             <td class="align-middle">
-                                <div class="mercosul-plate shadow-sm mx-auto" style="transform: scale(0.8);">
+                                <div class="mercosul-plate shadow-sm mx-auto">
                                     <div class="mercosul-header">BRASIL</div>
                                     <div class="mercosul-body">{{ $m->vehicle->plate }}</div>
                                 </div>
@@ -206,37 +206,7 @@
         100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
     }
 
-    /* 🇧🇷 ESTILO PLACA MERCOSUL */
-    .mercosul-plate { 
-        display: inline-flex; 
-        flex-direction: column; 
-        background: #fff; 
-        border: 1.5px solid #000; 
-        border-radius: 4px; 
-        overflow: hidden; 
-        min-width: 110px; 
-        line-height: 1; 
-        vertical-align: middle; 
-    }
-    .mercosul-header { 
-        background: #003399; 
-        color: #fff; 
-        font-size: 0.45rem; 
-        text-align: center; 
-        padding: 2px 0; 
-        font-weight: 800; 
-        letter-spacing: 1.5px; 
-        border-bottom: 0.5px solid #000; 
-    }
-    .mercosul-body { 
-        color: #000; 
-        font-size: 1.2rem; 
-        text-align: center; 
-        padding: 4px 10px; 
-        font-weight: bold; 
-        font-family: 'Roboto Mono', monospace; 
-        letter-spacing: -1px; 
-    }
+    /* 🇧🇷 ESTILO PLACA MERCOSUL (LEGACY LOCAL REMOVED - NOW GLOBAL) */
 </style>
 
 @push('scripts')
