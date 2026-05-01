@@ -806,9 +806,12 @@ class CustomerPortalController extends Controller
             $vehicles = Vehicle::where('customer_id', $driver->customer_id)->orderBy('plate')->get();
         }
 
+        $isAdmin = $isGlobal;
+        $customer = $user->customer;
+        
         return view('portal.despesas.index', compact(
-            'driver', 'expenses', 'isSupervisor', 'totalAmount', 'customers', 'vehicles', 
-            'customerId', 'vehicleId', 'dateStart', 'dateEnd'
+            'driver', 'expenses', 'isSupervisor', 'isAdmin', 'customer', 'totalAmount', 
+            'customers', 'vehicles', 'customerId', 'vehicleId', 'dateStart', 'dateEnd'
         ));
     }
 

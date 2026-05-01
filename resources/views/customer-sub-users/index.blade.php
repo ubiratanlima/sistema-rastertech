@@ -576,8 +576,42 @@
     }
 
     window.copyToClipboard = function(text) {
+        if (!navigator.clipboard) {
+            // Fallback para navegadores antigos ou conexões inseguras
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Copiado!',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true
+                });
+            } catch (err) {
+                console.error('Erro ao copiar', err);
+            }
+            document.body.removeChild(textArea);
+            return;
+        }
+
         navigator.clipboard.writeText(text).then(() => {
-            toastr.success('Copiado para a área de transferência!');
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Copiado para a área de transferência!',
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true
+            });
+        }).catch(err => {
+            console.error('Erro ao copiar via Clipboard API', err);
         });
     }
 </script>
@@ -588,6 +622,8 @@
     .shadow-inner { box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
     .text-teal { color: #20c997 !important; }
     .bg-teal { background-color: #20c997 !important; }
+    .cursor-pointer { cursor: pointer !important; transition: all 0.2s; }
+    .cursor-pointer:hover { color: #17a2b8 !important; transform: scale(1.2); }
     
     .dark-mode .table td { border-color: rgba(255,255,255,0.05); color: #e0e0e0; }
     .dark-mode code { background: #16213e !important; color: #20c997 !important; border: 1px solid #2d2d44 !important; }
