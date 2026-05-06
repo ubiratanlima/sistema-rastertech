@@ -124,6 +124,8 @@ networks:
   EmbraNetV2:
     driver: overlay
     attachable: true
+  traefik_public:
+    external: true
 
 volumes:
   rastertech-public: 
