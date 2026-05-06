@@ -83,10 +83,9 @@ services:
       dockerfile: ./Dockerfile
     image: sistema-rastertech-app:latest
     restart: unless-stopped
-    # volumes: - .:/var/www (REMOVIDO: Código agora está na imagem)
     volumes:
+      - .:/var/www
       - ./docker/php/99-rastertech.ini:/usr/local/etc/php/conf.d/99-rastertech.ini:ro
-      - rastertech-public:/var/www/public # Volume compartilhado para Assets
     environment:
       - APP_KEY=${APP_KEY}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -101,8 +100,8 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     volumes:
+      - .:/var/www
       - ./docker/volumes/web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - rastertech-public:/var/www/public:ro # Lê os Assets da imagem do App
     depends_on:
       - rastertech-app
     networks:
@@ -112,6 +111,3 @@ networks:
   EmbraNetV2:
     driver: overlay
     attachable: true
-
-volumes:
-  rastertech-public: # Volume para sincronizar o build do Vite entre App e Nginx
