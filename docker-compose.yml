@@ -12,14 +12,14 @@ services:
       - ./docker/volumes/db/zz-setup-embraet.sql:/docker-entrypoint-initdb.d/zz-setup-embraet.sql
       - ./docker/volumes/db/data_v3:/var/lib/postgresql/data
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
   # 🧠 REDIS
   rastertech-redis:
     image: redis:alpine
     restart: unless-stopped
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
   # 📡 KONG API GATEWAY
   rastertech-kong:
@@ -42,7 +42,7 @@ services:
       - "80:8000"
       - "8001:8001"
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
   # 👤 SUPABASE AUTH
   supabase-auth:
@@ -61,7 +61,7 @@ services:
       - GOTRUE_EXTERNAL_EMAIL_ENABLED=false
       - GOTRUE_DB_MAX_POOL_SIZE=20
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
   # 🚀 REST INTERFACE
   supabase-rest:
@@ -74,7 +74,7 @@ services:
       - PGRST_DB_ANON_ROLE=anon
       - PGRST_JWT_SECRET=${JWT_SECRET}
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
   # 🏎️ LARAVEL APP (PHP-FPM ENGINE)
   rastertech-app:
@@ -93,7 +93,7 @@ services:
       - rastertech-db
       - rastertech-redis
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
   # 🛡️ THE WEB SIDECAR (NGINX ELITE)
   rastertech-web:
@@ -105,9 +105,9 @@ services:
     depends_on:
       - rastertech-app
     networks:
-      - EmbraNet
+      - EmbraNetV2
 
 networks:
-  EmbraNet:
+  EmbraNetV2:
     driver: overlay
     attachable: true
