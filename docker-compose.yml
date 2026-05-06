@@ -25,7 +25,7 @@ services:
 
   # 📡 KONG API GATEWAY
   rastertech-kong:
-    image: kong:2.8.1
+    image: sistema-rastertech-kong:latest
     restart: unless-stopped
     environment:
       - KONG_DATABASE=off
@@ -41,11 +41,17 @@ services:
     configs:
       - source: kong_config
         target: /etc/kong/kong.yml
-    ports:
-      - "8000:8000"
-      - "8001:8001"
     networks:
       - EmbraNetV2
+      - traefik_public # <--- Verifique se este é o nome da rede
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.rastertech.rule=Host(`rastertech.embraet.com.br`)"
+        - "traefik.http.routers.rastertech.entrypoints=websecure"
+        - "traefik.http.routers.rastertech.tls=true"
+        - "traefik.http.routers.rastertech.tls.certresolver=letsencrypt" # <--- Ou o nome do seu resolver
+        - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
 
   # 🛡️ THE WEB SIDECAR (NGINX)
   rastertech-web:
@@ -66,13 +72,23 @@ services:
 
   # 🏎️ LARAVEL APP
   rastertech-app:
-    image: sistema-rastertech-app:latest # Você precisará buildar esta imagem no servidor uma vez
+    image: sistema-rastertech-app:latest
     restart: unless-stopped
     volumes:
       - rastertech-public:/var/www/public
     environment:
+      - APP_NAME=${APP_NAME}
+      - APP_ENV=${APP_ENV}
       - APP_KEY=${APP_KEY}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_URL=${APP_URL}
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - EmbraNetV2
 
