@@ -50,7 +50,8 @@ services:
         - "traefik.http.routers.rastertech.rule=Host(`rastertech.embraet.com.br`)"
         - "traefik.http.routers.rastertech.entrypoints=websecure"
         - "traefik.http.routers.rastertech.tls=true"
-        - "traefik.http.routers.rastertech.tls.certresolver=letsencrypt" # <--- Ou o nome do seu resolver
+        - "traefik.http.routers.rastertech.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.rastertech.loadbalancer.passHostHeader=true"
         - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
 
   # 🛡️ THE WEB SIDECAR (NGINX)
