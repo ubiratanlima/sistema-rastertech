@@ -43,7 +43,7 @@ services:
         target: /etc/kong/kong.yml
     networks:
       - EmbraNetV2
-      - traefik_public # <--- Verifique se este é o nome da rede
+      - EmbraNet
     deploy:
       labels:
         - "traefik.enable=true"
@@ -125,7 +125,7 @@ networks:
   EmbraNetV2:
     driver: overlay
     attachable: true
-  traefik_public:
+  EmbraNet:
     external: true
 
 volumes:
