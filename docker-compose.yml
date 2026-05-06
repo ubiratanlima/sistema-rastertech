@@ -10,7 +10,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./docker/volumes/db/zz-setup-embraet.sql:/docker-entrypoint-initdb.d/zz-setup-embraet.sql
-      - ./docker/volumes/db/data_v3:/var/lib/postgresql/data
+      - rastertech-db-data:/var/lib/postgresql/data
     networks:
       - EmbraNetV2
 
@@ -115,3 +115,4 @@ networks:
 
 volumes:
   rastertech-public: # Volume para sincronizar o build do Vite entre App e Nginx
+  rastertech-db-data: # Volume para os dados reais do Postgres
