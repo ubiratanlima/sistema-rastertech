@@ -109,4 +109,5 @@ services:
 
 networks:
   EmbraNet:
-    driver: bridge
+    driver: overlay
+    attachable: true
