@@ -1,15 +1,17 @@
 version: '3.8'
 
 services:
-  # 🏦 POSTGRES RASTERTECH
+  # 🏦 POSTGRES RASTERTECH (Imune a erros de volume)
   rastertech-db:
-    image: postgres:15
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    image: sistema-rastertech-db:latest
     restart: unless-stopped
     command: ["postgres", "-c", "listen_addresses=*"]
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - ./docker/volumes/db/zz-setup-embraet.sql:/docker-entrypoint-initdb.d/zz-setup-embraet.sql
       - rastertech-db-data:/var/lib/postgresql/data
     networks:
       - EmbraNetV2
@@ -21,9 +23,12 @@ services:
     networks:
       - EmbraNetV2
 
-  # 📡 KONG API GATEWAY
+  # 📡 KONG API GATEWAY (Imune a erros de volume)
   rastertech-kong:
-    image: kong:2.8.1
+    build:
+      context: .
+      dockerfile: Dockerfile.kong
+    image: sistema-rastertech-kong:latest
     restart: unless-stopped
     environment:
       - KONG_DATABASE=off
@@ -36,8 +41,6 @@ services:
       - KONG_NGINX_PROXY_CLIENT_MAX_BODY_SIZE=50m
       - DASHBOARD_USERNAME=${KONG_USER}
       - DASHBOARD_PASSWORD=${KONG_PASS}
-    volumes:
-      - ./docker/volumes/db/kong.yml:/etc/kong/kong.yml:ro
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -76,17 +79,15 @@ services:
     networks:
       - EmbraNetV2
 
-  # 🏎️ LARAVEL APP (PHP-FPM ENGINE)
+  # 🏎️ LARAVEL APP (Totalmente Embutido)
   rastertech-app:
     build:
       context: .
       dockerfile: ./Dockerfile
     image: sistema-rastertech-app:latest
     restart: unless-stopped
-    # volumes: - .:/var/www (REMOVIDO: Código agora está na imagem)
     volumes:
-      - ./docker/php/99-rastertech.ini:/usr/local/etc/php/conf.d/99-rastertech.ini:ro
-      - rastertech-public:/var/www/public # Volume compartilhado para Assets
+      - rastertech-public:/var/www/public
     environment:
       - APP_KEY=${APP_KEY}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -96,13 +97,15 @@ services:
     networks:
       - EmbraNetV2
 
-  # 🛡️ THE WEB SIDECAR (NGINX ELITE)
+  # 🛡️ THE WEB SIDECAR (Nginx com config embutida)
   rastertech-web:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    image: sistema-rastertech-web:latest
     restart: unless-stopped
     volumes:
-      - ./docker/volumes/web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - rastertech-public:/var/www/public:ro # Lê os Assets da imagem do App
+      - rastertech-public:/var/www/public:ro
     depends_on:
       - rastertech-app
     networks:
@@ -114,5 +117,5 @@ networks:
     attachable: true
 
 volumes:
-  rastertech-public: # Volume para sincronizar o build do Vite entre App e Nginx
-  rastertech-db-data: # Volume para os dados reais do Postgres
+  rastertech-public: 
+  rastertech-db-data: 

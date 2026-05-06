@@ -1,0 +1,2 @@
+FROM postgres:15
+COPY ./docker/volumes/db/zz-setup-embraet.sql /docker-entrypoint-initdb.d/zz-setup-embraet.sql
