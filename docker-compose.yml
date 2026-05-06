@@ -47,6 +47,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
+        - "traefik.docker.network=EmbraNet"
         - "traefik.http.routers.rastertech.rule=Host(`rastertech.embraet.com.br`)"
         - "traefik.http.routers.rastertech.entrypoints=websecure"
         - "traefik.http.routers.rastertech.tls=true"
