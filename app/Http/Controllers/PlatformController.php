@@ -26,6 +26,9 @@ class PlatformController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('name', 'ILIKE', "%{$search}%")
                   ->orWhere('server_ip', 'ILIKE', "%{$search}%")
+                  ->orWhere('server_ip2', 'ILIKE', "%{$search}%")
+                  ->orWhere('dns1', 'ILIKE', "%{$search}%")
+                  ->orWhere('dns2', 'ILIKE', "%{$search}%")
                   ->orWhere('supplier_name', 'ILIKE', "%{$search}%");
             });
         }
@@ -51,6 +54,9 @@ class PlatformController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:100',
             'server_ip' => 'required|max:45',
+            'server_ip2' => 'nullable|max:45',
+            'dns1' => 'nullable|max:255',
+            'dns2' => 'nullable|max:255',
             'url' => 'nullable|url',
             'supplier_name' => 'nullable|max:100',
             'app_android_url' => 'nullable|url',
@@ -72,6 +78,9 @@ class PlatformController extends Controller
         $validated = $request->validate([
             'name' => 'required|max:100',
             'server_ip' => 'required|max:45',
+            'server_ip2' => 'nullable|max:45',
+            'dns1' => 'nullable|max:255',
+            'dns2' => 'nullable|max:255',
             'url' => 'nullable|url',
             'supplier_name' => 'nullable|max:100',
             'app_android_url' => 'nullable|url',

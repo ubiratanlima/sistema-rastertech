@@ -91,7 +91,12 @@
                                 </div>
                             </td>
                             <td class="text-center align-middle">
-                                <code class="px-2 py-1 shadow-sm" style="border-radius: 6px; background: #f0f4f8; font-weight: bold; border: 1px solid #d1d9e6;">{{ $platform->server_ip }}</code>
+                                <div class="d-flex flex-column align-items-center">
+                                    <code class="px-2 py-1 mb-1 shadow-sm w-100" style="border-radius: 6px; background: #f0f4f8; font-weight: bold; border: 1px solid #d1d9e6;">{{ $platform->server_ip }}</code>
+                                    @if($platform->server_ip2)
+                                        <code class="px-2 py-1 shadow-sm w-100" style="border-radius: 6px; background: #eef2f7; font-weight: bold; border: 1px dashed #adb5bd; font-size: 0.8rem;">{{ $platform->server_ip2 }}</code>
+                                    @endif
+                                </div>
                             </td>
                             <td class="text-center align-middle d-none d-md-table-cell">
                                 @if($platform->url)
@@ -113,6 +118,9 @@
                                             data-id="{{ $platform->id }}"
                                             data-name="{{ $platform->name }}"
                                             data-ip="{{ $platform->server_ip }}"
+                                            data-ip2="{{ $platform->server_ip2 }}"
+                                            data-dns1="{{ $platform->dns1 }}"
+                                            data-dns2="{{ $platform->dns2 }}"
                                             data-url="{{ $platform->url }}"
                                             data-supplier="{{ $platform->supplier_name }}"
                                             data-android="{{ $platform->app_android_url }}"
@@ -178,9 +186,21 @@
                             <label class="text-xs text-uppercase text-muted font-weight-bold">Nome do Sistema</label>
                             <input type="text" name="name" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="Ex: Traccar, Wialon, RasterTech v3" required>
                         </div>
-                        <div class="col-12 form-group mb-3">
-                            <label class="text-xs text-uppercase text-muted font-weight-bold">Endereço IP (Server IP)</label>
+                        <div class="col-6 form-group mb-3">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold">Endereço IP 01</label>
                             <input type="text" name="server_ip" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="Ex: 54.12.33.10" required>
+                        </div>
+                        <div class="col-6 form-group mb-3">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold">Endereço IP 02 (Opcional)</label>
+                            <input type="text" name="server_ip2" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="Ex: 54.12.33.11">
+                        </div>
+                        <div class="col-6 form-group mb-3">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold">DNS Primário</label>
+                            <input type="text" name="dns1" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="dns1.exemplo.com">
+                        </div>
+                        <div class="col-6 form-group mb-3">
+                            <label class="text-xs text-uppercase text-muted font-weight-bold">DNS Secundário</label>
+                            <input type="text" name="dns2" class="form-control form-control-lg border-0 shadow-sm" style="background: #f8f9fa; border-radius: 8px;" placeholder="dns2.exemplo.com">
                         </div>
                         <div class="col-12 form-group mb-3">
                             <label class="text-xs text-uppercase text-muted font-weight-bold">URL de Acesso (Login)</label>
@@ -217,6 +237,9 @@
         return [$p->id => [
             'name' => $p->name,
             'ip' => $p->server_ip,
+            'ip2' => $p->server_ip2,
+            'dns1' => $p->dns1,
+            'dns2' => $p->dns2,
             'url' => $p->url ?? 'Não definida',
             'supplier' => $p->supplier_name ?? 'Infra Própria',
             'devices' => $p->devices_count,
@@ -256,14 +279,16 @@
                         <div class="row">
                             <div class="col-6 mb-3">
                                 <div class="p-3 bg-light rounded border-left" style="border-left: 4px solid #6c757d !important;">
-                                    <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">IP DO SERVIDOR</label>
+                                    <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">IP(s) DO SERVIDOR</label>
                                     <code class="font-weight-bold text-dark h6">${platform.ip}</code>
+                                    ${platform.ip2 ? `<br><code class="text-muted small">${platform.ip2}</code>` : ''}
                                 </div>
                             </div>
                             <div class="col-6 mb-3">
-                                <div class="p-3 bg-light rounded border-left" style="border-left: 4px solid #28a745 !important;">
-                                    <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">ATIVOS REAIS</label>
-                                    <div class="font-weight-bold text-success h5 mb-0">${platform.devices} un</div>
+                                <div class="p-3 bg-light rounded border-left" style="border-left: 4px solid #20c997 !important;">
+                                    <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">DNS CONFIGURADOS</label>
+                                    <div class="small font-weight-bold text-dark">${platform.dns1 || 'N/D'}</div>
+                                    <div class="small text-muted">${platform.dns2 || ''}</div>
                                 </div>
                             </div>
                         </div>
@@ -312,13 +337,29 @@
 
                         <div class="row">
                             <div class="col-6 mb-3">
-                                <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">IP DO SERVIDOR</label>
+                                <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">IP SERVIDOR 01</label>
                                 <input type="text" id="swal_edit_ip" class="form-control text-primary font-weight-bold" value="${platform.ip}" style="height: 45px; border-radius: 8px;">
                             </div>
                             <div class="col-6 mb-3">
-                                <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">FORNECEDOR / INFRA</label>
-                                <input type="text" id="swal_edit_supplier" class="form-control" value="${platform.supplier}" style="height: 45px; border-radius: 8px;">
+                                <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">IP SERVIDOR 02</label>
+                                <input type="text" id="swal_edit_ip2" class="form-control text-muted" value="${platform.ip2 || ''}" style="height: 45px; border-radius: 8px;">
                             </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">DNS PRIMÁRIO</label>
+                                <input type="text" id="swal_edit_dns1" class="form-control" value="${platform.dns1 || ''}" style="height: 45px; border-radius: 8px;">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">DNS SECUNDÁRIO</label>
+                                <input type="text" id="swal_edit_dns2" class="form-control" value="${platform.dns2 || ''}" style="height: 45px; border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="small text-muted mb-1 d-block font-weight-bold text-uppercase">FORNECEDOR / INFRA</label>
+                            <input type="text" id="swal_edit_supplier" class="form-control" value="${platform.supplier}" style="height: 45px; border-radius: 8px;">
                         </div>
 
                         <div class="form-group mb-3">
@@ -355,6 +396,9 @@
                         data: {
                             name: $('#swal_edit_name').val(),
                             server_ip: $('#swal_edit_ip').val(),
+                            server_ip2: $('#swal_edit_ip2').val(),
+                            dns1: $('#swal_edit_dns1').val(),
+                            dns2: $('#swal_edit_dns2').val(),
                             supplier_name: $('#swal_edit_supplier').val(),
                             url: $('#swal_edit_url').val(),
                             app_android_url: $('#swal_edit_android').val(),
