@@ -135,7 +135,12 @@ class SimCardController extends Controller
                 $chipsData = $request->get('chips');
                 $count = 0;
                 foreach ($chipsData as $data) {
-                    $chip = GsmCard::create([
+                    // 🛡️ VERIFICAÇÃO DE SEGURANÇA: Evita quebra por ICCID duplicado
+                    if (GsmCard::withTrashed()->where('iccid', $data['iccid'])->exists()) {
+                        throw new \Exception("O chip com ICCID [{$data['iccid']}] já está cadastrado no sistema (pode estar na lixeira).");
+                    }
+
+                    GsmCard::create([
                         'iccid' => $data['iccid'],
                         'phone_number' => $data['phone_number'] ?? null,
                         'pin' => $data['pin'] ?? null,
@@ -153,7 +158,8 @@ class SimCardController extends Controller
                 }
                 DB::commit();
                 return response()->json(['success' => true, 'message' => "📟 $count CHIPS REGISTRADOS EM MASSA COM SUCESSO!"]);
-            } else {
+            }
+ else {
                 $validated = $request->validate([
                     'iccid' => 'required|unique:gsm_cards,iccid|max:50',
                     'phone_number' => 'nullable|max:20',
