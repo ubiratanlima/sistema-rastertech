@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
         // 🚀 ESTABILIZAÇÃO GLOBAL DE URL (REMOÇÃO DE :8000)
         if (config('app.url')) {
             \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
-            \Illuminate\Support\Facades\URL::forceScheme('http');
+            \Illuminate\Support\Facades\URL::forceScheme('https');
 
             // Reforço específico para links de Paginação
             \Illuminate\Pagination\Paginator::currentPathResolver(function () {
