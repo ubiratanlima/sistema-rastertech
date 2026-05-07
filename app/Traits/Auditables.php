@@ -46,7 +46,7 @@ trait Auditables
             'old_values'     => $oldValues,
             'new_values'     => $newValues,
             'url'            => Request::fullUrl(),
-            'ip_address'     => request()->header('X-Forwarded-For') ?? request()->ip(),
+            'ip_address'     => Request::header('X-Forwarded-For') ?? Request::ip(),
             'user_agent'     => Request::header('User-Agent'),
         ]);
     }
