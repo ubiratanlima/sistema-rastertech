@@ -185,8 +185,7 @@ class SimCardController extends Controller
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'FALHA NO REGISTRO!',
-                    'error' => $e->getMessage()
+                    'message' => $e->getMessage()
                 ], 422);
             }
             throw $e;
