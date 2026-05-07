@@ -489,6 +489,12 @@
             contentType: false,
             success: function(response) {
                 if(response.success) {
+                    // 🧹 LIMPEZA TOTAL DO FORMULÁRIO
+                    $('#form-new-user')[0].reset();
+                    $('#new_avatar_preview').addClass('d-none').attr('src', '');
+                    $('#new_avatar_placeholder').removeClass('d-none').addClass('d-flex').css('background-color', '#007bff');
+                    $('#new_avatar_icon').attr('class', 'fas fa-user-tie text-white');
+
                     Swal.fire({
                         icon: 'success',
                         title: 'SUCESSO',
@@ -502,6 +508,14 @@
                 Swal.fire('ERRO DE VALIDAÇÃO', xhr.responseJSON.message || 'Erro ao processar o registro.', 'error');
             }
         });
+    });
+
+    // 🧹 LIMPEZA AO FECHAR O MODAL (Garante que o próximo cadastro venha vazio)
+    $('#modalNovoUsuario').on('hidden.bs.modal', function () {
+        $('#form-new-user')[0].reset();
+        $('#new_avatar_preview').addClass('d-none').attr('src', '');
+        $('#new_avatar_placeholder').removeClass('d-none').addClass('d-flex').css('background-color', '#007bff');
+        $('#new_avatar_icon').attr('class', 'fas fa-user-tie text-white');
     });
 
     function editUser(id) {
