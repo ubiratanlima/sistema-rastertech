@@ -6,9 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+use Illuminate\Database\Eloquent\Prunable;
+
 class AuditLog extends Model
 {
-    public $timestamps = false; // Usamos apenas created_at automático na migração
+    use Prunable;
+
+    /**
+     * Define quais registros devem ser limpos automaticamente.
+     * Registros com mais de 180 dias serão excluídos ao rodar 'php artisan model:prune'.
+     */
+    public function prunable()
+    {
+        return static::where('created_at', '<=', now()->subMonths(6));
+    }
+
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',

@@ -29,7 +29,7 @@ trait Auditables
         $newValues = $event === 'updated' ? $this->getDirty() : ($event === 'created' ? $this->getAttributes() : null);
 
         // Remover campos sensíveis ou irrelevantes
-        $ignore = ['password', 'remember_token', 'updated_at', 'created_at', 'deleted_at'];
+        $ignore = ['password', 'remember_token', 'updated_at', 'created_at', 'deleted_at', 'email_verified_at'];
         if ($oldValues) $oldValues = array_diff_key($oldValues, array_flip($ignore));
         if ($newValues) $newValues = array_diff_key($newValues, array_flip($ignore));
 
