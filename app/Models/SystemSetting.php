@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Auditables;
 
 class SystemSetting extends Model
 {
+    use HasFactory, SoftDeletes, Auditables;
+
     protected $fillable = ['key', 'value', 'group', 'label', 'type'];
 
     /**

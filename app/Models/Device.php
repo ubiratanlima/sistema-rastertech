@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Auditables;
 
 class Device extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Auditables;
     
     /**
      * 🛰️ Engine de Identificação Universal Rastertech
