@@ -12,6 +12,7 @@ use App\Http\Controllers\DeviceModelController;
 use App\Http\Controllers\DeviceCommandController;
 use App\Http\Controllers\CustomerSubUserController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\HelpController;
@@ -137,6 +138,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
         Route::put('/users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+        
+        // AUDITORIA GLOBAL
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
     });
 
     // ⚙️ CONFIGURAÇÕES (Admin)

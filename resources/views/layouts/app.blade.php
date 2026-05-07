@@ -249,6 +249,12 @@
                     <li class="nav-item">
                         <a href="/reports" class="nav-link {{ request()->is('reports*') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice"></i><p>Relatórios</p></a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('audit.index') }}" class="nav-link {{ request()->is('audit-logs*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-shield-alt text-danger"></i>
+                            <p>Auditoria de Sistema</p>
+                        </a>
+                    </li>
                     @endif
                     
                     @if($userRole === 'admin')
