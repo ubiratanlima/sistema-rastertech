@@ -796,10 +796,10 @@
                         apn: $('#bulk_apn').val(),
                         apn_user: $('#bulk_user').val(),
                         apn_pass: $('#bulk_pass').val(),
-                        rows: []
+                        chips: []
                     };
                     container.find('.gsm-row').each(function() {
-                        currentData.rows.push({
+                        currentData.chips.push({
                             iccid: $(this).find('.iccid-field').val(),
                             phone_number: $(this).find('.phone-field').val(),
                             status: $(this).find('.status-field').val(),
@@ -839,7 +839,7 @@
             },
             preConfirm: () => {
                 const data = JSON.parse(localStorage.getItem('sim_bulk_cache'));
-                if (data.rows.some(r => !r.iccid)) return Swal.showValidationMessage('Todos os ICCIDs são obrigatórios.');
+                if (data.chips.some(r => !r.iccid)) return Swal.showValidationMessage('Todos os ICCIDs são obrigatórios.');
                 
                 return $.ajax({
                     url: '/sim-cards',
