@@ -21,7 +21,8 @@ class AuditLog extends Model
         return static::where('created_at', '<=', now()->subMonths(6));
     }
 
-    public $timestamps = false;
+    public $timestamps = true;
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
