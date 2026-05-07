@@ -25,7 +25,7 @@ class AuditLoginLogout
             'old_values'     => null,
             'new_values'     => ['message' => "Usuário realizou {$type} no sistema."],
             'url'            => Request::fullUrl(),
-            'ip_address'     => Request::header('X-Forwarded-For') ?? Request::ip(),
+            'ip_address'     => explode(',', Request::header('X-Forwarded-For') ?? Request::ip())[0],
             'user_agent'     => Request::header('User-Agent'),
         ]);
     }
