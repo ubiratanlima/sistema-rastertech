@@ -134,27 +134,32 @@ class SimCardController extends Controller
             if ($isMassive) {
                 $chipsData = $request->get('chips');
                 $count = 0;
-                foreach ($chipsData as $data) {
-                    // 🛡️ VERIFICAÇÃO DE SEGURANÇA: Evita quebra por ICCID duplicado
-                    if (GsmCard::withTrashed()->where('iccid', $data['iccid'])->exists()) {
-                        throw new \Exception("O chip com ICCID [{$data['iccid']}] já está cadastrado no sistema (pode estar na lixeira).");
-                    }
+                foreach ($chipsData as $index => $data) {
+                    $rowNumber = $index + 1;
+                    try {
+                        // 🛡️ VERIFICAÇÃO DE SEGURANÇA: Evita quebra por ICCID duplicado
+                        if (GsmCard::withTrashed()->where('iccid', $data['iccid'])->exists()) {
+                            throw new \Exception("Linha {$rowNumber}: O ICCID [{$data['iccid']}] já existe.");
+                        }
 
-                    GsmCard::create([
-                        'iccid' => $data['iccid'],
-                        'phone_number' => $data['phone_number'] ?? null,
-                        'pin' => $data['pin'] ?? null,
-                        'puk' => $data['puk'] ?? null,
-                        'pin2' => $data['pin2'] ?? null,
-                        'puk2' => $data['puk2'] ?? null,
-                        'operator' => $request->get('operator'),
-                        'provider_id' => $request->get('provider_id'),
-                        'apn' => $request->get('apn'),
-                        'apn_user' => $request->get('apn_user'),
-                        'apn_pass' => $request->get('apn_pass'),
-                        'status' => $data['status'] ?? 'inactive'
-                    ]);
-                    $count++;
+                        GsmCard::create([
+                            'iccid' => $data['iccid'],
+                            'phone_number' => $data['phone_number'] ?? null,
+                            'pin' => $data['pin'] ?? null,
+                            'puk' => $data['puk'] ?? null,
+                            'pin2' => $data['pin2'] ?? null,
+                            'puk2' => $data['puk2'] ?? null,
+                            'operator' => $request->get('operator'),
+                            'provider_id' => $request->get('provider_id'),
+                            'apn' => $request->get('apn'),
+                            'apn_user' => $request->get('apn_user'),
+                            'apn_pass' => $request->get('apn_pass'),
+                            'status' => $data['status'] ?? 'inactive'
+                        ]);
+                        $count++;
+                    } catch (\Exception $e) {
+                        throw new \Exception("Erro na Linha {$rowNumber}: " . $e->getMessage());
+                    }
                 }
                 DB::commit();
                 return response()->json(['success' => true, 'message' => "📟 $count CHIPS REGISTRADOS EM MASSA COM SUCESSO!"]);

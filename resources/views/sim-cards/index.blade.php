@@ -699,7 +699,7 @@
                         <select class="form-control status-field" style="height: 40px; border-radius: 8px;">
                             <option value="active" ${data.status === 'active' ? 'selected' : ''}>ATIVO</option>
                             <option value="inactive" ${data.status === 'inactive' || !data.status ? 'selected' : ''}>ESTOQUE</option>
-                            <option value="suspended" ${data.status === 'suspended' ? 'selected' : ''}>SUSPENSO</option>
+                            <option value="canceled" ${data.status === 'canceled' ? 'selected' : ''}>CANCELADO</option>
                         </select>
                     </div>
                 </div>
