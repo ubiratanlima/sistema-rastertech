@@ -4,56 +4,51 @@ Este manual contém as soluções reais para os problemas de permissão, autenti
 
 ---
 
-## 1. O Problema da Senha do GitHub (Token)
-**Sintoma**: `Authentication failed` ou `Password authentication is not supported`.
-**Solução**: O GitHub não aceita mais sua senha comum. Use um **Personal Access Token (PAT)**.
-1.  Gere o Token no GitHub (Settings -> Developer Settings -> Tokens Classic).
-2.  No Portainer, use seu usuário e cole o **Token** no campo de senha.
+## 1. Sincronização de Horário (Timezone Brasil)
+**Sintoma**: Horários na Auditoria ou Missões aparecem 3 horas à frente (UTC).
+**Solução**: O Laravel e o Banco de Dados devem estar em sintonia com o horário de Brasília.
+1.  No arquivo `config/app.php`, o timezone deve ser: `'timezone' => 'America/Sao_Paulo'`.
+2.  No arquivo `config/database.php`, dentro da conexão `mysql`, adicione: `'timezone' => '-03:00'`.
+3.  No Modelo `AuditLog.php`, certifique-se de que `$timestamps = true` para que o Laravel gerencie o tempo.
+4.  Rode `php artisan optimize` para aplicar.
 
 ---
 
-## 2. Aviso de "Conexão Não Segura" no Login (HTTPS)
+## 2. Limpeza de Dados da Auditoria
+**Sintoma**: Tabela de logs crescendo muito ou necessidade de apagar registros antigos.
+**Solução**:
+- **Limpeza Automática (Configurada)**: O sistema apaga automaticamente registros com mais de **180 dias**.
+- **Limpeza Manual Total**: Para apagar tudo e começar do zero, rode:
+    ```bash
+    php artisan tinker --execute="App\Models\AuditLog::truncate()"
+    ```
+- **Limpeza Manual de "Ruído"**: Para apagar apenas os logs de um período específico:
+    ```bash
+    php artisan tinker --execute="App\Models\AuditLog::where('created_at', '<', now()->subDays(7))->delete()"
+    ```
+
+---
+
+## 3. Aviso de "Conexão Não Segura" (HTTPS)
 **Sintoma**: Navegador avisa que "as informações serão enviadas por uma conexão não segura".
-**Solução**: O Laravel está gerando links `http` em um site `https`.
-1.  Garantir que `AppServiceProvider.php` tenha o comando `URL::forceScheme('https');`.
-2.  Sempre rodar `php artisan optimize` após o deploy para atualizar o cache de links.
+**Solução**:
+1.  `AppServiceProvider.php` deve ter o comando `URL::forceScheme('https');` no topo do método `boot()`.
+2.  Rode `php artisan optimize` para atualizar o cache de links.
 
 ---
 
-## 3. Erro 500 ao abrir páginas (Missing Column)
-**Sintoma**: `column ... deleted_at does not exist`.
-**Solução**: Algum modelo está usando `SoftDeletes` mas a tabela no banco não tem essa coluna.
-1.  Remover `use SoftDeletes` do Modelo PHP correspondente.
-2.  Ou rodar a migração para adicionar a coluna (se for desejado).
-3.  **Importante**: Sempre rode `php artisan migrate --force` para garantir que a tabela de **Auditoria** existirá.
-
----
-
-## 4. Loop de Redirecionamento (Portal vs Dashboard)
-**Sintoma**: O usuário faz login e fica sendo jogado de uma página para outra sem carregar.
-**Solução**: Geralmente o `CustomerPortalController` não encontra o `customer_id` do usuário.
-1.  Verificar se o usuário logado tem um "Cliente" vinculado no cadastro.
-2.  O `DashboardController` agora possui lógica para detectar o cargo e mandar para o lugar certo.
+## 4. O Problema da Senha do GitHub (Token)
+**Sintoma**: `Authentication failed` no Portainer ao tentar atualizar.
+**Solução**: Use um **Personal Access Token (PAT)** do GitHub no lugar da senha.
 
 ---
 
 ## 5. O Problema de Permissão (Permission Denied)
 **Sintoma**: `failed to remove... Permission denied`.
-**Solução**: Você precisa assumir o controle dos arquivos como ROOT.
-1.  No Console do Portainer, selecione o usuário **`root`**.
+**Solução**:
+1.  No Console do Portainer, entre como usuário **`root`**.
 2.  Rode: `chown -R ubiratanlima:ubiratanlima /var/www`.
 3.  Rode: `git config --global --add safe.directory /var/www`.
 
 ---
-
-## 6. O Reset Geral (Solução Atômica)
-Se o Git der erro de conflito e nada funcionar, use o "Reset de Fábrica" do servidor:
-```bash
-git reset --hard origin/main
-git clean -fd
-git pull origin main
-php artisan optimize
-```
-
----
-*Este documento foi forjado em combate. Siga os passos acima e o sistema sempre voltará ao ar.*
+*Este documento é o seu escudo operacional. Siga os passos acima para manter o sistema Rastertech em perfeito estado.*
