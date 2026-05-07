@@ -392,8 +392,9 @@
                 preConfirm: () => {
                     return $.ajax({
                         url: `/platforms/${id}`,
-                        method: 'PUT',
+                        method: 'POST',
                         data: {
+                            _method: 'PUT',
                             name: $('#swal_edit_name').val(),
                             server_ip: $('#swal_edit_ip').val(),
                             server_ip2: $('#swal_edit_ip2').val(),
