@@ -45,7 +45,7 @@ class CustomerPortalController extends Controller
             }
         }
 
-        if (!$customer) {
+        if (!$customer && !$isAdminLevel) {
             return redirect('/')->with('error', 'Não foi possível localizar um cliente vinculado ao seu perfil.');
         }
 

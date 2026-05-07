@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\Auditables;
+
 class VehicleChecklist extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditables;
 
     protected $fillable = [
         'customer_id',

@@ -9,7 +9,7 @@ use App\Traits\Auditables;
 
 class VehicleMission extends Model
 {
-    use HasFactory, SoftDeletes, Auditables;
+    use HasFactory, Auditables;
 
     protected $fillable = [
         'customer_id',
