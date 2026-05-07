@@ -19,17 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // 🚀 FORÇAR HTTPS ABSOLUTO (Evita avisos de segurança no login/formulários)
+        \Illuminate\Support\Facades\URL::forceScheme('https');
+
         \Illuminate\Pagination\Paginator::useBootstrapFour();
-
-        // 🚀 ESTABILIZAÇÃO GLOBAL DE URL (REMOÇÃO DE :8000)
-        if (config('app.url')) {
-            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-
-            // Reforço específico para links de Paginação
-            \Illuminate\Pagination\Paginator::currentPathResolver(function () {
-                return config('app.url') . request()->getPathInfo();
-            });
-        }
     }
 }
