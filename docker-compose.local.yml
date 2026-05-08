@@ -133,8 +133,8 @@ volumes:
 
 configs:
   db_setup:
-    file: ./docker/volumes/db/zz-setup-embraet.sql
+    file: setup.local.sql
   kong_config:
-    file: ./docker/volumes/db/kong.yml
+    file: kong.local.yml
   nginx_config_v2:
-    file: ./docker/volumes/web/nginx.conf
+    file: nginx.local.conf
