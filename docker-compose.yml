@@ -120,6 +120,47 @@ services:
     networks:
       - EmbraNet
 
+  # 📊 INTERFACE VISUAL (STUDIO)
+  supabase-studio:
+    image: supabase/studio:2025.11.10-sha-5291fe3
+    environment:
+      - HOSTNAME=0.0.0.0
+      - SUPABASE_URL=http://rastertech-kong:8000
+      - SUPABASE_PUBLIC_URL=https://supabase.embraet.com.br
+      - SUPABASE_ANON_KEY=${ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SERVICE_ROLE_KEY}
+      - AUTH_JWT_SECRET=${JWT_SECRET}
+      - DEFAULT_ORGANIZATION_NAME=Rastertech
+      - DEFAULT_PROJECT_NAME=FleetManager
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST=rastertech-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - STUDIO_PG_META_URL=http://supabase-meta:8080
+    networks:
+      - EmbraNet
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.supabase-studio.rule=Host(`studio.embraet.com.br`)"
+        - "traefik.http.routers.supabase-studio.entrypoints=websecure"
+        - "traefik.http.routers.supabase-studio.tls=true"
+        - "traefik.http.routers.supabase-studio.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.supabase-studio.loadbalancer.server.port=3000"
+
+  # 🧠 METADADOS DO BANCO
+  supabase-meta:
+    image: supabase/postgres-meta:v0.84.2
+    environment:
+      - PG_META_PORT=8080
+      - PG_META_DB_HOST=rastertech-db
+      - PG_META_DB_PORT=5432
+      - PG_META_DB_NAME=postgres
+      - PG_META_DB_USER=postgres
+      - PG_META_DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - EmbraNet
+
 networks:
   EmbraNet:
     external: true
