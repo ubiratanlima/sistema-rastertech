@@ -133,6 +133,7 @@ services:
       - DEFAULT_ORGANIZATION_NAME=Rastertech
       - DEFAULT_PROJECT_NAME=FleetManager
       - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
       - POSTGRES_HOST=rastertech-db
       - POSTGRES_PORT=5432
       - POSTGRES_PASSWORD=${DB_PASSWORD}
