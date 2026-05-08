@@ -7,6 +7,9 @@ ALTER USER supabase_auth_admin WITH SUPERUSER;
 CREATE USER authenticator WITH PASSWORD 'RastertechMasterInternal_123';
 ALTER USER authenticator WITH SUPERUSER;
 
+CREATE USER supabase_admin WITH PASSWORD '${DB_PASSWORD}';
+ALTER USER supabase_admin WITH SUPERUSER;
+
 CREATE USER anon;
 CREATE USER authenticated;
 CREATE ROLE service_role;
