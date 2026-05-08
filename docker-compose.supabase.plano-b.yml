@@ -5,6 +5,8 @@ services:
 
   supabase_studio:
     image: supabase/studio:2025.11.10-sha-5291fe3
+    ports:
+      - 54323:3000
     networks:
       - EmbraNet
     environment:
