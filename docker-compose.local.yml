@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # 🏦 BANCO DE DADOS LOCAL (POSTGRES)
+  rastertech-db:
+    image: postgres:15
+    restart: unless-stopped
+    ports:
+      - "5432:5432" # Aberto para acesso via DBeaver/HeidiSQL local
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - rastertech-db-local-data:/var/lib/postgresql/data
+      - ./docker/volumes/db/zz-setup-embraet.sql:/docker-entrypoint-initdb.d/zz-setup-embraet.sql
+    networks:
+      - local-network
+
+  # 🧠 REDIS LOCAL
+  rastertech-redis:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - local-network
+
+  # 🏎️ LARAVEL APP LOCAL
+  rastertech-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_NAME=${APP_NAME}
+      - APP_ENV=local
+      - APP_KEY=${APP_KEY}
+      - APP_DEBUG=true
+      - APP_URL=http://localhost
+      - DB_CONNECTION=pgsql
+      - DB_HOST=rastertech-db
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - local-network
+
+  # 🛡️ NGINX LOCAL (WEB ENTRY)
+  rastertech-web:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80" # Acesso direto via http://localhost
+    volumes:
+      - ./:/var/www
+      - ./docker/volumes/web/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - rastertech-app
+    networks:
+      - local-network
+
+  # 📊 SUPABASE STUDIO LOCAL
+  supabase-studio:
+    image: supabase/studio:2025.11.10-sha-5291fe3
+    ports:
+      - "54323:3000" # Acesso direto via http://localhost:54323
+    environment:
+      - HOSTNAME=0.0.0.0
+      - SUPABASE_URL=http://localhost:8000
+      - SUPABASE_ANON_KEY=${ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SERVICE_ROLE_KEY}
+      - AUTH_JWT_SECRET=${JWT_SECRET}
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_HOST=rastertech-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - STUDIO_PG_META_URL=http://supabase-meta:8080
+    networks:
+      - local-network
+
+  # 🧠 SUPABASE META LOCAL
+  supabase-meta:
+    image: supabase/postgres-meta:v0.84.2
+    environment:
+      - PG_META_PORT=8080
+      - PG_META_DB_URL=postgres://postgres:${DB_PASSWORD}@rastertech-db:5432/postgres?sslmode=disable
+    networks:
+      - local-network
+
+networks:
+  local-network:
+    driver: bridge
+
+volumes:
+  rastertech-db-local-data:
