@@ -62,9 +62,11 @@ services:
   rastertech-web:
     image: nginx:alpine
     restart: unless-stopped
+    configs:
+      - source: nginx_config
+        target: /etc/nginx/conf.d/default.conf
     volumes:
       - ./:/var/www
-      - ./docker/volumes/web/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
       - EmbraNet
 
@@ -134,8 +136,8 @@ volumes:
 
 configs:
   db_setup:
-    file: ./docker/volumes/db/zz-setup-embraet.sql
+    file: docker/volumes/db/zz-setup-embraet.sql
   kong_config:
-    file: ./docker/volumes/db/kong.yml
+    file: docker/volumes/db/kong.yml
   nginx_config:
-    file: ./docker/volumes/web/nginx.conf
+    file: docker/volumes/web/nginx.conf
