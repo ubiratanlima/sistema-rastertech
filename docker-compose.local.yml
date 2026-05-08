@@ -65,6 +65,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
+        - "traefik.docker.network=EmbraNet"
         - "traefik.http.routers.rastertech.rule=Host(`rastertech.local`) || Host(`localhost`)"
         - "traefik.http.routers.rastertech.entrypoints=web"
         - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
