@@ -154,11 +154,7 @@ services:
     image: supabase/postgres-meta:v0.84.2
     environment:
       - PG_META_PORT=8080
-      - PG_META_DB_HOST=rastertech-db
-      - PG_META_DB_PORT=5432
-      - PG_META_DB_NAME=postgres
-      - PG_META_DB_USER=postgres
-      - PG_META_DB_PASSWORD=${DB_PASSWORD}
+      - PG_META_DB_URL=postgres://postgres:${DB_PASSWORD}@rastertech-db:5432/postgres?sslmode=disable
     networks:
       - EmbraNet
 
