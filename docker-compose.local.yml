@@ -25,7 +25,9 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - rastertech-db-data:/var/lib/postgresql/data
-      - ./docker/volumes/db/zz-setup-embraet.sql:/docker-entrypoint-initdb.d/zz-setup-embraet.sql
+    configs:
+      - source: db_setup
+        target: /docker-entrypoint-initdb.d/zz-setup-embraet.sql
     networks:
       - EmbraNet
 
@@ -44,8 +46,9 @@ services:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
       - KONG_PROXY_LISTEN=0.0.0.0:8000
-    volumes:
-      - ./docker/volumes/db/kong.yml:/etc/kong/kong.yml
+    configs:
+      - source: kong_config
+        target: /etc/kong/kong.yml
     networks:
       - EmbraNet
     deploy:
@@ -128,3 +131,11 @@ networks:
 
 volumes:
   rastertech-db-data:
+
+configs:
+  db_setup:
+    file: ./docker/volumes/db/zz-setup-embraet.sql
+  kong_config:
+    file: ./docker/volumes/db/kong.yml
+  nginx_config:
+    file: ./docker/volumes/web/nginx.conf
