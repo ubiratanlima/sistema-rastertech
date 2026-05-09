@@ -1,0 +1,21 @@
+# Dados de runtime do banco (pertence ao postgres/root, não deve ir para a imagem)
+docker/volumes/db/data
+docker/volumes/db/data_prod
+docker/volumes/db/data_v3
+
+# Dependências (serão instaladas no build)
+vendor/
+node_modules/
+
+# Build do frontend (será gerado no build)
+public/build/
+public/hot/
+public/storage/
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Git
+.git/
+.gitignore

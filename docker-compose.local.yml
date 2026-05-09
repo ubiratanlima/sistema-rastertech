@@ -98,12 +98,14 @@ services:
       - APP_ENV=local
       - APP_KEY=${APP_KEY}
       - APP_DEBUG=true
+      - APP_URL=http://localhost
       - DB_CONNECTION=pgsql
       - DB_HOST=rastertech-db
       - DB_PORT=5432
       - DB_DATABASE=postgres
       - DB_USERNAME=postgres
       - DB_PASSWORD=${DB_PASSWORD}
+      - TRUSTED_PROXIES=*
     networks:
       - EmbraNet
 
