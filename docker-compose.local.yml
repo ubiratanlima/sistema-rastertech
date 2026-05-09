@@ -68,6 +68,7 @@ services:
         - "traefik.enable=true"
         - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
         - "traefik.http.routers.rastertech.entrypoints=web"
+        - "traefik.http.routers.rastertech.service=rastertech-kong"
         - "traefik.http.services.rastertech-kong.loadbalancer.server.port=8000"
 
   # 🛡️ NGINX WEB SIDECAR (Configuração Injetada)
@@ -99,7 +100,9 @@ services:
 
   # 🏎️ LARAVEL APP
   rastertech-app:
-    image: sistema-rastertech-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     volumes:
       - ./:/var/www
