@@ -1,23 +1,22 @@
 version: '3.8'
 
 services:
-  # 🌍 TRAEFIK LOCAL
+  # 🌍 TRAEFIK LOCAL (Habilitado para paridade, mas porta 8081 para não conflitar)
   traefik:
     image: traefik:v2.10
     command:
-      - "--log.level=DEBUG"
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.address=:8080"
     ports:
-      - "80:80"
+      - "8081:8080" # Painel do Traefik
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - EmbraNet
 
-  # 🏦 POSTGRES RASTERTECH (Injeção de Usuários via Comando)
+  # 🏦 POSTGRES RASTERTECH
   rastertech-db:
     image: postgres:15
     restart: unless-stopped
@@ -35,10 +34,12 @@ services:
     networks:
       - EmbraNet
 
-  # 📡 KONG API GATEWAY (Configuração Injetada)
+  # 📡 KONG API GATEWAY (Direto na porta 80 para evitar 404)
   rastertech-kong:
     image: kong:2.8.1
     restart: unless-stopped
+    ports:
+      - "80:8000" # ACESSO DIRETO VIA http://localhost
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/tmp/kong.yml
@@ -63,15 +64,8 @@ services:
         /docker-entrypoint.sh kong docker-start
     networks:
       - EmbraNet
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
-        - "traefik.http.routers.rastertech.entrypoints=web"
-        - "traefik.http.routers.rastertech.priority=1000"
-        - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
 
-  # 🛡️ NGINX WEB SIDECAR (Configuração Injetada)
+  # 🛡️ NGINX WEB SIDECAR
   rastertech-web:
     image: nginx:alpine
     restart: unless-stopped
@@ -98,11 +92,9 @@ services:
     networks:
       - EmbraNet
 
-  # 🏎️ LARAVEL APP
+  # 🏎️ LARAVEL APP (Usando imagem local existente)
   rastertech-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: sistema-rastertech-app:latest
     restart: unless-stopped
     volumes:
       - ./:/var/www
@@ -119,10 +111,12 @@ services:
   # 📊 SUPABASE STUDIO
   supabase-studio:
     image: supabase/studio:2025.11.10-sha-5291fe3
+    ports:
+      - "54323:3000" # Acesso direto ao Studio via porta 54323
     environment:
       - HOSTNAME=0.0.0.0
       - SUPABASE_URL=http://rastertech-kong:8000
-      - SUPABASE_PUBLIC_URL=http://studio.local
+      - SUPABASE_PUBLIC_URL=http://localhost:54323
       - SUPABASE_ANON_KEY=${ANON_KEY}
       - SUPABASE_SERVICE_KEY=${SERVICE_ROLE_KEY}
       - AUTH_JWT_SECRET=${JWT_SECRET}
@@ -134,12 +128,6 @@ services:
       - STUDIO_PG_META_URL=http://supabase-meta:8080
     networks:
       - EmbraNet
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.supabase-studio.rule=Host(`studio.local`)"
-        - "traefik.http.routers.supabase-studio.entrypoints=web"
-        - "traefik.http.services.supabase-studio.loadbalancer.server.port=3000"
 
   # 🧠 SUPABASE META
   supabase-meta:
