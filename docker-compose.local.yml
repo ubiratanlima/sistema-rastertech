@@ -28,14 +28,14 @@ services:
     networks:
       - EmbraNet
 
-  # 📡 KONG API GATEWAY (Injeção Direta)
+  # 📡 KONG API GATEWAY
   rastertech-kong:
     image: kong:2.8.1
     restart: unless-stopped
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/tmp/kong.yml
-    entrypoint: 
+    entrypoint:
       - /bin/sh
       - -c
       - |
@@ -45,19 +45,19 @@ services:
             url: http://rastertech-web:80
             routes:
               - name: main-dashboard
-                paths: ["/", "/devices", "/sim-cards", "/customers", "/fleets"]
+                paths: ["/"]
                 strip_path: false' > /tmp/kong.yml && \
         /docker-entrypoint.sh kong docker-start
+    # ⚠️ LABELS AQUI (fora do deploy), pois o Docker local não está em modo Swarm
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.rastertech.entrypoints=web"
+      - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
     networks:
       - EmbraNet
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
-        - "traefik.http.routers.rastertech.entrypoints=web"
-        - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
 
-  # 🛡️ NGINX WEB SIDECAR (Compartilhando Volume com App)
+  # 🛡️ NGINX WEB SIDECAR
   rastertech-web:
     image: nginx:alpine
     restart: unless-stopped
@@ -65,30 +65,32 @@ services:
       - /bin/sh
       - -c
       - |
-        echo 'server { 
-          listen 80; 
-          index index.php; 
-          root /var/www/public; 
-          location ~ \.php$$ { 
-            fastcgi_pass rastertech-app:9000; 
-            include fastcgi_params; 
-            fastcgi_param SCRIPT_FILENAME $$document_root$$fastcgi_script_name; 
-          } 
-          location / { 
-            try_files $$uri $$uri/ /index.php?$$query_string; 
-          } 
-        }' > /etc/nginx/conf.d/default.conf && \
-        nginx -g "daemon off;"
+        echo 'server {
+          listen 80;
+          index index.php;
+          root /var/www/public;
+          location ~ \.php$$ {
+            fastcgi_pass rastertech-app:9000;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $$document_root$$fastcgi_script_name;
+          }
+          location / {
+            try_files $$uri $$uri/ /index.php?$$query_string;
+          }
+        }' > /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"
     volumes:
+      # O Nginx precisa APENAS da pasta public para servir arquivos estáticos
+      # O código PHP é executado DENTRO do rastertech-app
       - rastertech-local-public:/var/www/public:ro
     networks:
       - EmbraNet
 
-  # 🏎️ LARAVEL APP (Dono do Volume)
+  # 🏎️ LARAVEL APP
   rastertech-app:
     image: sistema-rastertech-app:latest
     restart: unless-stopped
     volumes:
+      # O App copia sua pasta /var/www/public para o volume nomeado
       - rastertech-local-public:/var/www/public
     environment:
       - APP_NAME=${APP_NAME}
@@ -105,4 +107,4 @@ networks:
 
 volumes:
   rastertech-db-local-data:
-  rastertech-local-public: # O volume mágico que resolve o "File not found"
+  rastertech-local-public:
