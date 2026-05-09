@@ -65,7 +65,6 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=EmbraNet"
         - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
         - "traefik.http.routers.rastertech.entrypoints=web"
         - "traefik.http.routers.rastertech.priority=1"
