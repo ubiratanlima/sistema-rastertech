@@ -24,7 +24,7 @@ services:
     image: kong:2.8.1
     restart: unless-stopped
     ports:
-      - "8080:8000"
+      - "80:8000"
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/tmp/kong.yml
