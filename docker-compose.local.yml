@@ -5,6 +5,7 @@ services:
   traefik:
     image: traefik:v2.10
     command:
+      - "--log.level=DEBUG"
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -65,9 +66,8 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
+        - "traefik.http.routers.rastertech.rule=Host(`localhost`) || Host(`127.0.0.1`) || Host(`rastertech.local`)"
         - "traefik.http.routers.rastertech.entrypoints=web"
-        - "traefik.http.routers.rastertech.priority=1"
         - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
 
   # 🛡️ NGINX WEB SIDECAR (Configuração Injetada)
