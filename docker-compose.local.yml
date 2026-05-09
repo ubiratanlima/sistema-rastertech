@@ -66,8 +66,9 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=EmbraNet"
-        - "traefik.http.routers.rastertech.rule=Host(`rastertech.local`) || Host(`localhost`)"
+        - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
         - "traefik.http.routers.rastertech.entrypoints=web"
+        - "traefik.http.routers.rastertech.priority=1"
         - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
 
   # 🛡️ NGINX WEB SIDECAR (Configuração Injetada)
