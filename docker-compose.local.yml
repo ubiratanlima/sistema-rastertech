@@ -1,22 +1,6 @@
 version: '3.8'
 
 services:
-  # 🌍 TRAEFIK LOCAL
-  traefik:
-    image: traefik:v2.10
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-      - "8081:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - EmbraNet
-
   # 🏦 POSTGRES RASTERTECH
   rastertech-db:
     image: postgres:15
@@ -35,10 +19,12 @@ services:
     networks:
       - EmbraNet
 
-  # 📡 KONG API GATEWAY
+  # 📡 KONG API GATEWAY (porta 80 direta, sem Traefik)
   rastertech-kong:
     image: kong:2.8.1
     restart: unless-stopped
+    ports:
+      - "80:8000"
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/tmp/kong.yml
@@ -55,19 +41,10 @@ services:
                 paths: ["/"]
                 strip_path: false' > /tmp/kong.yml && \
         /docker-entrypoint.sh kong docker-start
-    # LABELS NO NÍVEL DO SERVIÇO (não dentro de deploy) para funcionar em modo Compose
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.rastertech.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.rastertech.entrypoints=web"
-      - "traefik.http.services.rastertech.loadbalancer.server.port=8000"
     networks:
       - EmbraNet
 
   # 🛡️ NGINX WEB SIDECAR
-  # ESTRATÉGIA: Nginx passa TUDO para o PHP-FPM.
-  # Não precisa de volumes com arquivos estáticos.
-  # O PHP-FPM (rastertech-app) tem os arquivos dentro da própria imagem.
   rastertech-web:
     image: nginx:alpine
     restart: unless-stopped
@@ -88,8 +65,7 @@ services:
     networks:
       - EmbraNet
 
-  # 🏎️ LARAVEL APP (PHP-FPM com arquivos internos da imagem)
-  # SEM volumes de código - usa arquivos da imagem diretamente
+  # 🏎️ LARAVEL APP
   rastertech-app:
     image: sistema-rastertech-app:latest
     restart: unless-stopped
@@ -105,7 +81,6 @@ services:
       - DB_DATABASE=postgres
       - DB_USERNAME=postgres
       - DB_PASSWORD=${DB_PASSWORD}
-      - TRUSTED_PROXIES=*
     networks:
       - EmbraNet
 
