@@ -19,8 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 🚀 FORÇAR HTTPS ABSOLUTO (Evita avisos de segurança no login/formulários)
-        \Illuminate\Support\Facades\URL::forceScheme('https');
+        // 🚀 FORÇAR HTTPS APENAS EM PRODUÇÃO
+        if (config('app.env') === 'production') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
 
         \Illuminate\Pagination\Paginator::useBootstrapFour();
     }
