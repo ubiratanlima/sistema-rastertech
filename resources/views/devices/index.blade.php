@@ -260,7 +260,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="font-weight-bold small text-muted text-uppercase">Proprietário / Cliente</label>
-                                <select name="customer_id" class="form-control" style="height: 45px; border-radius: 8px;">
+                                <select name="customer_id" id="wizard_customer_id" class="form-control" style="height: 45px; border-radius: 8px;">
+                                    <option value="">📦 MANTER EM ESTOQUE (SEM CLIENTE)</option>
                                     @foreach($customers as $c)
                                         <option value="{{ $c->id }}">{{ $c->name }}</option>
                                     @endforeach
@@ -285,11 +286,20 @@
                             <div class="col-md-5">
                                 <div class="card border-0 shadow-sm" style="border-radius: 12px; height: 100%;">
                                     <div class="card-body">
-                                        <label class="font-weight-bold small text-muted text-uppercase">Identificador (IMEI)</label>
-                                        <div class="input-group mb-3">
-                                            <input type="text" id="input_imei" class="form-control" placeholder="Ex: 866..." style="height: 45px; border-radius: 8px 0 0 8px;">
-                                            <div class="input-group-append">
-                                                <button class="btn btn-warning font-weight-bold" type="button" onclick="addEquipmentToWizard()">FIXAR</button>
+                                        <div class="row">
+                                            <div class="col-12 mb-3">
+                                                <label class="font-weight-bold small text-muted text-uppercase">RTECH CODE (Sugestão)</label>
+                                                <input type="text" id="input_internal_code" class="form-control font-weight-bold text-primary" placeholder="RTECH-XXXXX" value="{{ $nextCode }}" style="height: 45px; border-radius: 8px;">
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="font-weight-bold small text-muted text-uppercase">Identificador (IMEI)</label>
+                                                <div class="input-group">
+                                                    <input type="text" id="input_imei" class="form-control" placeholder="Ex: 866..." style="height: 45px; border-radius: 8px 0 0 8px;">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-warning font-weight-bold" type="button" id="btn_fix_equipment" onclick="addEquipmentToWizard()">FIXAR</button>
+                                                    </div>
+                                                </div>
+                                                <div id="imei_check_status" class="mt-2 small font-weight-bold"></div>
                                             </div>
                                         </div>
                                         <p class="small text-muted"><i class="fas fa-lightbulb mr-1 text-warning"></i> Digite e clique em <b>FIXAR</b> para ir empilhando os aparelhos.</p>
@@ -415,6 +425,7 @@
     const globalModels = {!! json_encode($deviceModels->mapWithKeys(fn($m) => [$m->id => $m->name])) !!};
     const globalSims = {!! json_encode($sims->map(fn($s) => ['id' => $s->id, 'iccid' => $s->iccid])) !!};
     const globalVehicles = {!! json_encode($freeVehicles->map(fn($v) => ['id' => $v->id, 'plate' => $v->plate, 'customer_id' => $v->customer_id])) !!};
+    let nextCodeSuggestion = "{{ $nextCode }}";
 
     @if(session('success'))
         Swal.fire({ icon: 'success', title: 'SUCESSO!', text: "{{ session('success') }}", timer: 3000, showConfirmButton: false });
@@ -452,14 +463,78 @@
         $('#step-two-label').addClass('text-muted').removeClass('text-warning font-weight-bold');
     };
 
+    /**
+     * 🔍 BUSCA TÁTICA DE IMEI EM TEMPO REAL
+     */
+    let imeiTimeout = null;
+    $('#input_imei').on('input', function() {
+        const imei = $(this).val().trim();
+        const statusDiv = $('#imei_check_status');
+        const btnFix = $('#btn_fix_equipment');
+
+        clearTimeout(imeiTimeout);
+        statusDiv.html('');
+        btnFix.prop('disabled', false);
+
+        if (imei.length < 10) return;
+
+        statusDiv.html('<i class="fas fa-spinner fa-spin mr-1"></i> Verificando disponibilidade...');
+
+        imeiTimeout = setTimeout(() => {
+            $.get(`/devices/check-imei/${imei}`, function(data) {
+                if (data.exists) {
+                    statusDiv.html(`<span class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i> IMEI JÁ CADASTRADO: ${data.internal_code} (${data.customer})</span>`);
+                    btnFix.prop('disabled', true);
+                    
+                    // Alerta sonoro visual (opcional)
+                    $('#input_imei').addClass('is-invalid');
+                } else {
+                    statusDiv.html('<span class="text-success"><i class="fas fa-check-circle mr-1"></i> NOVO HARDWARE IDENTIFICADO</span>');
+                    $('#input_imei').removeClass('is-invalid').addClass('is-valid');
+                    btnFix.prop('disabled', false);
+                }
+            });
+        }, 500);
+    });
+
     window.addEquipmentToWizard = function() {
         const imei = $('#input_imei').val().trim();
+        const internalCode = $('#input_internal_code').val().trim();
         const modelName = $('#wizard_model_id option:selected').text();
 
-        if (imei.length < 5) return;
+        if (imei.length < 5) {
+            Swal.fire({ icon: 'warning', title: 'IMEI INVÁLIDO', text: 'O IMEI deve ter pelo menos 5 caracteres.' });
+            return;
+        }
 
-        wizardEquipments.push({ imei: imei, model: modelName });
+        if (!internalCode) {
+            Swal.fire({ icon: 'warning', title: 'RTECH CODE VAZIO', text: 'O RTECH CODE é obrigatório para identificação.' });
+            return;
+        }
+
+        // Verifica se o RTECH CODE já está na fila
+        if (wizardEquipments.some(e => e.internal_code === internalCode)) {
+            Swal.fire({ icon: 'error', title: 'CÓDIGO DUPLICADO', text: 'Este RTECH CODE já foi adicionado à fila.' });
+            return;
+        }
+
+        wizardEquipments.push({ 
+            imei: imei, 
+            internal_code: internalCode, 
+            model: modelName 
+        });
+
+        // Sugere o próximo código (incrementa a parte numérica)
+        const match = internalCode.match(/^(RTECH-)(\d+)$/);
+        if (match) {
+            const prefix = match[1];
+            const num = parseInt(match[2]);
+            const nextNum = (num + 1).toString().padStart(5, '0');
+            nextCodeSuggestion = prefix + nextNum;
+        }
+
         $('#input_imei').val('').focus();
+        $('#input_internal_code').val(nextCodeSuggestion);
         updateWizardList();
     };
 
@@ -476,6 +551,7 @@
             html += `
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded animate__animated animate__slideInLeft" style="border-left: 3px solid #ffc107;">
                     <div>
+                        <span class="badge badge-primary mr-2">${item.internal_code}</span>
                         <span class="small text-muted font-weight-bold mr-2 text-uppercase">IMEI:</span>
                         <span class="font-weight-bold text-dark">${item.imei}</span>
                     </div>

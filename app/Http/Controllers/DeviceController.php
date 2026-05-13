@@ -85,8 +85,12 @@ class DeviceController extends Controller
         $sims = GsmCard::whereDoesntHave('device')->orderBy('iccid')->get(['id', 'iccid']);
         $freeVehicles = \App\Models\Vehicle::whereDoesntHave('devices')->orderBy('plate')->get(['id', 'plate', 'customer_id']);
         $providers = Provider::where('type', 'hardware')->orderBy('name')->get(['id', 'name']);
+        
+        // 🔮 Sugestão de Próximo RTECH CODE
+        $lastId = DB::table('devices')->max('id') ?? 0;
+        $nextCode = 'RTECH-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
 
-        return view('devices.index', compact('devices_list', 'sort', 'direction', 'search', 'view', 'customers', 'deviceModels', 'sims', 'freeVehicles', 'providers'));
+        return view('devices.index', compact('devices_list', 'sort', 'direction', 'search', 'view', 'customers', 'deviceModels', 'sims', 'freeVehicles', 'providers', 'nextCode'));
     }
 
     /**
@@ -98,12 +102,16 @@ class DeviceController extends Controller
             // 🧙‍♂️ MODO WIZARD (REGISTRO EM MASSA)
             if ($request->has('wizard')) {
                 $equipments = json_decode($request->get('equipments'), true);
-                $common = $request->only(['device_model_id', 'provider_id', 'status', 'customer_id']);
+                $common = $request->only(['device_model_id', 'provider_id', 'customer_id']);
+                
+                // 🤖 Lógica de Status Automático: Com cliente = ATIVO, Sem cliente = ESTOQUE
+                $common['status'] = empty($common['customer_id']) ? 'inactive' : 'active';
 
                 DB::transaction(function() use ($equipments, $common) {
                     foreach ($equipments as $item) {
                         Device::create(array_merge($common, [
                             'imei' => $item['imei'],
+                            'internal_code' => $item['internal_code'] ?? null,
                             'model_description' => $item['model'] ?? 'N/A'
                         ]));
                     }
@@ -115,10 +123,15 @@ class DeviceController extends Controller
             // 🛠️ MODO MANUAL (SINGLE)
             $validated = $request->validate([
                 'imei' => 'required|unique:devices,imei',
+                'internal_code' => 'nullable|unique:devices,internal_code',
                 'device_model_id' => 'required|exists:device_models,id',
-                'status' => 'required',
+                'status' => 'nullable',
                 'customer_id' => 'nullable|exists:customers,id'
             ]);
+
+            if (empty($validated['status'])) {
+                $validated['status'] = empty($validated['customer_id']) ? 'inactive' : 'active';
+            }
 
             Device::create($validated);
             return redirect('/devices')->with('success', 'Equipamento registrado individualmente.');
@@ -233,5 +246,28 @@ class DeviceController extends Controller
         $device = Device::onlyTrashed()->findOrFail($id);
         $device->restore();
         return redirect('/devices')->with('success', 'Equipamento restaurado.');
+    }
+
+    /**
+     * 🔍 VALIDAÇÃO TÁTICA DE IMEI (API INTERNA)
+     */
+    public function checkImei($imei)
+    {
+        $device = Device::withTrashed()
+            ->with(['customer', 'deviceModel'])
+            ->where('imei', $imei)
+            ->first();
+
+        if ($device) {
+            return response()->json([
+                'exists' => true,
+                'internal_code' => $device->internal_code,
+                'customer' => $device->customer->name ?? 'ESTOQUE',
+                'model' => $device->deviceModel->name ?? 'N/A',
+                'status' => $device->trashed() ? 'INATIVO (LIXEIRA)' : $device->status
+            ]);
+        }
+
+        return response()->json(['exists' => false]);
     }
 }
