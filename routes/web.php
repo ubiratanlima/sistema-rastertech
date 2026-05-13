@@ -59,6 +59,7 @@ Route::group(['middleware' => ['auth']], function () {
 
         // GESTÃO DE ATIVOS
         Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
+        Route::get('/devices/check-imei/{imei}', [DeviceController::class, 'checkImei'])->name('devices.check-imei');
         Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
         Route::put('/devices/{id}', [DeviceController::class, 'update'])->name('devices.update');
         Route::put('/devices/{id}/restore', [DeviceController::class, 'restore'])->name('devices.restore');
