@@ -19,8 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 🚀 FORÇAR HTTPS APENAS EM PRODUÇÃO
-        if (config('app.env') === 'production') {
+        // 🚀 FORÇAR HTTPS EM QUALQUER AMBIENTE QUE NÃO SEJA LOCAL
+        if (!app()->environment('local')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 

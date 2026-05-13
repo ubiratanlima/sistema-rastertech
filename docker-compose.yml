@@ -71,6 +71,9 @@ services:
 
   # 🏎️ LARAVEL APP
   rastertech-app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     image: sistema-rastertech-app:latest
     restart: unless-stopped
     volumes:
