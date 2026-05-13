@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # 🏦 POSTGRES RASTERTECH
+  rastertech-db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - rastertech-db-local-data:/var/lib/postgresql/data
+    networks:
+      - EmbraNet
+
+  # 🧠 REDIS
+  rastertech-redis:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - EmbraNet
+
+  # 📡 KONG API GATEWAY (porta 80 direta, sem Traefik)
+  rastertech-kong:
+    image: kong:2.8.1
+    restart: unless-stopped
+    ports:
+      - "80:8000"
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/tmp/kong.yml
+      - KONG_PORT_MAPS=80:8000
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo '_format_version: "1.1"
+        services:
+          - name: rastertech-api
+            url: http://rastertech-web:80
+            routes:
+              - name: main-dashboard
+                paths: ["/"]
+                strip_path: false' > /tmp/kong.yml && \
+        /docker-entrypoint.sh kong docker-start
+    networks:
+      - EmbraNet
+
+  # 🛡️ NGINX WEB SIDECAR
+  rastertech-web:
+    image: nginx:alpine
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo 'server {
+          listen 80;
+          location / {
+            fastcgi_pass rastertech-app:9000;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME /var/www/public/index.php;
+            fastcgi_param REQUEST_URI $$request_uri;
+            fastcgi_param QUERY_STRING $$query_string;
+          }
+        }' > /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"
+    networks:
+      - EmbraNet
+
+  # 🏎️ LARAVEL APP
+  rastertech-app:
+    image: sistema-rastertech-app:latest
+    restart: unless-stopped
+    environment:
+      - APP_NAME=${APP_NAME}
+      - APP_ENV=local
+      - APP_KEY=${APP_KEY}
+      - APP_DEBUG=true
+      - APP_URL=http://localhost
+      - DB_CONNECTION=pgsql
+      - DB_HOST=rastertech-db
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - EmbraNet
+
+networks:
+  EmbraNet:
+    driver: bridge
+
+volumes:
+  rastertech-db-local-data:
