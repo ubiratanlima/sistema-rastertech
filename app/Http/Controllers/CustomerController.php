@@ -181,7 +181,7 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')->with('success', "Cliente e todos os seus vínculos de acesso foram inativados com sucesso.");
     }
 
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\AsaasService $asaas)
     {
         $rules = [
             'name' => 'required|string|max:100',
@@ -197,6 +197,7 @@ class CustomerController extends Controller
             'complement' => 'nullable|string|max:100',
             'neighborhood' => 'nullable|string|max:100',
             'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:2',
             'notes' => 'nullable|string',
             'vehicles' => 'nullable|string',
             'v_plate' => 'nullable|string|max:10',
@@ -206,8 +207,43 @@ class CustomerController extends Controller
 
         $validated = $request->validate($rules);
         
-        DB::transaction(function() use ($validated, $request) {
-            $customer = Customer::create(collect($validated)->except(['vehicles', 'v_plate', 'v_brand', 'v_model'])->toArray());
+        // --- 🛰️ INTEGRAÇÃO AUTOMÁTICA ASAAS ---
+        $asaasId = null;
+        $securityCode = $validated['code'] ?? null;
+
+        if ($request->filled('document')) {
+            $documentClean = preg_replace('/[^0-9]/', '', $validated['document']);
+            
+            // Enviar para o Asaas
+            $asaasResponse = $asaas->createCustomer([
+                'name' => $validated['name'],
+                'cpfCnpj' => $documentClean,
+                'email' => explode(',', $validated['email'])[0], // Primeiro e-mail se houver vários
+                'groupName' => 'RASTERTECH',
+                'mobilePhone' => $validated['cell_phone'] ?? null,
+                'postalCode' => $validated['zip_code'] ?? null,
+                'address' => $validated['street'] ?? null,
+                'addressNumber' => $validated['number'] ?? null,
+                'province' => $validated['neighborhood'] ?? null,
+                'externalReference' => 'RT_NEW_' . time()
+            ]);
+
+            if ($asaasResponse && isset($asaasResponse['id'])) {
+                $asaasId = $asaasResponse['id'];
+                $securityCode = str_replace('cus_', '', $asaasId);
+            }
+        }
+
+        DB::transaction(function() use ($validated, $request, $asaasId, $securityCode) {
+            $customerData = collect($validated)->except(['vehicles', 'v_plate', 'v_brand', 'v_model'])->toArray();
+            
+            // Sobrescreve campos com dados do Asaas
+            $customerData['asaas_id'] = $asaasId;
+            $customerData['code'] = $securityCode;
+            $customerData['origin'] = 'ASAAS';
+            $customerData['asaas_group'] = 'RASTERTECH';
+
+            $customer = Customer::create($customerData);
             
             // 🚛 INTEGRAÇÃO TÁTICA: Se vier um veículo no wizard, salva na frota
             if ($request->filled('v_plate')) {

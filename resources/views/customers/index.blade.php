@@ -45,6 +45,12 @@
                         </select>
                     </div>
 
+                    <!-- 🔄 SINCRONIZAR ASAAS -->
+                    <button type="button" class="btn btn-sm btn-outline-success ml-2 px-3 font-weight-bold shadow-sm" 
+                            onclick="syncAsaas()" style="border-radius: 6px; height: 31px; display: flex; align-items: center;">
+                        <i class="fas fa-sync-alt mr-2"></i> SINCRONIZAR ASAAS
+                    </button>
+
                     <!-- ➕ NOVO CLIENTE -->
                     <button type="button" class="btn btn-sm btn-primary ml-4 px-3 font-weight-bold shadow-sm" onclick="openCreateCustomerModal()" style="border-radius: 6px; height: 31px; display: flex; align-items: center;">
                         <i class="fas fa-plus-circle mr-2"></i> NOVO CLIENTE
@@ -232,6 +238,42 @@
 
 @push('scripts')
 <script>
+    window.syncAsaas = function() {
+        Swal.fire({
+            title: 'Sincronizar com Asaas',
+            text: "Deseja importar novos clientes e atualizar os códigos de segurança agora?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            confirmButtonText: '<i class="fas fa-sync-alt mr-1"></i> SIM, SINCRONIZAR',
+            cancelButtonText: 'CANCELAR'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processando Sincronização...',
+                    html: 'Isso pode levar alguns segundos dependendo do tamanho da base no Asaas.',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                $.post('/asaas/sync', { _token: '{{ csrf_token() }}' }, function(res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sincronização Concluída!',
+                        text: res.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => location.reload());
+                }).fail(function(err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Falha na Sincronização',
+                        text: err.responseJSON?.message || 'Erro interno do servidor.'
+                    });
+                });
+            }
+        });
+    };
+
     window.openCreateCustomerModal = () => $('#modalCreateCustomer').modal('show');
     
     window.viewDossier = function(el) {

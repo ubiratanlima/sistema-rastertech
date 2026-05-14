@@ -69,11 +69,12 @@ class CustomerPortalController extends Controller
         $userRole = strtolower($user->role);
         $isAdminLevel = in_array($userRole, ['admin', 'gerente', 'operador', 'administrador', 'gestor']);
 
-        // Se for cliente, ignora o ID da request e força o dele
-        if (!$isAdminLevel) {
-            $customerId = $user->customer_id;
+        // Se for admin/gerente, o customer_id da Request tem prioridade total (Select Admin)
+        if ($isAdminLevel && $request->has('customer_id')) {
+            $customerId = $request->get('customer_id');
+            session(['portal_customer_id' => $customerId]);
         } else {
-            $customerId = $request->get('customer_id', session('portal_customer_id'));
+            $customerId = $isAdminLevel ? session('portal_customer_id') : $user->customer_id;
         }
         
         $customer = \App\Models\Customer::find($customerId);
@@ -100,7 +101,35 @@ class CustomerPortalController extends Controller
                 return view('portal.components.perfil', compact('customer', 'whatsapps', 'sectors'));
             
             case 'suporte':
-                return view('portal.components.suporte', compact('customer'));
+                $payments = [];
+                $hasMore = false;
+                $page = (int) $request->get('page', 1);
+                $limit = 4;
+                $offset = ($page - 1) * $limit;
+
+                if ($customer->asaas_id) {
+                    $asaas = app(\App\Services\AsaasService::class);
+                    $fullAsaasId = str_starts_with($customer->asaas_id, 'cus_') ? $customer->asaas_id : 'cus_' . $customer->asaas_id;
+                    
+                    $paymentsResult = $asaas->listPayments($fullAsaasId, $limit, $offset);
+                    $payments = $paymentsResult['data'] ?? [];
+                    $hasMore = $paymentsResult['hasMore'] ?? false;
+
+                    // 🧾 BUSCA DE LINKS DIRETOS PARA NOTA FISCAL (PDF)
+                    foreach ($payments as &$p) {
+                        $p['direct_invoice_pdf'] = null;
+                        // Se o Asaas indica que existe uma nota fiscal
+                        $invoiceData = $asaas->getInvoiceByPayment($p['id']);
+                        if ($invoiceData && !empty($invoiceData['data'])) {
+                            $invoice = $invoiceData['data'][0];
+                            // Só anexa se a nota estiver efetivada/autorizada e tiver link de PDF
+                            if (in_array($invoice['status'], ['AUTHORIZED', 'SENT']) && !empty($invoice['pdfUrl'])) {
+                                $p['direct_invoice_pdf'] = $invoice['pdfUrl'];
+                            }
+                        }
+                    }
+                }
+                return view('portal.components.suporte', compact('customer', 'payments', 'page', 'hasMore'));
 
             case 'checklist':
                 $vehicle = Vehicle::findOrFail($request->id);

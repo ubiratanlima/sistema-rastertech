@@ -93,10 +93,27 @@
     <div class="card shadow-sm border-0 animate__animated animate__fadeInUp" style="border-radius: 12px; min-height: 500px;">
         <div class="card-header bg-transparent border-0 px-4 pt-4 d-flex justify-content-between align-items-center">
             <h4 class="m-0 text-bold" id="component-title">Monitoramento de Veículos</h4>
-            <div class="d-flex" style="gap: 10px;">
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <!-- 📞 LINKS DE SUPORTE NO TOPO -->
+                <div class="d-none d-lg-flex mr-2" style="gap: 8px;">
+                    <a href="https://api.whatsapp.com/send?phone=5511999999999" target="_blank" class="btn btn-sm btn-outline-success border-0 shadow-none" title="WhatsApp Suporte">
+                        <i class="fab fa-whatsapp fa-lg"></i>
+                    </a>
+                    <a href="https://instagram.com/rastertech" target="_blank" class="btn btn-sm btn-outline-danger border-0 shadow-none" title="Instagram">
+                        <i class="fab fa-instagram fa-lg"></i>
+                    </a>
+                    <a href="https://facebook.com/rastertech" target="_blank" class="btn btn-sm btn-outline-primary border-0 shadow-none" title="Facebook">
+                        <i class="fab fa-facebook fa-lg"></i>
+                    </a>
+                    <div class="border-left mx-2" style="height: 20px;"></div>
+                    <a href="tel:+551231993369" class="btn btn-sm btn-outline-dark border-0 shadow-none" title="Ligar para Suporte">
+                        <i class="fas fa-phone-alt fa-lg"></i>
+                    </a>
+                </div>
+
                 @if(optional(auth()->user())->role !== 'Autorizado')
-                <button class="btn btn-sm btn-light border" onclick="loadComponent('perfil')" title="Minha Conta">
-                    <i class="fas fa-user-cog mr-1"></i><span class="d-none d-sm-inline">Meu Perfil</span>
+                <button class="btn btn-sm btn-primary shadow-sm px-3" onclick="loadComponent('perfil')" title="Minha Conta" style="border-radius: 8px;">
+                    <i class="fas fa-user-circle mr-1"></i><span class="d-none d-sm-inline">Meu Perfil</span>
                 </button>
                 @endif
             </div>
@@ -133,6 +150,7 @@
     function loadComponent(name, params = '') {
         const contentArea = $('#portal-content');
         const titleArea = $('#component-title');
+        const customerId = $('#select-customer').val() || '{{ session('portal_customer_id') }}';
         
         // Loader visual
         contentArea.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>');
@@ -148,8 +166,12 @@
 
         titleArea.text(titles[name] || 'Painel do Cliente');
 
+        // Adiciona customer_id aos params para garantir contexto
+        let queryParams = params ? params + '&' : '';
+        queryParams += `customer_id=${customerId}`;
+
         // Requisição AJAX para buscar o componente
-        const url = `/portal/view/${name}` + (params ? `?${params}` : '');
+        const url = `/portal/view/${name}?` + queryParams;
         $.get(url, function(html) {
             contentArea.html(html).addClass('animate__animated animate__fadeIn');
         }).fail(function() {

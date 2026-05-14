@@ -49,8 +49,9 @@
                                     <input type="text" name="document" class="form-control gold-input" placeholder="00.000.000/0000-00">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label class="font-weight-bold small text-muted text-uppercase">Código de Segurança (RTECH)</label>
-                                    <input type="text" name="code" class="form-control gold-input bg-light font-weight-bold text-primary" placeholder="Gerado automaticamente se vazio">
+                                    <label class="font-weight-bold small text-muted text-uppercase">Código de Segurança (ASAAAS)</label>
+                                    <input type="text" name="code" class="form-control gold-input bg-light font-weight-bold text-primary" 
+                                           readonly placeholder="AUTOMÁTICO VIA ASAAS" title="Este código será gerado automaticamente pelo Asaas após o salvamento.">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="font-weight-bold small text-muted text-uppercase">Celular / WhatsApp</label>

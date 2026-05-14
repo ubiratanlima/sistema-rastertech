@@ -12,9 +12,9 @@ class Customer extends Model
     use HasFactory, SoftDeletes, Auditables;
 
     protected $fillable = [
-        'name', 'company_name', 'email', 'document', 'code',
+        'asaas_id', 'origin', 'asaas_group', 'name', 'company_name', 'email', 'document', 'code',
         'cell_phone', 'landline_phone', 'zip_code', 'street',
-        'number', 'complement', 'neighborhood', 'city', 'notes'
+        'number', 'complement', 'neighborhood', 'city', 'state', 'notes'
     ];
 
     protected $casts = [

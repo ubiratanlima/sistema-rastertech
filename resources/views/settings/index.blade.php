@@ -219,8 +219,8 @@
                                     <i class="fas fa-server mr-1"></i> Ambiente
                                 </label>
                                 <select name="asaas_environment" class="form-control">
-                                    <option value="sandbox" {{ ($asaas['asaas_environment']->value ?? 'sandbox') === 'sandbox' ? 'selected' : '' }}>Sandbox (Testes)</option>
-                                    <option value="production" {{ ($asaas['asaas_environment']->value ?? '') === 'production' ? 'selected' : '' }}>Produção</option>
+                                    <option value="sandbox" {{ (isset($asaas['asaas_environment']) && $asaas['asaas_environment']->value === 'sandbox') ? 'selected' : '' }}>Sandbox (Testes)</option>
+                                    <option value="production" {{ (isset($asaas['asaas_environment']) && $asaas['asaas_environment']->value === 'production') ? 'selected' : '' }}>Produção</option>
                                 </select>
                             </div>
                             <div class="col-12 form-group">
@@ -228,8 +228,41 @@
                                     <i class="fas fa-link mr-1"></i> URL da API
                                 </label>
                                 <input type="text" name="asaas_api_url" class="form-control"
-                                    value="{{ $asaas['asaas_api_url']->value ?? 'https://sandbox.asaas.com/api/v3' }}"
-                                    placeholder="https://sandbox.asaas.com/api/v3">
+                                    value="{{ $asaas['asaas_api_url']->value ?? '' }}"
+                                    placeholder="https://api.asaas.com/v3">
+                            </div>
+                        </div>
+
+                        {{-- CONFIGURAÇÕES ATUAIS --}}
+                        <div class="row">
+                            <div class="col-12">
+                                <hr>
+                                <div class="p-3 bg-light" style="border-radius: 8px; border-left: 5px solid #f39c12;">
+                                    <h6 class="font-weight-bold small text-uppercase mb-3 text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i> Configurações Atuais (Banco de Dados)
+                                    </h6>
+                                    <div class="row text-center">
+                                        <div class="col-md-4">
+                                            <p class="small text-muted mb-0">Ambiente Ativo</p>
+                                            @php
+                                                $env = $asaas['asaas_environment']->value ?? 'sandbox';
+                                            @endphp
+                                            <span class="badge badge-{{ $env === 'production' ? 'success' : 'warning' }} px-3 py-2 text-uppercase">
+                                                {{ $env === 'production' ? 'Produção' : 'Sandbox' }}
+                                            </span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p class="small text-muted mb-0">URL em Uso</p>
+                                            <code class="small" style="color: #e67e22;">{{ $asaas['asaas_api_url']->value ?? 'Padrão do Ambiente' }}</code>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p class="small text-muted mb-0">Status da Chave</p>
+                                            <span class="small font-weight-bold {{ isset($asaas['asaas_api_key']) && !empty($asaas['asaas_api_key']->value) ? 'text-success' : 'text-danger' }}">
+                                                {{ isset($asaas['asaas_api_key']) && !empty($asaas['asaas_api_key']->value) ? '✓ CONFIGURADA' : '✗ NÃO ENCONTRADA' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -81,6 +81,17 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
         Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
         Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+        
+        // --- 🛰️ INTEGRAÇÃO ASAAS ---
+        Route::post('/asaas/sync', function() {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('asaas:sync-customers');
+                $output = \Illuminate\Support\Facades\Artisan::output();
+                return response()->json(['success' => true, 'message' => $output]);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+        })->name('asaas.sync');
 
         Route::get('/fleets', [VehicleController::class, 'index'])->name('fleets.index');
         Route::post('/fleets', [VehicleController::class, 'store'])->name('fleets.store');
